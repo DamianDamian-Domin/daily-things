@@ -7,36 +7,36 @@ export default {
   theme: {
     extend: {
       colors: {
-        ground: '#FCEDDC',
-        gray: {
-          100: '#525252', // ikonki
-          200: '#C2C2C2', // dividery
-          300: '#343434', // bordery
-          400: 'rgba(180, 180, 180, 0.22)', // accent bacgrounds
-          500: '#D3D5C5' // navbar kolko 
-        },
-        green: "#434C22",
-        black: {
-          100: "#4D4D4D", //glowne czcionki
-          200: "#343434" // mniejsze czionki
-        },
-        white: {
-          100: "#ffffff", // karta głowna
-          200: "#f8f8f8" //karta boczna
-        },
-        success: {
-          fill: "rgba(0, 255, 25, 0.27)",
-          border: "#00762F"
-        },
-        warning: {
-          fill: "rgba(255, 199, 0, 0.29)",
-          border: "#A2A500"
-        },
-        danger: {
-          fill: "rgba(255, 0, 0, 0.33)",
-          border: "#BE1300"
-        }
-      },
+      //   ground: '#FCEDDC',
+      //   gray: {
+      //     100: '#525252', // ikonki
+      //     200: '#C2C2C2', // dividery
+      //     300: '#343434', // bordery
+      //     400: 'rgba(180, 180, 180, 0.22)', // accent bacgrounds
+      //     500: '#D3D5C5' // navbar kolko 
+      //   },
+      //   green: "#434C22",
+      //   black: {
+      //     100: "#4D4D4D", //glowne czcionki
+      //     200: "#343434" // mniejsze czionki
+      //   },
+      //   white: {
+      //     100: "#ffffff", // karta głowna
+      //     200: "#f8f8f8" //karta boczna
+      //   },
+      //   success: {
+      //     fill: "rgba(0, 255, 25, 0.27)",
+      //     border: "#00762F"
+      //   },
+      //   warning: {
+      //     fill: "rgba(255, 199, 0, 0.29)",
+      //     border: "#A2A500"
+      //   },
+      //   danger: {
+      //     fill: "rgba(255, 0, 0, 0.33)",
+      //     border: "#BE1300"
+      //   }
+      // },
 
       primary: 'rgb(var(--primary))',
       'primary-inverse': 'rgb(var(--primary-inverse))',
@@ -71,7 +71,7 @@ export default {
       'surface-800': 'rgb(var(--surface-800))',
       'surface-900': 'rgb(var(--surface-900))',
       'surface-950': 'rgb(var(--surface-950))'
-
+      }
     },
   },
   plugins: [],
