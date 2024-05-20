@@ -1,56 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Sacramento&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-
 @tailwind base;
     h1 {
-        @apply text-2xl text-primary
+        @apply font-lora text-3xl text-a
     }
     h2 {
-        @apply text-xl text-primary
+        @apply font-lora text-2xl text-a 
     }
     h3 {
-        @apply text-lg text-secondary
+        @apply font-sacramento text-3xl text-b
     }
     h4 {
-        @apply text-base text-secondary
+        @apply font-sacramento text-2xl text-b
+    }
+    p {
+        @apply font-lora text-sm text-b
     }
 
 @layer components {
     /* backgrounds */
-    .bg-ground {
+    .surface-ground {
         @apply bg-orange-50
     }
-    .bg-content-a {
+    .surface-content-a {
         @apply bg-white
     }
-    .bg-content-b {
+    .surface-content-b {
         @apply bg-gray-300
     }
-    .bg-primary {
-        @apply bg-green-50
+    .surface-primary {
+        @apply !bg-green-100
     }
-    .bg-secondary {
-        @apply bg-emerald-950
+    .surface-secondary {
+        @apply !bg-emerald-950
     }
-    .bg-success {
+    .surface-success {
         @apply bg-green-200
     }
-    .bg-warning {
+    .surface-warning {
         @apply bg-yellow-200
     }
-    .bg-danger {
+    .surface-danger {
         @apply bg-red-200
     }
     /* texts  */
-    .text-primary {
+    .text-a {
         @apply text-zinc-700
     }
-    .text-secondary {
+    .text-b {
         @apply text-zinc-900
     }
-    .text-neutral {
+    .text-c {
         @apply text-neutral-600
     }
     /* borders  */
@@ -59,6 +63,18 @@
     }
     .border-secondary {
         @apply border-neutral-600
+    }
+    /* fonts  */
+    .font-lora {
+        font-family: "Lora", serif;
+        font-optical-sizing: auto;
+        font-style: normal;
+        font-weight: 500;
+    }
+    .font-sacramento {
+        font-family: "Sacramento", cursive;
+        font-weight: 400;
+        font-style: normal;
     }
 
 }

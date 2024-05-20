@@ -1,15 +1,13 @@
 <template>
     <div class="w-full flex flex-row justify-between">
         <div class="flex flex-row items-center gap-2">
-            <img src="@/assets/logo.png" alt="">
-            <h2 class=" text-3xl text-black-100t"> Daily Things </h2>
+            <img class="w-24" src="@/assets/logo.png" alt="">
+            <h1> Daily Things </h1>
 
         </div>
         <div class="flex flex-row items-center gap-2">
-            <Avatar shape="circle" label="DD" size="large" class="bg-green text-white-100" />
-            <Avatar shape="circle" icon="pi pi-ellipsis-v" size="large" class="bg-gray-500 text-gray-100" />
-            <Button label="Submit" />
-
+            <Avatar shape="circle" icon="pi pi-ellipsis-v" size="large" class="surface-secondary text-white" />
+            <Avatar shape="circle" label="DD" size="large" class="surface-primary text-a" />
         </div>
     </div>
 </template>
