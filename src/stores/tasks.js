@@ -16,11 +16,95 @@ export const useTasksStore = defineStore('tasks', () => {
     refDate.value = new Date(refDate.value)
   }
 
-  const count = ref(0)
-  const doubleCount = computed(() => count.value * 2)
-  function increment() {
-    count.value++
-  }
+   const allTasksList = ref( [
+    {
+        name: 'gym',
+        icon: 'fitness_center',
+        severity: 'success'
+    },
+    {
+        name: 'cook',
+        icon: 'skillet',
+        severity: 'success'
+    },
+    {
+        name: 'washing',
+        icon: 'local_laundry_service',
+        severity: 'success'
+    }, 
+    {
+        name: 'vacuum',
+        icon: 'vacuum',
+        severity: 'success'
+    }, 
+    {
+        name: 'mop',
+        icon: 'mop',
+        severity: 'success'
+    }, 
+    {
+        name: 'dishwasher',
+        icon: 'dishwasher',
+        severity: 'success'
+    },
+    {
+        name: 'Meet',
+        icon: 'groups',
+        severity: 'success'
+    },
+    {
+        name: 'Learn',
+        icon: 'school',
+        severity: 'success'
+    },
+    {
+        name: 'shop',
+        icon: 'shopping_cart',
+        severity: 'success'
+    },
+    {
+        name: 'bike',
+        icon: 'pedal_bike',
+        severity: 'success'
+    },
+    {
+        name: 'refuel the car',
+        icon: 'local_gas_station',
+        severity: 'success'
+    },
+    {
+        name: 'wash the car',
+        icon: 'local_car_wash',
+        severity: 'success'
+    },
+    {
+        name: 'Car repair',
+        icon: 'car_repair',
+        severity: 'success'
+    },
+    {
+        name: 'Self Care',
+        icon: 'self_care',
+        severity: 'success'
+    },
+    {
+        name: 'Dentist',
+        icon: 'dentistry',
+        severity: 'success'
+    },
+    {
+        name: 'Gynecology',
+        icon: 'gynecology',
+        severity: 'success'
+    },
+    {
+        name: 'Stadia Controller',
+        icon: 'stadia_controller',
+        severity: 'success'
+    }
+])
 
-  return { refDate, dateFormated, changeDate }
+  
+
+  return { refDate, dateFormated, changeDate, allTasksList }
 })

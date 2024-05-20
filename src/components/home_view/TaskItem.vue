@@ -1,6 +1,6 @@
 <template>
-    <div :class="taskStyle" class="w-12 h-12 flex justify-center items-center rounded-md shadow-sm">
-        <i class="material-icons">{{ data.icon }}</i>
+    <div :class="taskStyle" class="w-12 h-12 flex justify-center items-center rounded-md shadow-sm transition-all  hover:cursor-pointer">
+        <span class="material-icons material-symbols-outlined">{{ data.icon}}</span>
     </div>
 </template>
 
@@ -14,13 +14,13 @@ const props = defineProps({
 const taskStyle = computed(() => {
     switch (props.data.severity) {
         case 'success':
-            return 'surface-success'
+            return 'surface-success hover:opacity-85'
         case 'danger':
-            return 'surface-danger'
+            return 'surface-danger hover:opacity-85'
         case 'warning':
-            return 'surface-warning'
+            return 'surface-warning hover:opacity-85'
         case 'empty':
-            return 'border-secondary border border-dashed'
+            return 'border-secondary border border-dashed hover:surface-content-c'
         default:
             return 'surface-content-a'
     }
