@@ -1,7 +1,7 @@
 <template>
     <div class="w-full flex flex-row justify-between">
         <div class="flex flex-row items-center gap-2">
-            <img class="w-24" src="@/assets/logo.png" alt="">
+            <img class="w-20" src="@/assets/logo.png" alt="">
             <h1> Daily Things </h1>
 
         </div>

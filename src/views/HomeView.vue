@@ -1,13 +1,15 @@
 <template>
-  <div>
-    <!-- <span class=" text-success-border"> siema eniu </span> -->
+  <div class="flex flex-col gap-6 items-center flex-grow">
+    <DatePicker></DatePicker>
+    <TaskCard></TaskCard>
   </div>
 </template>
 
-<script>
-  export default {
-    
-  }
+<script setup>
+import DatePicker from '@/components/home_view/DatePicker.vue';
+import TaskCard from '@/components/home_view/TaskCard.vue'
+
+
 </script>
 
 <style scoped>

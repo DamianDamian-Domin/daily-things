@@ -12,25 +12,32 @@
         @apply font-lora text-2xl text-a 
     }
     h3 {
-        @apply font-sacramento text-3xl text-b
+        @apply font-sacramento text-4xl text-b
     }
     h4 {
-        @apply font-sacramento text-2xl text-b
+        @apply font-sacramento text-3xl text-b
     }
     p {
         @apply font-lora text-sm text-b
     }
 
 @layer components {
+    /* shapes  */
+    .card-a {
+        @apply shadow-md rounded-md py-6 px-4 surface-content-a
+    }
     /* backgrounds */
     .surface-ground {
-        @apply bg-orange-50
+        @apply !bg-orange-50
     }
     .surface-content-a {
-        @apply bg-white
+        @apply !bg-white
     }
     .surface-content-b {
-        @apply bg-gray-300
+        @apply !bg-gray-300
+    }
+    .surface-content-c {
+        @apply !bg-gray-100
     }
     .surface-primary {
         @apply !bg-green-100
@@ -39,13 +46,13 @@
         @apply !bg-emerald-950
     }
     .surface-success {
-        @apply bg-green-200
+        @apply !bg-green-200
     }
     .surface-warning {
-        @apply bg-yellow-200
+        @apply !bg-yellow-200
     }
     .surface-danger {
-        @apply bg-red-200
+        @apply !bg-red-200
     }
     /* texts  */
     .text-a {
