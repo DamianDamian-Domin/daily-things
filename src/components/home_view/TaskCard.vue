@@ -10,7 +10,9 @@
 				<TaskItem
 					v-for="task in allTasksList"
 					:key="task.icon"
-					:data="task"></TaskItem>
+					:data="task"
+					@select="handleTaskSelect(task)"
+					@click="showAddTaskDialog = false"></TaskItem>
 			</div>
 		</div>
 	</Dialog>
@@ -59,4 +61,9 @@ const tasksStore = useTasksStore();
 const { allTasksList, currentTasks } = storeToRefs(tasksStore);
 
 const showAddTaskDialog = ref(false);
+
+function handleTaskSelect(task) {
+	const today = new Date().toISOString().slice(0, 10);
+	tasksStore.addTaskToDailyList(today, task);
+}
 </script>
