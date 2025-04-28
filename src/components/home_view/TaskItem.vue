@@ -16,10 +16,11 @@ const props = defineProps({
 	data: Object,
 });
 
-const emit = defineEmits(["select"]);
+const emit = defineEmits(["select", "click"]);
 
 function handleClick() {
-	emit("select", props);
+	emit("select", props.data);
+	emit("click", props.data);
 }
 
 const taskStyle = computed(() => {

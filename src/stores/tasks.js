@@ -201,6 +201,20 @@ export const useTasksStore = defineStore("tasks", () => {
 			});
 		}
 	}
+	function deleteDailyTask(task) {
+		dailyTasksList.value.forEach((day, index) => {
+			const taskIndex = day.tasks.findIndex(
+				(t) => t.name === task.name && t.icon === task.icon
+			);
+			if (taskIndex !== -1) {
+				day.tasks.splice(taskIndex, 1);
+
+				if (day.tasks.length === 0) {
+					dailyTasksList.value.splice(index, 1);
+				}
+			}
+		});
+	}
 
 	return {
 		refDate,
@@ -213,5 +227,6 @@ export const useTasksStore = defineStore("tasks", () => {
 		currentTasks,
 		addTaskToDailyList,
 		toDateKey,
+		deleteDailyTask,
 	};
 });

@@ -17,6 +17,27 @@
 		</div>
 	</Dialog>
 
+	<Dialog
+		v-model:visible="showDeleteTaskDialog"
+		modal
+		:dismissableMask="true"
+		header="Are You realy whant delete this?">
+		<div class="w-[clamp(20rem,50%,60rem)]">
+			<div>
+				<button
+					@click="closeDeleteTaskDialog"
+					class="cancel-button">
+					Back
+				</button>
+				<button
+					@click="deleteSelectedTask()"
+					class="delete-button">
+					Delete
+				</button>
+			</div>
+		</div>
+	</Dialog>
+
 	<div
 		class="flex flex-col card-a sm:w-[480px] w-full h-4/5 min-h-[30rem] max-h-[50rem] overflow-auto">
 		<div class="text-center">
@@ -27,7 +48,8 @@
 				<TaskItem
 					v-for="(task, index) in currentTasks"
 					:key="index"
-					:data="task"></TaskItem>
+					:data="task"
+					@click="openDeleteTaskDialog(task)" />
 				<TaskItem
 					@click="showAddTaskDialog = true"
 					:data="{ severity: 'empty', icon: 'add' }"></TaskItem>
@@ -36,7 +58,7 @@
 		<Divider></Divider>
 		<div class="flex flex-col gap-6 flex-grow">
 			<div class="text-center">
-				<h3>Daily goals</h3>
+				<h3>Weekly goals</h3>
 			</div>
 			<div class="flex flex-row flex-wrap h-min gap-2">
 				<TaskItem
@@ -65,5 +87,27 @@ const showAddTaskDialog = ref(false);
 function handleTaskSelect(task) {
 	const today = new Date().toISOString().slice(0, 10);
 	tasksStore.addTaskToDailyList(today, task);
+}
+
+const showDeleteTaskDialog = ref(false);
+const selectedTaskToDelete = ref(null);
+
+function openDeleteTaskDialog(task) {
+	console.log("TAK");
+	selectedTaskToDelete.value = task;
+	showDeleteTaskDialog.value = true;
+}
+
+function closeDeleteTaskDialog() {
+	selectedTaskToDelete.value = null;
+	showDeleteTaskDialog.value = false;
+	console.log("NIE");
+}
+
+function deleteSelectedTask() {
+	if (selectedTaskToDelete.value) {
+		tasksStore.deleteDailyTask(selectedTaskToDelete.value);
+		closeDeleteTaskDialog();
+	}
 }
 </script>
