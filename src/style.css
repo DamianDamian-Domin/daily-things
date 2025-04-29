@@ -1,87 +1,83 @@
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Sacramento&display=swap');
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tailwindcss-primeui";
 
-@tailwind base;
+
+@layer base {
     h1 {
-        @apply font-lora text-3xl text-a
+        @apply font-lora text-2xl
     }
     h2 {
-        @apply font-lora text-2xl text-a 
+        @apply font-lora text-xl
     }
     h3 {
-        @apply font-sacramento text-4xl text-b
-    }
-    h4 {
-        @apply font-sacramento text-3xl text-b
+        @apply font-lora text-lg
     }
     p {
-        @apply font-lora text-sm text-b
+        @apply font-lora
+    }
+    span {
+        @apply font-lora
+    }
+}
+@layer components {
+    /* shapes */
+    .card-a {
+        @apply shadow-md rounded-md py-6 px-4 !bg-white;
     }
 
-@layer components {
-    /* shapes  */
-    .card-a {
-        @apply shadow-md rounded-md py-6 px-4 surface-content-a
-    }
     /* backgrounds */
     .surface-ground {
-        @apply !bg-orange-50
+        @apply !bg-orange-50;
     }
     .surface-content-a {
-        @apply !bg-white
+        @apply !bg-white;
     }
     .surface-content-b {
-        @apply !bg-gray-300
+        @apply !bg-gray-100;
     }
     .surface-content-c {
-        @apply !bg-gray-100
+        @apply !bg-gray-300;
     }
     .surface-primary {
-        @apply !bg-green-100
+        @apply !bg-green-100;
     }
     .surface-secondary {
-        @apply !bg-emerald-950
+        @apply !bg-emerald-950;
     }
     .surface-success {
-        @apply !bg-green-200
+        @apply !bg-green-200;
     }
     .surface-warning {
-        @apply !bg-yellow-200
+        @apply !bg-yellow-200;
     }
     .surface-danger {
-        @apply !bg-red-200
-    }
-    /* texts  */
-    .text-a {
-        @apply text-zinc-700
-    }
-    .text-b {
-        @apply text-zinc-900
-    }
-    .text-c {
-        @apply text-neutral-600
-    }
-    /* borders  */
-    .border-primary {
-        @apply border-gray-300
-    }
-    .border-secondary {
-        @apply border-neutral-600
-    }
-    /* fonts  */
-    .font-lora {
-        font-family: "Lora", serif;
-        font-optical-sizing: auto;
-        font-style: normal;
-        font-weight: 500;
-    }
-    .font-sacramento {
-        font-family: "Sacramento", cursive;
-        font-weight: 400;
-        font-style: normal;
+        @apply !bg-red-200;
     }
 
+    /* texts */
+    .text-a {
+        @apply text-zinc-700;
+    }
+    .text-b {
+        @apply text-zinc-900;
+    }
+    .text-c {
+        @apply text-neutral-600;
+    }
+
+    /* borders */
+    .border-primary {
+        @apply border-gray-300;
+    }
+    .border-secondary {
+        @apply border-neutral-600;
+    }
 }
+
+@theme {
+    --font-lora: "Lora", serif;
+    --font-sacramento: "Sacramento", cursive;
+}
+

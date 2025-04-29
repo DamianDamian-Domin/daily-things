@@ -1,5 +1,5 @@
 <template>
-    <div :class="taskStyle" class="w-12 h-12 flex justify-center items-center rounded-md shadow-sm transition-all  hover:cursor-pointer">
+    <div :class="taskStyle" class="w-12 h-12 flex justify-center items-center rounded-md shadow-sm transition-all hover:cursor-pointer">
         <span class="material-icons material-symbols-outlined">{{ data.icon}}</span>
     </div>
 </template>

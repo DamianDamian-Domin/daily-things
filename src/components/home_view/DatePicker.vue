@@ -1,10 +1,10 @@
 <template>
 	<div
-		class="flex flex-row justify-between items-center sm:w-[480px] w-full rounde">
+		class="flex flex-row justify-between items-center sm:w-[480px] w-full rounded">
 		<div>
 			<Button
 				:pt="{
-					root: 'surface-content-c hover:opacity-75 border-none rounded-[40%] text-c',
+					root: 'surface-content-b hover:opacity-75 border-none rounded-[40%] text-c',
 					icon: 'text-c',
 				}"
 				:pt-options="{
@@ -26,7 +26,7 @@
 		<div>
 			<Button
 				:pt="{
-					root: 'surface-content-c hover:opacity-75 border-none rounded-[40%] text-c',
+					root: 'surface-content-b hover:opacity-75 border-none rounded-[40%] text-c',
 					icon: 'text-c',
 				}"
 				:pt-options="{
