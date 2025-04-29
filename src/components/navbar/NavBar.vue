@@ -6,21 +6,47 @@
 
         </div>
         <div class="flex flex-row items-center gap-2">
-            <Avatar shape="circle" icon="pi pi-ellipsis-v" size="large" class="surface-secondary" />
-            <Avatar shape="circle" label="DD" size="large" class="surface-primary " />
-            <Button severity="secondary" label="Dark" @click="toggleDarkMode()" />
+            <Button class="w-12 h-12" text v-if="isDarkMode" icon="pi pi-sun" severity="secondary" @click="toggleDarkMode()" />
+            <Button class="w-12 h-12" text v-else icon="pi pi-moon" severity="secondary" @click="toggleDarkMode()" />
+            <Button class="w-12 h-12" rounded icon="pi pi-ellipsis-v" severity="secondary"></Button>
+            <Button class="w-12 h-12" rounded label="DD" severity="primary"></Button>
         </div>
     </div>
 </template>
 
 <script setup>
-import Avatar from 'primevue/avatar';
+import { onMounted } from 'vue';
 import Button from 'primevue/button';
+import { useCommonStore } from '@/stores/common'
+import { storeToRefs } from 'pinia';
 
+const commonStore = useCommonStore()
+const { isDarkMode } = storeToRefs(commonStore)
 
-function toggleDarkMode() {
-    document.documentElement.classList.toggle('my-app-dark');
+const toggleDarkMode = () => {
+
+    isDarkMode.value = !isDarkMode.value
+    if (isDarkMode.value) {
+        document.documentElement.classList.add('my-app-dark')
+        localStorage.setItem('theme', 'dark')
+    } else {
+        document.documentElement.classList.remove('my-app-dark')
+        localStorage.setItem('theme', 'light')
+    }
+
 }
 
-</script>
+onMounted(() => {
+    const savedTheme = localStorage.getItem('theme')
+    if (savedTheme) {
+        isDarkMode.value = savedTheme === 'dark'
+    } else {
+        isDarkMode.value = window.matchMedia('(prefers-color-scheme: dark)').matches
+    }
+    if (isDarkMode.value) {
+        document.documentElement.classList.add('my-app-dark')
+    }
 
+})
+
+</script>
