@@ -21,6 +21,7 @@
     .card-a {
         @apply shadow-md rounded-md py-6 px-4;
     }
+
     /* backgrounds */
     .surface-ground {
         @apply bg-orange-50 dark:bg-gray-700;
@@ -56,6 +57,18 @@
     }
     .text-contrast {
         @apply dark:text-gray-900 text-gray-100;
+    }
+    .text-primary {
+        @apply text-primary-200 dark:text-primary-700;
+    }
+    .text-success {
+        @apply text-green-500 dark:text-green-400
+    }
+    .text-warning {
+        @apply text-yellow-500 dark:text-yellow-400;
+    }
+    .text-danger {
+        @apply text-red-500 dark:text-red-400;
     }
 }
 

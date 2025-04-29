@@ -62,6 +62,42 @@ const MyPreset = definePreset(Aura, {
                     }
                 }
             }
+        },
+        button: {
+            colorScheme: {
+                light: {
+                    primary: {
+                        background: '{primary.200}',
+                        border: {
+                            color: '{primary.200}'
+                        },
+                        color: '{zinc.600}',
+                        hover: {
+                            background: '{primary.300}',
+                            border: {
+                                color: '{primary.300}'
+                            },
+                            color: '{zinc.600}',
+                        }
+                    }
+                },
+                dark: {
+                    primary: {
+                        background: '{primary.700}',
+                        border: {
+                            color: '{primary.700}'
+                        },
+                        color: '{zinc.200}',
+                        hover: {
+                            background: '{primary.800}',
+                            border: {
+                                color: '{primary.800}'
+                            },
+                            color: '{zinc.200}',
+                        }
+                    }
+                }
+            }
         }
     }
 });
