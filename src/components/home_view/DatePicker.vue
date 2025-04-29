@@ -3,14 +3,6 @@
 		class="flex flex-row justify-between items-center sm:w-[480px] w-full rounded">
 		<div>
 			<Button
-				:pt="{
-					root: 'surface-content-b hover:opacity-75 border-none rounded-[40%] text-c',
-					icon: 'text-c',
-				}"
-				:pt-options="{
-					mergeProps: true,
-					mergeSections: true,
-				}"
 				icon="pi pi-arrow-left"
 				severity="secondary"
 				aria-label="Bookmark"
@@ -20,19 +12,11 @@
 		<div
 			class="flex flex-col items-center gap-1 hover:cursor-pointer"
 			@click="visible = true">
-			<h1>{{ dateFormated[0] }}</h1>
-			<h1>{{ dateFormated[1] }}</h1>
+			<h1 class="text-a">{{ dateFormated[0] }}</h1>
+			<h1 class="text-a">{{ dateFormated[1] }}</h1>
 		</div>
 		<div>
 			<Button
-				:pt="{
-					root: 'surface-content-b hover:opacity-75 border-none rounded-[40%] text-c',
-					icon: 'text-c',
-				}"
-				:pt-options="{
-					mergeProps: true,
-					mergeSections: true,
-				}"
 				icon="pi pi-arrow-right"
 				severity="secondary"
 				aria-label="Bookmark"
@@ -46,7 +30,7 @@
 			:closable="false"
 			:dismissableMask="true">
 			<div>
-				<Calendar
+				<DatePicker
 					v-model="calendarValue"
 					@update:modelValue="onDateSelect"
 					inline
@@ -63,7 +47,7 @@ import { useTasksStore } from "@/stores/tasks";
 import { storeToRefs } from "pinia";
 import { ref } from "vue";
 import Dialog from "primevue/dialog";
-import Calendar from "primevue/calendar";
+import DatePicker from "primevue/datepicker";
 
 const tasksStore = useTasksStore();
 const { dateFormated } = storeToRefs(tasksStore);
