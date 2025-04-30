@@ -1,16 +1,15 @@
 <template>
-	<div
-		@click="handleClick"
-		:class="taskStyle"
-		class="w-12 h-12 flex justify-center items-center rounded-md shadow-sm transition-all hover:cursor-pointer">
-		<span class="material-icons material-symbols-outlined">{{
-			data.icon
-		}}</span>
-	</div>
+    <Button class="w-12 h-12 border-dashed" severity="secondary" variant="outlined" v-if="props.data.severity === 'empty'">
+        <span class="material-icons material-symbols-outlined">{{ data.icon}}</span>
+    </Button>
+    <Button :severity="props.data.severity" class="w-12 h-12" v-else>
+            <span class="material-icons material-symbols-outlined">{{ data.icon}}</span>
+    </Button>
 </template>
 
 <script setup>
 import { computed } from "vue";
+import { Button } from 'primevue';
 
 const props = defineProps({
 	data: Object,
@@ -23,20 +22,7 @@ function handleClick() {
 	emit("click", props.data);
 }
 
-const taskStyle = computed(() => {
-	switch (props.data.severity) {
-		case "success":
-			return "surface-success hover:opacity-85";
-		case "danger":
-			return "surface-danger hover:opacity-85";
-		case "warning":
-			return "surface-warning hover:opacity-85";
-		case "empty":
-			return "border-secondary border border-dashed hover:surface-content-c";
-		default:
-			return "surface-content-a";
-	}
-});
+
 </script>
 
 <style scoped></style>
