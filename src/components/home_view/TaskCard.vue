@@ -1,8 +1,8 @@
 <template>
 	<Dialog
-		v-model:visible="showAddTaskDialog"
+		v-model:visible="showTaskDialog"
 		modal
-		header="Add task"
+		:header="headerText"
 		class="w-[clamp(20rem,50%,60rem)]">
 		<div class="flex flex-col gap-4">
 			<span class="p-text-secondary block mb-5">Update your information.</span>
@@ -12,7 +12,7 @@
 					:key="task.icon"
 					:data="task"
 					@select="handleTaskSelect(task)"
-					@click="showAddTaskDialog = false"></TaskItem>
+					@click="showTaskDialog = false"></TaskItem>
 			</div>
 		</div>
 	</Dialog>
@@ -51,21 +51,24 @@
 					:data="task"
 					@click="openDeleteTaskDialog(task)" />
 				<TaskItem
-					@click="showAddTaskDialog = true"
+					@click="openAddTaskDialog"
 					:data="{ severity: 'empty', icon: 'add' }"></TaskItem>
 			</div>
 		</div>
 		<Divider></Divider>
 		<div class="flex flex-col gap-6 flex-grow">
 			<div class="text-center">
-				<h3>Weekly goals</h3>
+				<h3>Daily goals</h3>
 			</div>
 			<div class="flex flex-row flex-wrap h-min gap-2">
 				<TaskItem
-					v-for="task in 4"
-					:key="task"
-					:data="{ severity: 'empty', icon: 'fitness_center' }"></TaskItem>
-				<TaskItem :data="{ severity: 'empty', icon: 'add' }"></TaskItem>
+					v-for="goal in currentGoals"
+					:key="goal.name"
+					:data="goal"
+					@click="onReachGoal(goal)"></TaskItem>
+				<TaskItem
+					@click="openAddGoalDialog"
+					:data="{ severity: 'empty', icon: 'add' }"></TaskItem>
 			</div>
 		</div>
 	</div>
@@ -75,18 +78,40 @@
 import TaskItem from "@/components/home_view/TaskItem.vue";
 import Divider from "primevue/divider";
 import Dialog from "primevue/dialog";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useTasksStore } from "@/stores/tasks";
 import { storeToRefs } from "pinia";
 
 const tasksStore = useTasksStore();
-const { allTasksList, currentTasks } = storeToRefs(tasksStore);
+const { allTasksList, currentTasks, currentGoals } = storeToRefs(tasksStore);
 
-const showAddTaskDialog = ref(false);
+const showTaskDialog = ref(false);
+const addDialogMode = ref("");
+
+const headerText = computed(() =>
+	addDialogMode.value === "task" ? "Add a daily task" : "Add a goal to complete"
+);
+
+function openAddTaskDialog() {
+	addDialogMode.value = "task";
+	showTaskDialog.value = true;
+}
+
+function openAddGoalDialog() {
+	addDialogMode.value = "goal";
+	showTaskDialog.value = true;
+}
 
 function handleTaskSelect(task) {
 	const today = new Date().toISOString().slice(0, 10);
-	tasksStore.addTaskToDailyList(today, task);
+
+	if (addDialogMode.value === "task") {
+		tasksStore.addTaskToDailyList(today, task);
+	} else if (addDialogMode.value === "goal") {
+		tasksStore.addGoalToDailyList(task);
+	}
+
+	showTaskDialog.value = false;
 }
 
 const showDeleteTaskDialog = ref(false);
@@ -110,4 +135,7 @@ function deleteSelectedTask() {
 		closeDeleteTaskDialog();
 	}
 }
+const onReachGoal = (goal) => {
+	tasksStore.reachGoal(goal.name);
+};
 </script>
