@@ -123,24 +123,19 @@ export const useTasksStore = defineStore("tasks", () => {
 	function setDate(date) {
 		refDate.value = new Date(date);
 	}
+
 	const dailyGoalsList = ref([
-		[
-			{ name: "gym", icon: "fitness_center", severity: "danger" },
-			{ name: "cook", icon: "skillet", severity: "danger" },
-			{ name: "washing", icon: "local_laundry_service", severity: "danger" },
-		],
+		{ name: "gym", icon: "fitness_center", severity: "danger" },
+		{ name: "cook", icon: "skillet", severity: "danger" },
+		{ name: "washing", icon: "local_laundry_service", severity: "danger" },
 	]);
+
 	const dailyTasksList = ref([
 		{
 			date: "2025-04-28",
 			tasks: [
 				{ name: "gym", icon: "fitness_center", severity: "success" },
 				{ name: "cook", icon: "skillet", severity: "success" },
-			],
-			goals: [
-				{ name: "gym", icon: "fitness_center", severity: "danger" },
-				{ name: "cook", icon: "skillet", severity: "danger" },
-				{ name: "washing", icon: "local_laundry_service", severity: "danger" },
 			],
 		},
 		{
@@ -149,11 +144,6 @@ export const useTasksStore = defineStore("tasks", () => {
 				{ name: "gym", icon: "fitness_center", severity: "success" },
 				{ name: "cook", icon: "skillet", severity: "success" },
 				{ name: "washing", icon: "local_laundry_service", severity: "success" },
-			],
-			goals: [
-				{ name: "gym", icon: "fitness_center", severity: "danger" },
-				{ name: "cook", icon: "skillet", severity: "danger" },
-				{ name: "washing", icon: "local_laundry_service", severity: "danger" },
 			],
 		},
 		{
@@ -185,11 +175,6 @@ export const useTasksStore = defineStore("tasks", () => {
 					severity: "success",
 				},
 			],
-			goals: [
-				{ name: "gym", icon: "fitness_center", severity: "danger" },
-				{ name: "cook", icon: "skillet", severity: "danger" },
-				{ name: "washing", icon: "local_laundry_service", severity: "danger" },
-			],
 		},
 	]);
 	function toDateKey(date) {
@@ -219,10 +204,17 @@ export const useTasksStore = defineStore("tasks", () => {
 			dailyTasksList.value.push({
 				date: formattedDate,
 				tasks: [normalizedTask],
-				goals: [],
 			});
 		}
+		const matchingGoal = dailyGoalsList.value.find(
+			(goal) => goal.name === task.name && goal.severity === "danger"
+		);
+
+		if (matchingGoal) {
+			matchingGoal.severity = "success";
+		}
 	}
+
 	function deleteDailyTask(task) {
 		dailyTasksList.value.forEach((day) => {
 			const taskIndex = day.tasks.findIndex(
@@ -230,41 +222,32 @@ export const useTasksStore = defineStore("tasks", () => {
 			);
 			if (taskIndex !== -1) {
 				day.tasks.splice(taskIndex, 1);
+				const goal = dailyGoalsList.value.find(
+					(goal) => goal.name === task.name
+				);
+				if (goal) {
+					goal.severity = "danger";
+				}
+
+				dailyTasksList.value = [...dailyTasksList.value];
 			}
 		});
 	}
 
-	const currentGoals = computed(() => {
-		const key = toDateKey(refDate.value);
-		const entry = dailyTasksList.value.find((item) => item.date === key);
-		return entry ? entry.goals : [];
-	});
-
-	const reachGoal = (goalName) => {
-		const key = toDateKey(refDate.value);
-		const dayEntry = dailyTasksList.value.find((item) => item.date === key);
-
-		if (!dayEntry) return;
-
-		const goalIndex = dayEntry.goals.findIndex((g) => g.name === goalName);
-
-		if (goalIndex === -1) return;
-
-		const goal = dayEntry.goals[goalIndex];
-
-		if (goal.severity === "danger") {
-			goal.severity = "success";
-		} else if (goal.severity === "success") {
-			dayEntry.goals.splice(goalIndex, 1);
-		}
-	};
-
-	function addGoalToDailyList(task) {
-		const normalizedGoal = {
-			name: task.name,
-			icon: task.icon,
+	function addGoal(goal) {
+		const newGoal = {
+			...goal,
 			severity: "danger",
 		};
+		dailyGoalsList.value.push(newGoal);
+	}
+
+	function completeGoal(goal) {
+		const goalIndex = dailyGoalsList.value.findIndex(
+			(g) => g.name === goal.name
+		);
+		if (goalIndex === -1) return;
+		dailyGoalsList.value[goalIndex].severity = "success";
 
 		const formattedDate = refDate.value.toISOString().split("T")[0];
 
@@ -272,15 +255,27 @@ export const useTasksStore = defineStore("tasks", () => {
 			(day) => day.date === formattedDate
 		);
 
-		if (dayEntry) {
-			dayEntry.goals.push(normalizedGoal);
-		} else {
-			dailyTasksList.value.push({
+		if (!dayEntry) {
+			dayEntry = {
 				date: formattedDate,
 				tasks: [],
-				goals: [normalizedGoal],
-			});
+			};
+			dailyTasksList.value.push(dayEntry);
 		}
+		const alreadyExists = dayEntry.tasks.some((t) => t.name === goal.name);
+		if (!alreadyExists) {
+			dayEntry.tasks.push({
+				name: goal.name,
+				icon: goal.icon,
+				severity: "success",
+			});
+			dailyTasksList.value = [...dailyTasksList.value];
+		}
+	}
+	function deleteDailyGoal(goal) {
+		dailyGoalsList.value = dailyGoalsList.value.filter(
+			(g) => g.name !== goal.name
+		);
 	}
 
 	return {
@@ -295,8 +290,9 @@ export const useTasksStore = defineStore("tasks", () => {
 		addTaskToDailyList,
 		toDateKey,
 		deleteDailyTask,
-		currentGoals,
-		reachGoal,
-		addGoalToDailyList,
+		dailyGoalsList,
+		addGoal,
+		completeGoal,
+		deleteDailyGoal,
 	};
 });

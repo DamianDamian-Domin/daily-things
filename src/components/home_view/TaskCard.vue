@@ -11,32 +11,23 @@
 					v-for="task in allTasksList"
 					:key="task.icon"
 					:data="task"
-					@select="handleTaskSelect(task)"
+					@select="handleTaskSelect"
 					@click="showTaskDialog = false"></TaskItem>
 			</div>
 		</div>
 	</Dialog>
 
-	<Dialog
-		v-model:visible="showDeleteTaskDialog"
-		modal
-		:dismissableMask="true"
-		header="Are You realy whant delete this?">
-		<div class="w-[clamp(20rem,50%,60rem)]">
-			<div>
-				<button
-					@click="closeDeleteTaskDialog"
-					class="cancel-button">
-					Back
-				</button>
-				<button
-					@click="deleteSelectedTask()"
-					class="delete-button">
-					Delete
-				</button>
+	<ConfirmPopup group="templating">
+		<template #message="slotProps">
+			<div
+				class="flex flex-col items-center w-full gap-4 border-b border-surface-200 dark:border-surface-700 p-4 mb-4 pb-0">
+				<i
+					:class="slotProps.message.icon"
+					class="text-6xl text-primary-500"></i>
+				<p>{{ slotProps.message.message }}</p>
 			</div>
-		</div>
-	</Dialog>
+		</template>
+	</ConfirmPopup>
 
 	<div
 		class="flex flex-col card-a sm:w-[480px] surface-content w-full h-4/5 min-h-[30rem] max-h-[50rem] overflow-auto">
@@ -49,7 +40,7 @@
 					v-for="(task, index) in currentTasks"
 					:key="index"
 					:data="task"
-					@click="openDeleteTaskDialog(task)" />
+					@click="(e) => showTemplate(e, task)" />
 				<TaskItem
 					@click="openAddTaskDialog"
 					:data="{ severity: 'empty', icon: 'add' }"></TaskItem>
@@ -60,15 +51,26 @@
 			<div class="text-center">
 				<h3>Daily goals</h3>
 			</div>
+			<div
+				class="text-right cursor-pointer"
+				@click="toggleEditMode">
+				<h4
+					class="inline-block border-b border-gray-300 hover:text-blue-600 transition-colors">
+					{{ editMode ? "Close edit goals" : "Edit goals" }}
+				</h4>
+			</div>
 			<div class="flex flex-row flex-wrap h-min gap-2">
 				<TaskItem
-					v-for="goal in currentGoals"
+					v-for="goal in dailyGoalsList"
 					:key="goal.name"
 					:data="goal"
-					@click="onReachGoal(goal)"></TaskItem>
+					@click="
+						(e) => (editMode ? showGoalDeletePopup(e, goal) : onReachGoal(goal))
+					" />
 				<TaskItem
+					v-if="editMode"
 					@click="openAddGoalDialog"
-					:data="{ severity: 'empty', icon: 'add' }"></TaskItem>
+					:data="{ severity: 'empty', icon: 'add' }" />
 			</div>
 		</div>
 	</div>
@@ -78,19 +80,28 @@
 import TaskItem from "@/components/home_view/TaskItem.vue";
 import Divider from "primevue/divider";
 import Dialog from "primevue/dialog";
+import ConfirmPopup from "primevue/confirmpopup";
 import { ref, computed } from "vue";
 import { useTasksStore } from "@/stores/tasks";
 import { storeToRefs } from "pinia";
 
+import { useConfirm } from "primevue/useconfirm";
+
+const confirm = useConfirm();
+
 const tasksStore = useTasksStore();
-const { allTasksList, currentTasks, currentGoals } = storeToRefs(tasksStore);
+const { allTasksList, currentTasks, dailyGoalsList, completeGoal } =
+	storeToRefs(tasksStore);
 
 const showTaskDialog = ref(false);
 const addDialogMode = ref("");
+const selectedTaskToDelete = ref(null);
+const selectedGoalToDelete = ref(null);
 
 const headerText = computed(() =>
 	addDialogMode.value === "task" ? "Add a daily task" : "Add a goal to complete"
 );
+const editMode = ref(false);
 
 function openAddTaskDialog() {
 	addDialogMode.value = "task";
@@ -108,34 +119,75 @@ function handleTaskSelect(task) {
 	if (addDialogMode.value === "task") {
 		tasksStore.addTaskToDailyList(today, task);
 	} else if (addDialogMode.value === "goal") {
-		tasksStore.addGoalToDailyList(task);
+		tasksStore.addGoal(task);
 	}
 
 	showTaskDialog.value = false;
 }
 
-const showDeleteTaskDialog = ref(false);
-const selectedTaskToDelete = ref(null);
-
-function openDeleteTaskDialog(task) {
-	console.log("TAK");
-	selectedTaskToDelete.value = task;
-	showDeleteTaskDialog.value = true;
-}
-
-function closeDeleteTaskDialog() {
-	selectedTaskToDelete.value = null;
-	showDeleteTaskDialog.value = false;
-	console.log("NIE");
-}
-
 function deleteSelectedTask() {
 	if (selectedTaskToDelete.value) {
 		tasksStore.deleteDailyTask(selectedTaskToDelete.value);
-		closeDeleteTaskDialog();
 	}
 }
 const onReachGoal = (goal) => {
-	tasksStore.reachGoal(goal.name);
+	tasksStore.completeGoal(goal);
 };
+
+const showTemplate = (event, task) => {
+	selectedTaskToDelete.value = task;
+	confirm.require({
+		target: event.currentTarget2,
+		group: "templating",
+		message: "Please confirm to proceed moving forward.",
+		icon: "pi pi-exclamation-circle",
+		rejectProps: {
+			icon: "pi pi-times",
+			label: "Cancel",
+			outlined: true,
+		},
+		acceptProps: {
+			icon: "pi pi-check",
+			label: "Confirm",
+		},
+		accept: () => {
+			deleteSelectedTask(task);
+		},
+	});
+};
+
+function toggleEditMode() {
+	editMode.value = !editMode.value;
+}
+
+const showGoalDeletePopup = (event, goal) => {
+	selectedGoalToDelete.value = goal;
+
+	confirm.require({
+		target: event.currentTarget,
+		group: "templating",
+		message: `Are you sure you want to delete "${goal.name}" from your goals?`,
+		icon: "pi pi-exclamation-circle",
+		rejectProps: {
+			icon: "pi pi-times",
+			label: "Cancel",
+			outlined: true,
+		},
+		acceptProps: {
+			icon: "pi pi-check",
+			label: "Confirm",
+		},
+		accept: () => {
+			tasksStore.deleteDailyGoal(selectedGoalToDelete.value);
+			selectedGoalToDelete.value = null;
+		},
+	});
+};
+
+function deleteGoalFromDailyGoalsList() {
+	if (selectedGoalToDelete.value)
+		tasksStore.deleteDailyGoal(selectedGoalToDelete.value);
+
+	selectedGoalToDelete.value = null;
+}
 </script>
