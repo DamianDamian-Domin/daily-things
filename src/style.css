@@ -30,7 +30,7 @@
         @apply bg-white dark:bg-gray-800;
     }
     .surface-primary {
-        @apply bg-primary-200 dark:bg-green-700;
+        @apply bg-primary-200 dark:bg-primary-700;
     }
     .surface-secondary {
         @apply bg-zinc-100 dark:bg-gray-800;

@@ -18,7 +18,7 @@
 	<div
 		class="flex flex-col card-a sm:w-[480px] surface-content w-full h-4/5 min-h-[30rem] max-h-[50rem] overflow-auto">
 		<div class="text-center">
-			<h3 class="text">You are doing well !</h3>
+			<h3 class="text-c">You are doing well !</h3>
 		</div>
 		<div class="tasks-area mt-8 h-2/3">
 			<div class="flex flex-row flex-wrap h-min gap-2">
