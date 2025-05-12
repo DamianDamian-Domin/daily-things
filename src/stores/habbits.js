@@ -1,29 +1,15 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
+import { formatDate, toDateKey } from '@/utils/timeUtils'
 
-export const useTasksStore = defineStore("tasks", () => {
+export const useHabbitsStore = defineStore("habbits", () => {
+
+	// Date refs
 	const refDate = ref(new Date());
 	const dateFormated = computed(() => formatDate(refDate.value));
 
-	function formatDate(date) {
-		const options = {
-			day: "2-digit",
-			month: "2-digit",
-			year: "numeric",
-			weekday: "long",
-		};
-		return date
-			.toLocaleDateString("en-GB", options)
-			.replace(/,/g, "")
-			.split(" ");
-	}
-
-	function changeDate(direction) {
-		refDate.value.setDate(refDate.value.getDate() + direction);
-		refDate.value = new Date(refDate.value);
-	}
-
-	const allTasksList = ref([
+	// Habbit refs
+	const allHabbitsList = ref([
 		{
 			name: "gym",
 			icon: "fitness_center",
@@ -110,37 +96,17 @@ export const useTasksStore = defineStore("tasks", () => {
 			severity: "success",
 		},
 	]);
-
-	function isToday() {
-		const today = new Date();
-		return (
-			refDate.value.getDate() === today.getDate() &&
-			refDate.value.getMonth() === today.getMonth() &&
-			refDate.value.getFullYear() === today.getFullYear()
-		);
-	}
-
-	function setDate(date) {
-		refDate.value = new Date(date);
-	}
-
-	const dailyGoalsList = ref([
-		{ name: "gym", icon: "fitness_center", severity: "danger" },
-		{ name: "cook", icon: "skillet", severity: "danger" },
-		{ name: "washing", icon: "local_laundry_service", severity: "danger" },
-	]);
-
-	const dailyTasksList = ref([
+	const userHabbitsList = ref([
 		{
 			date: "2025-04-28",
-			tasks: [
+			habbits: [
 				{ name: "gym", icon: "fitness_center", severity: "success" },
 				{ name: "cook", icon: "skillet", severity: "success" },
 			],
 		},
 		{
 			date: "2025-04-27",
-			tasks: [
+			habbits: [
 				{ name: "gym", icon: "fitness_center", severity: "success" },
 				{ name: "cook", icon: "skillet", severity: "success" },
 				{ name: "washing", icon: "local_laundry_service", severity: "success" },
@@ -148,7 +114,7 @@ export const useTasksStore = defineStore("tasks", () => {
 		},
 		{
 			date: "2025-04-26",
-			tasks: [
+			habbits: [
 				{ name: "gym", icon: "fitness_center", severity: "success" },
 				{ name: "cook", icon: "skillet", severity: "success" },
 				{ name: "washing", icon: "local_laundry_service", severity: "success" },
@@ -177,122 +143,145 @@ export const useTasksStore = defineStore("tasks", () => {
 			],
 		},
 	]);
-	function toDateKey(date) {
-		return date.toISOString().split("T")[0];
-	}
-
-	const currentTasks = computed(() => {
+	const selectedDayHabbits = computed(() => {
 		const key = toDateKey(refDate.value);
-		const entry = dailyTasksList.value.find((item) => item.date === key);
-		return entry ? entry.tasks : [];
+		const entry = userHabbitsList.value.find((item) => item.date === key);
+		return entry ? entry.habbits : [];
 	});
 
-	function addTaskToDailyList(date, task) {
-		const normalizedTask = {
-			name: task.name,
-			icon: task.icon,
-			severity: task.severity,
-		};
+	// Goals refs
+	const dailyGoalsList = ref([
+		{ name: "gym", icon: "fitness_center", severity: "success" },
+		{ name: "cook", icon: "skillet", severity: "success" },
+		{ name: "washing", icon: "local_laundry_service", severity: "success" },
+	]);
+
+	const dailyGoalsColored = computed(() => {
+
+		const formatedGoals = []
+		const counters = {}
+
+		for (const goal of dailyGoalsList.value) {
+
+			const currentDayTaskCount = selectedDayHabbits.value.filter(g => g.name === goal.name).length
+
+			if (!counters.hasOwnProperty(goal.name)) {
+				counters[goal.name] = 1
+			}
+			else {
+				counters[goal.name] = counters[goal.name] + 1
+			}
+			console.log(counters)
+
+			if (counters[goal.name] <= currentDayTaskCount ) {
+				formatedGoals.push({
+					...goal,
+					severity: goal.severity
+				})
+			}
+			else {
+				formatedGoals.push({
+					...goal,
+					severity: 'empty'
+				})
+			} 
+
+		}
+		return formatedGoals
+
+	})
+
+
+	// Date functions
+	function changeDate(direction) {
+		refDate.value.setDate(refDate.value.getDate() + direction);
+		refDate.value = new Date(refDate.value);
+	}
+	function isToday() {
+		const today = new Date();
+		return (
+			refDate.value.getDate() === today.getDate() &&
+			refDate.value.getMonth() === today.getMonth() &&
+			refDate.value.getFullYear() === today.getFullYear()
+		);
+	}
+	function setDate(date) {
+		refDate.value = new Date(date);
+	}
+	
+	// Habbit functions
+	function addHabbitToSelectedDay(habbit) {
+
 		const formattedDate = refDate.value.toISOString().split("T")[0];
-		const dayEntry = dailyTasksList.value.find(
+		const dayEntry = userHabbitsList.value.find(
 			(day) => day.date === formattedDate
 		);
 
 		if (dayEntry) {
-			dayEntry.tasks.push(normalizedTask);
+			dayEntry.habbits.push(habbit);
 		} else {
-			dailyTasksList.value.push({
+			userHabbitsList.value.push({
 				date: formattedDate,
-				tasks: [normalizedTask],
+				habbits: [habbit],
 			});
 		}
-		const matchingGoal = dailyGoalsList.value.find(
-			(goal) => goal.name === task.name && goal.severity === "danger"
-		);
 
-		if (matchingGoal) {
-			matchingGoal.severity = "success";
+	}
+
+	function deleteHabbitFromSelectedDay(habbit) {
+		const index = selectedDayHabbits.value.findIndex(t => t.name === habbit.name)
+		if (index !== -1) {
+			selectedDayHabbits.value.splice(index, 1)
 		}
 	}
 
-	function deleteDailyTask(task) {
-		dailyTasksList.value.forEach((day) => {
-			const taskIndex = day.tasks.findIndex(
-				(t) => t.name === task.name && t.icon === task.icon
-			);
-			if (taskIndex !== -1) {
-				day.tasks.splice(taskIndex, 1);
-				const goal = dailyGoalsList.value.find(
-					(goal) => goal.name === task.name
-				);
-				if (goal) {
-					goal.severity = "danger";
-				}
-
-				dailyTasksList.value = [...dailyTasksList.value];
-			}
-		});
-	}
-
-	function addGoal(goal) {
+	// Goals functions
+	function addDailyGoal(goal) {
 		const newGoal = {
 			...goal,
-			severity: "danger",
+			severity: goal.severity,
 		};
 		dailyGoalsList.value.push(newGoal);
 	}
 
-	function completeGoal(goal) {
-		const goalIndex = dailyGoalsList.value.findIndex(
-			(g) => g.name === goal.name
-		);
-		if (goalIndex === -1) return;
-		dailyGoalsList.value[goalIndex].severity = "success";
-
-		const formattedDate = refDate.value.toISOString().split("T")[0];
-
-		let dayEntry = dailyTasksList.value.find(
-			(day) => day.date === formattedDate
-		);
-
-		if (!dayEntry) {
-			dayEntry = {
-				date: formattedDate,
-				tasks: [],
-			};
-			dailyTasksList.value.push(dayEntry);
-		}
-		const alreadyExists = dayEntry.tasks.some((t) => t.name === goal.name);
-		if (!alreadyExists) {
-			dayEntry.tasks.push({
-				name: goal.name,
-				icon: goal.icon,
-				severity: "success",
-			});
-			dailyTasksList.value = [...dailyTasksList.value];
+	function deleteDailyGoal(goal) {
+		const index = dailyGoalsList.value.findIndex(g => g.name === goal.name)
+		if (index !== -1) {
+			dailyGoalsList.value.splice(index, 1)
 		}
 	}
-	function deleteDailyGoal(goal) {
-		dailyGoalsList.value = dailyGoalsList.value.filter(
-			(g) => g.name !== goal.name
-		);
+	
+	function onGoalClick(goal) {
+
+		// It means that habbits is completed and we should remove habbit from current habbits
+		if (goal.severity !== 'empty') {
+			deleteHabbitFromSelectedDay(goal)
+		}
+		// And that means it's not so we should add it to the list
+		else {
+			// change severity to original 
+			const goalFormatted = dailyGoalsList.value.find(g => g.name === goal.name)
+			addHabbitToSelectedDay(goalFormatted)
+		}
+		
 	}
 
 	return {
 		refDate,
 		dateFormated,
 		changeDate,
-		allTasksList,
-		dailyTasksList,
+		allHabbitsList,
+		userHabbitsList,
 		isToday,
 		setDate,
-		currentTasks,
-		addTaskToDailyList,
+		selectedDayHabbits,
+		addHabbitToSelectedDay,
 		toDateKey,
-		deleteDailyTask,
+		deleteHabbitFromSelectedDay,
 		dailyGoalsList,
-		addGoal,
-		completeGoal,
+		addDailyGoal,
 		deleteDailyGoal,
+		dailyGoalsColored,
+		onGoalClick
 	};
 });
