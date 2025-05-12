@@ -6,7 +6,7 @@
 				icon="pi pi-arrow-left"
 				severity="secondary"
 				aria-label="Bookmark"
-				@click="tasksStore.changeDate(-1)" />
+				@click="habbitsStore.changeDate(-1)" />
 		</div>
 
 		<div
@@ -20,8 +20,8 @@
 				icon="pi pi-arrow-right"
 				severity="secondary"
 				aria-label="Bookmark"
-				:disabled="tasksStore.isToday()"
-				@click="tasksStore.changeDate(1)" />
+				:disabled="habbitsStore.isToday()"
+				@click="habbitsStore.changeDate(1)" />
 		</div>
 		<Dialog
 			v-model:visible="visible"
@@ -43,21 +43,22 @@
 
 <script setup>
 import Button from "primevue/button";
-import { useTasksStore } from "@/stores/tasks";
+import { useHabbitsStore } from "@/stores/habbits";
 import { storeToRefs } from "pinia";
 import { ref } from "vue";
 import Dialog from "primevue/dialog";
 import DatePicker from "primevue/datepicker";
 
-const tasksStore = useTasksStore();
-const { dateFormated } = storeToRefs(tasksStore);
+const habbitsStore = useHabbitsStore();
+const { dateFormated } = storeToRefs(habbitsStore);
 const visible = ref(false);
 const calendarValue = ref(new Date());
 
 function onDateSelect(selectedDate) {
-	tasksStore.setDate(selectedDate);
+	habbitsStore.setDate(selectedDate);
 	visible.value = false;
 }
 </script>
 
 <style scoped></style>
+@/stores/habbits

@@ -1,18 +1,18 @@
 <template>
 	<Dialog
-		v-model:visible="showTaskDialog"
+		v-model:visible="showHabbitDialog"
 		modal
 		:header="headerText"
 		class="w-[clamp(20rem,50%,60rem)]">
 		<div class="flex flex-col gap-4">
 			<span class="p-text-secondary block mb-5">Update your information.</span>
 			<div class="flex flex-row flex-wrap gap-2">
-				<TaskItem
-					v-for="task in allTasksList"
-					:key="task.icon"
-					:data="task"
-					@select="handleTaskSelect"
-					@click="showTaskDialog = false"></TaskItem>
+				<HabbitItem
+					v-for="habbit in allHabbitsList"
+					:key="habbit.icon"
+					:data="habbit"
+					@select="handleHabbitSelect"
+					@click="showHabbitDialog = false"></HabbitItem>
 			</div>
 		</div>
 	</Dialog>
@@ -36,14 +36,14 @@
 		</div>
 		<div class="tasks-area mt-8 h-2/3">
 			<div class="flex flex-row flex-wrap h-min gap-2">
-				<TaskItem
-					v-for="(task, index) in currentTasks"
+				<HabbitItem
+					v-for="(habbit, index) in selectedDayHabbits"
 					:key="index"
-					:data="task"
-					@click="(e) => showTemplate(e, task)" />
-				<TaskItem
-					@click="openAddTaskDialog"
-					:data="{ severity: 'empty', icon: 'add' }"></TaskItem>
+					:data="habbit"
+					@click="(e) => showTemplate(e, habbit)" />
+				<HabbitItem
+					@click="openAddHabbitDialog"
+					:data="{ severity: 'empty', icon: 'add' }"></HabbitItem>
 			</div>
 		</div>
 		<Divider></Divider>
@@ -60,16 +60,16 @@
 				</h4>
 			</div>
 			<div class="flex flex-row flex-wrap h-min gap-2">
-				<TaskItem
-					v-for="goal in dailyGoalsList"
+				<HabbitItem
+					v-for="goal in dailyGoalsColored"
 					:key="goal.name"
 					:data="goal"
 					@click="
 						(e) => (editMode ? showGoalDeletePopup(e, goal) : onReachGoal(goal))
 					" />
-				<TaskItem
+				<HabbitItem
 					v-if="editMode"
-					@click="openAddGoalDialog"
+					@click="openaddDailyGoalDialog"
 					:data="{ severity: 'empty', icon: 'add' }" />
 			</div>
 		</div>
@@ -77,65 +77,63 @@
 </template>
 
 <script setup>
-import TaskItem from "@/components/home_view/TaskItem.vue";
+import HabbitItem from "@/components/home_view/HabbitItem.vue";
 import Divider from "primevue/divider";
 import Dialog from "primevue/dialog";
 import ConfirmPopup from "primevue/confirmpopup";
 import { ref, computed } from "vue";
-import { useTasksStore } from "@/stores/tasks";
+import { useHabbitsStore } from "@/stores/habbits";
 import { storeToRefs } from "pinia";
 
 import { useConfirm } from "primevue/useconfirm";
 
 const confirm = useConfirm();
 
-const tasksStore = useTasksStore();
-const { allTasksList, currentTasks, dailyGoalsList, completeGoal } =
-	storeToRefs(tasksStore);
+const habbitsStore = useHabbitsStore();
+const { allHabbitsList, selectedDayHabbits, dailyGoalsColored } =
+	storeToRefs(habbitsStore);
 
-const showTaskDialog = ref(false);
+const showHabbitDialog = ref(false);
 const addDialogMode = ref("");
 const selectedTaskToDelete = ref(null);
 const selectedGoalToDelete = ref(null);
 
 const headerText = computed(() =>
-	addDialogMode.value === "task" ? "Add a daily task" : "Add a goal to complete"
+	addDialogMode.value === "habbit" ? "Add a daily habbit" : "Add a goal to complete"
 );
 const editMode = ref(false);
 
-function openAddTaskDialog() {
-	addDialogMode.value = "task";
-	showTaskDialog.value = true;
+function openAddHabbitDialog() {
+	addDialogMode.value = "habbit";
+	showHabbitDialog.value = true;
 }
 
-function openAddGoalDialog() {
+function openaddDailyGoalDialog() {
 	addDialogMode.value = "goal";
-	showTaskDialog.value = true;
+	showHabbitDialog.value = true;
 }
 
-function handleTaskSelect(task) {
-	const today = new Date().toISOString().slice(0, 10);
-
-	if (addDialogMode.value === "task") {
-		tasksStore.addTaskToDailyList(today, task);
+function handleHabbitSelect(habbit) {
+	if (addDialogMode.value === "habbit") {
+		habbitsStore.addHabbitToSelectedDay(habbit);
 	} else if (addDialogMode.value === "goal") {
-		tasksStore.addGoal(task);
+		habbitsStore.addDailyGoal(habbit);
 	}
 
-	showTaskDialog.value = false;
+	showHabbitDialog.value = false;
 }
 
 function deleteSelectedTask() {
 	if (selectedTaskToDelete.value) {
-		tasksStore.deleteDailyTask(selectedTaskToDelete.value);
+		habbitsStore.deleteHabbitFromSelectedDay(selectedTaskToDelete.value);
 	}
 }
 const onReachGoal = (goal) => {
-	tasksStore.completeGoal(goal);
+	habbitsStore.onGoalClick(goal);
 };
 
-const showTemplate = (event, task) => {
-	selectedTaskToDelete.value = task;
+const showTemplate = (event, habbit) => {
+	selectedTaskToDelete.value = habbit;
 	confirm.require({
 		target: event.currentTarget2,
 		group: "templating",
@@ -151,7 +149,7 @@ const showTemplate = (event, task) => {
 			label: "Confirm",
 		},
 		accept: () => {
-			deleteSelectedTask(task);
+			deleteSelectedTask(habbit);
 		},
 	});
 };
@@ -178,16 +176,12 @@ const showGoalDeletePopup = (event, goal) => {
 			label: "Confirm",
 		},
 		accept: () => {
-			tasksStore.deleteDailyGoal(selectedGoalToDelete.value);
+			habbitsStore.deleteDailyGoal(selectedGoalToDelete.value);
 			selectedGoalToDelete.value = null;
 		},
 	});
 };
 
-function deleteGoalFromDailyGoalsList() {
-	if (selectedGoalToDelete.value)
-		tasksStore.deleteDailyGoal(selectedGoalToDelete.value);
 
-	selectedGoalToDelete.value = null;
-}
 </script>
+@/stores/habbits
