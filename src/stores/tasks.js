@@ -124,60 +124,175 @@ export const useTasksStore = defineStore("tasks", () => {
 		refDate.value = new Date(date);
 	}
 
-	const dailyTasksMap = ref(new Map());
+	const dailyGoalsList = ref([
+		{ name: "gym", icon: "fitness_center", severity: "danger" },
+		{ name: "cook", icon: "skillet", severity: "danger" },
+		{ name: "washing", icon: "local_laundry_service", severity: "danger" },
+	]);
 
+	const dailyTasksList = ref([
+		{
+			date: "2025-04-28",
+			tasks: [
+				{ name: "gym", icon: "fitness_center", severity: "success" },
+				{ name: "cook", icon: "skillet", severity: "success" },
+			],
+		},
+		{
+			date: "2025-04-27",
+			tasks: [
+				{ name: "gym", icon: "fitness_center", severity: "success" },
+				{ name: "cook", icon: "skillet", severity: "success" },
+				{ name: "washing", icon: "local_laundry_service", severity: "success" },
+			],
+		},
+		{
+			date: "2025-04-26",
+			tasks: [
+				{ name: "gym", icon: "fitness_center", severity: "success" },
+				{ name: "cook", icon: "skillet", severity: "success" },
+				{ name: "washing", icon: "local_laundry_service", severity: "success" },
+				{ name: "vacuum", icon: "vacuum", severity: "success" },
+				{ name: "mop", icon: "mop", severity: "success" },
+				{ name: "dishwasher", icon: "dishwasher", severity: "success" },
+				{ name: "Meet", icon: "groups", severity: "success" },
+				{ name: "Learn", icon: "school", severity: "success" },
+				{ name: "shop", icon: "shopping_cart", severity: "success" },
+				{ name: "bike", icon: "pedal_bike", severity: "success" },
+				{
+					name: "refuel the car",
+					icon: "local_gas_station",
+					severity: "success",
+				},
+				{ name: "wash the car", icon: "local_car_wash", severity: "success" },
+				{ name: "Car repair", icon: "car_repair", severity: "success" },
+				{ name: "Self Care", icon: "self_care", severity: "success" },
+				{ name: "Dentist", icon: "dentistry", severity: "success" },
+				{ name: "Gynecology", icon: "gynecology", severity: "success" },
+				{
+					name: "Stadia Controller",
+					icon: "stadia_controller",
+					severity: "success",
+				},
+			],
+		},
+	]);
 	function toDateKey(date) {
 		return date.toISOString().split("T")[0];
 	}
 
-	dailyTasksMap.value.set("2025-04-16", [
-		{ name: "gym", icon: "fitness_center", severity: "success" },
-		{ name: "cook", icon: "skillet", severity: "success" },
-	]);
-
-	dailyTasksMap.value.set("2025-04-15", [
-		{ name: "gym", icon: "fitness_center", severity: "success" },
-		{ name: "cook", icon: "skillet", severity: "success" },
-		{ name: "washing", icon: "local_laundry_service", severity: "success" },
-	]);
-
-	dailyTasksMap.value.set("2025-04-14", [
-		{ name: "gym", icon: "fitness_center", severity: "success" },
-		{ name: "cook", icon: "skillet", severity: "success" },
-		{ name: "washing", icon: "local_laundry_service", severity: "success" },
-		{ name: "vacuum", icon: "vacuum", severity: "success" },
-		{ name: "mop", icon: "mop", severity: "success" },
-		{ name: "dishwasher", icon: "dishwasher", severity: "success" },
-		{ name: "Meet", icon: "groups", severity: "success" },
-		{ name: "Learn", icon: "school", severity: "success" },
-		{ name: "shop", icon: "shopping_cart", severity: "success" },
-		{ name: "bike", icon: "pedal_bike", severity: "success" },
-		{ name: "refuel the car", icon: "local_gas_station", severity: "success" },
-		{ name: "wash the car", icon: "local_car_wash", severity: "success" },
-		{ name: "Car repair", icon: "car_repair", severity: "success" },
-		{ name: "Self Care", icon: "self_care", severity: "success" },
-		{ name: "Dentist", icon: "dentistry", severity: "success" },
-		{ name: "Gynecology", icon: "gynecology", severity: "success" },
-		{
-			name: "Stadia Controller",
-			icon: "stadia_controller",
-			severity: "success",
-		},
-	]);
-
 	const currentTasks = computed(() => {
 		const key = toDateKey(refDate.value);
-		return dailyTasksMap.value.get(key) || [];
+		const entry = dailyTasksList.value.find((item) => item.date === key);
+		return entry ? entry.tasks : [];
 	});
+
+	function addTaskToDailyList(date, task) {
+		const normalizedTask = {
+			name: task.name,
+			icon: task.icon,
+			severity: task.severity,
+		};
+		const formattedDate = refDate.value.toISOString().split("T")[0];
+		const dayEntry = dailyTasksList.value.find(
+			(day) => day.date === formattedDate
+		);
+
+		if (dayEntry) {
+			dayEntry.tasks.push(normalizedTask);
+		} else {
+			dailyTasksList.value.push({
+				date: formattedDate,
+				tasks: [normalizedTask],
+			});
+		}
+		const matchingGoal = dailyGoalsList.value.find(
+			(goal) => goal.name === task.name && goal.severity === "danger"
+		);
+
+		if (matchingGoal) {
+			matchingGoal.severity = "success";
+		}
+	}
+
+	function deleteDailyTask(task) {
+		dailyTasksList.value.forEach((day) => {
+			const taskIndex = day.tasks.findIndex(
+				(t) => t.name === task.name && t.icon === task.icon
+			);
+			if (taskIndex !== -1) {
+				day.tasks.splice(taskIndex, 1);
+				const goal = dailyGoalsList.value.find(
+					(goal) => goal.name === task.name
+				);
+				if (goal) {
+					goal.severity = "danger";
+				}
+
+				dailyTasksList.value = [...dailyTasksList.value];
+			}
+		});
+	}
+
+	function addGoal(goal) {
+		const newGoal = {
+			...goal,
+			severity: "danger",
+		};
+		dailyGoalsList.value.push(newGoal);
+	}
+
+	function completeGoal(goal) {
+		const goalIndex = dailyGoalsList.value.findIndex(
+			(g) => g.name === goal.name
+		);
+		if (goalIndex === -1) return;
+		dailyGoalsList.value[goalIndex].severity = "success";
+
+		const formattedDate = refDate.value.toISOString().split("T")[0];
+
+		let dayEntry = dailyTasksList.value.find(
+			(day) => day.date === formattedDate
+		);
+
+		if (!dayEntry) {
+			dayEntry = {
+				date: formattedDate,
+				tasks: [],
+			};
+			dailyTasksList.value.push(dayEntry);
+		}
+		const alreadyExists = dayEntry.tasks.some((t) => t.name === goal.name);
+		if (!alreadyExists) {
+			dayEntry.tasks.push({
+				name: goal.name,
+				icon: goal.icon,
+				severity: "success",
+			});
+			dailyTasksList.value = [...dailyTasksList.value];
+		}
+	}
+	function deleteDailyGoal(goal) {
+		dailyGoalsList.value = dailyGoalsList.value.filter(
+			(g) => g.name !== goal.name
+		);
+	}
 
 	return {
 		refDate,
 		dateFormated,
 		changeDate,
 		allTasksList,
-		dailyTasksMap,
+		dailyTasksList,
 		isToday,
 		setDate,
 		currentTasks,
+		addTaskToDailyList,
+		toDateKey,
+		deleteDailyTask,
+		dailyGoalsList,
+		addGoal,
+		completeGoal,
+		deleteDailyGoal,
 	};
 });
