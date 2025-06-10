@@ -30,7 +30,8 @@
 	</ConfirmPopup>
 
 	<div
-		class="flex flex-col card-a sm:w-[480px] surface-content w-full h-4/5 min-h-[30rem] max-h-[50rem] overflow-auto">
+		class="flex flex-col card-a sm:w-[480px] surface-content w-full h-4/5 min-h-[30rem] max-h-[50rem] overflow-auto"
+		@click.capture="handleGlobalClick">
 		<div class="text-center">
 			<h3 class="text-c">You are doing well !</h3>
 		</div>
@@ -59,14 +60,14 @@
 					{{ editMode ? "Close edit goals" : "Edit goals" }}
 				</h4>
 			</div>
-			<div class="flex flex-row flex-wrap h-min gap-2">
+			<div
+				ref="goalsContainerRef"
+				class="flex flex-row flex-wrap h-min gap-2">
 				<HabbitItem
 					v-for="goal in dailyGoalsColored"
 					:key="goal.name"
-					:data="goal"
-					@click="
-						(e) => (editMode ? showGoalDeletePopup(e, goal) : onReachGoal(goal))
-					" />
+					:data="getGoalDisplayData(goal)"
+					@click="editMode ? toggleMarkGoal(goal) : onReachGoal(goal)" />
 				<HabbitItem
 					v-if="editMode"
 					@click="openaddDailyGoalDialog"
@@ -81,7 +82,7 @@ import HabbitItem from "@/components/home_view/HabbitItem.vue";
 import Divider from "primevue/divider";
 import Dialog from "primevue/dialog";
 import ConfirmPopup from "primevue/confirmpopup";
-import { ref, computed } from "vue";
+import { ref, computed, onBeforeUnmount, nextTick } from "vue";
 import { useHabbitsStore } from "@/stores/habbits";
 import { storeToRefs } from "pinia";
 
@@ -99,7 +100,9 @@ const selectedTaskToDelete = ref(null);
 const selectedGoalToDelete = ref(null);
 
 const headerText = computed(() =>
-	addDialogMode.value === "habbit" ? "Add a daily habbit" : "Add a goal to complete"
+	addDialogMode.value === "habbit"
+		? "Add a daily habbit"
+		: "Add a goal to complete"
 );
 const editMode = ref(false);
 
@@ -182,6 +185,54 @@ const showGoalDeletePopup = (event, goal) => {
 	});
 };
 
+const markedGoalToDelete = ref(null);
+const goalsContainerRef = ref(null);
 
+function handleClickOutside(event) {
+	if (
+		goalsContainerRef.value &&
+		!goalsContainerRef.value.contains(event.target)
+	) {
+		markedGoalToDelete.value = null;
+	}
+}
+
+function toggleMarkGoal(goal) {
+	if (markedGoalToDelete.value === goal.name) {
+		habbitsStore.deleteDailyGoal(goal);
+		markedGoalToDelete.value = null; // reset selection
+		document.removeEventListener("mousedown", handleClickOutside);
+	} else {
+		markedGoalToDelete.value = goal.name;
+		// Wait for DOM update to ensure ref is set
+		nextTick(() => {
+			document.addEventListener("mousedown", handleClickOutside);
+		});
+	}
+}
+
+// Clean up event listener on unmount
+onBeforeUnmount(() => {
+	document.removeEventListener("mousedown", handleClickOutside);
+});
+
+function getGoalDisplayData(goal) {
+	if (editMode.value && markedGoalToDelete.value === goal.name) {
+		return {
+			...goal,
+			icon: "delete",
+			severity: "danger",
+		};
+	}
+
+	return goal;
+}
+
+function handleGlobalClick(event) {
+	const container = goalsContainerRef.value;
+	if (editMode.value && container && !container.contains(event.target)) {
+		markedGoalToDelete.value = null;
+	}
+}
 </script>
 @/stores/habbits
