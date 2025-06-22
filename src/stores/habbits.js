@@ -1,7 +1,7 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import { formatDate, toDateKey, convertDateToDbFormat, formatDateToDbFormat } from '@/utils/timeUtils'
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, setDoc } from "firebase/firestore";
 import { db } from "@/firebase"; 
 
 export const useHabbitsStore = defineStore("habbits", () => {
@@ -199,22 +199,33 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	}
 	
 	// Habbit functions
-	function addHabbitToSelectedDay(habbit) {
-
-		const formattedDate = refDate.value.toISOString().split("T")[0];
+	async function addHabbitToSelectedDay(habbit) {
+		const formattedDate = toDateKey(refDate.value);
 		const dayEntry = userHabbitsList.value.find(
 			(day) => day.date === formattedDate
 		);
-
-		if (dayEntry) {
-			dayEntry.habbits.push(habbit);
-		} else {
-			userHabbitsList.value.push({
-				date: formattedDate,
-				habbits: [habbit],
-			});
+	
+		try {
+			const habbitsRef = doc(db, "users", "user1", "habbits", formattedDate);
+	
+			if (dayEntry) {
+				await updateDoc(habbitsRef, {
+					habbits: [...dayEntry.habbits, habbit],
+				});
+				dayEntry.habbits.push(habbit);
+			} else {
+				await setDoc(habbitsRef, {
+					date: formattedDate,
+					habbits: [habbit],
+				});
+				userHabbitsList.value.push({
+					date: formattedDate,
+					habbits: [habbit],
+				});
+			}
+		} catch (error) {
+			console.error("Error adding habbit to Firestore:", error);
 		}
-
 	}
 
 	function deleteHabbitFromSelectedDay(habbit) {
