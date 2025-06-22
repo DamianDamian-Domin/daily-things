@@ -108,8 +108,6 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 	// Goals refs
 	const dailyGoalsList = ref([]);
-
-
 	const dailyGoalsColored = computed(() => {
 
 		const formatedGoals = []
@@ -125,7 +123,6 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			else {
 				counters[goal.name] = counters[goal.name] + 1
 			}
-			console.log(counters)
 
 			if (counters[goal.name] <= currentDayTaskCount) {
 				formatedGoals.push({
@@ -145,14 +142,8 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 	})
 
-
-
-	// Firebase communication
-
-
 	const loadedStartDate = ref(new Date(new Date().setDate(new Date().getDate() - 7)));
 	const loadedEndDate = ref(new Date()); // today
-
 	async function loadHabbitsForDate(selectedDate) {
 		if (selectedDate < loadedStartDate.value || selectedDate > loadedEndDate.value) {
 			console.log('Laduje nowy zakres dat')
