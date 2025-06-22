@@ -26,18 +26,17 @@
 		<Dialog
 			v-model:visible="visible"
 			modal
-			:style="{ width: '30rem' }"
 			:closable="false"
 			:dismissableMask="true"
-			class="p-2">
-			<div>
+			class="p-2 w-fit">
+			<div class="pt-1">
 				<DatePicker
 					v-model="calendarValue"
 					@update:modelValue="onDateSelect"
 					inline
 					showWeek
 					:maxDate="new Date()"
-					style="width: 100%" />
+					class="w-full" />
 			</div>
 		</Dialog>
 	</div>
