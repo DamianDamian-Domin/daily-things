@@ -15,6 +15,7 @@ const habbitsStore = useHabbitsStore();
 
 onMounted(() => {
   habbitsStore.getDailyHabbitsInRange()
+  habbitsStore.loadDailyGoals();
 });
 </script>
 

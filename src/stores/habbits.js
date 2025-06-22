@@ -1,7 +1,7 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import { formatDate, toDateKey, convertDateToDbFormat, formatDateToDbFormat } from '@/utils/timeUtils'
-import { collection, query, where, getDocs, doc, updateDoc, setDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 
 export const useHabbitsStore = defineStore("habbits", () => {
@@ -107,11 +107,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	});
 
 	// Goals refs
-	const dailyGoalsList = ref([
-		{ name: "gym", icon: "fitness_center", severity: "success" },
-		{ name: "cook", icon: "skillet", severity: "success" },
-		{ name: "washing", icon: "local_laundry_service", severity: "success" },
-	]);
+	const dailyGoalsList = ref([]);
 
 
 	const dailyGoalsColored = computed(() => {
@@ -275,18 +271,47 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	}
 
 	// Goals functions
-	function addDailyGoal(goal) {
-		const newGoal = {
-			...goal,
-			severity: goal.severity,
-		};
-		dailyGoalsList.value.push(newGoal);
-	}
+	async function loadDailyGoals() {
+        try {
+            const userDocRef = doc(db, "users", "user1");
+            const userDoc = await getDoc(userDocRef);
 
-	function deleteDailyGoal(goal) {
-		const index = dailyGoalsList.value.findIndex(g => g.name === goal.name)
-		if (index !== -1) {
-			dailyGoalsList.value.splice(index, 1)
+            if (userDoc.exists() && userDoc.data().dailyGoals) {
+                dailyGoalsList.value = userDoc.data().dailyGoals;
+            } else {
+                console.log("No dailyGoals found for the user.");
+            }
+        } catch (error) {
+            console.error("Error loading dailyGoals from Firestore:", error);
+        }
+    }
+
+	async function addDailyGoal(goal) {
+		try {
+			const newGoal = { ...goal, severity: goal.severity };
+			const updatedList = [...dailyGoalsList.value, newGoal]; 
+	
+			const userDocRef = doc(db, "users", "user1");
+			await updateDoc(userDocRef, { dailyGoals: updatedList });
+	
+			dailyGoalsList.value = updatedList;
+			console.log("Daily goal added successfully.");
+		} catch (error) {
+			console.error("Error adding daily goal to Firestore:", error);
+		}
+	}
+	
+	async function deleteDailyGoal(goal) {
+		try {
+			const updatedList = dailyGoalsList.value.filter((g) => g.name !== goal.name); 
+	
+			const userDocRef = doc(db, "users", "user1");
+			await updateDoc(userDocRef, { dailyGoals: updatedList });
+	
+			dailyGoalsList.value = updatedList;
+			console.log("Daily goal deleted successfully.");
+		} catch (error) {
+			console.error("Error deleting daily goal from Firestore:", error);
 		}
 	}
 
@@ -323,6 +348,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		dailyGoalsColored,
 		onGoalClick,
 		getDailyHabbitsInRange,
-		loadHabbitsForDate
+		loadHabbitsForDate,
+		loadDailyGoals
 	};
 });
