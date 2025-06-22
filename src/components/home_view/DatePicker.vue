@@ -46,12 +46,12 @@
 import Button from "primevue/button";
 import { useHabbitsStore } from "@/stores/habbits";
 import { storeToRefs } from "pinia";
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import Dialog from "primevue/dialog";
 import DatePicker from "primevue/datepicker";
 
 const habbitsStore = useHabbitsStore();
-const { dateFormated } = storeToRefs(habbitsStore);
+const { refDate, dateFormated } = storeToRefs(habbitsStore);
 const visible = ref(false);
 const calendarValue = ref(new Date());
 
@@ -61,10 +61,18 @@ function onDateSelect(selectedDate) {
         selectedDate.getMonth(),
         selectedDate.getDate()
     ));
-
     habbitsStore.setDate(utcDate); 
     visible.value = false;
 }
+
+watch(
+	refDate,
+	(newValue) => {
+		habbitsStore.loadHabbitsForDate(newValue);
+	},
+	{ immediate: true }
+);
+
 </script>
 
 <style scoped></style>
