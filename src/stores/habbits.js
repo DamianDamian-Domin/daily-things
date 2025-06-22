@@ -1,6 +1,8 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
-import { formatDate, toDateKey } from '@/utils/timeUtils'
+import { formatDate, toDateKey, convertDateToDbFormat, formatDateToDbFormat } from '@/utils/timeUtils'
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/firebase"; 
 
 export const useHabbitsStore = defineStore("habbits", () => {
 
@@ -96,53 +98,8 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			severity: "success",
 		},
 	]);
-	const userHabbitsList = ref([
-		{
-			date: "2025-04-28",
-			habbits: [
-				{ name: "gym", icon: "fitness_center", severity: "success" },
-				{ name: "cook", icon: "skillet", severity: "success" },
-			],
-		},
-		{
-			date: "2025-04-27",
-			habbits: [
-				{ name: "gym", icon: "fitness_center", severity: "success" },
-				{ name: "cook", icon: "skillet", severity: "success" },
-				{ name: "washing", icon: "local_laundry_service", severity: "success" },
-			],
-		},
-		{
-			date: "2025-04-26",
-			habbits: [
-				{ name: "gym", icon: "fitness_center", severity: "success" },
-				{ name: "cook", icon: "skillet", severity: "success" },
-				{ name: "washing", icon: "local_laundry_service", severity: "success" },
-				{ name: "vacuum", icon: "vacuum", severity: "success" },
-				{ name: "mop", icon: "mop", severity: "success" },
-				{ name: "dishwasher", icon: "dishwasher", severity: "success" },
-				{ name: "Meet", icon: "groups", severity: "success" },
-				{ name: "Learn", icon: "school", severity: "success" },
-				{ name: "shop", icon: "shopping_cart", severity: "success" },
-				{ name: "bike", icon: "pedal_bike", severity: "success" },
-				{
-					name: "refuel the car",
-					icon: "local_gas_station",
-					severity: "success",
-				},
-				{ name: "wash the car", icon: "local_car_wash", severity: "success" },
-				{ name: "Car repair", icon: "car_repair", severity: "success" },
-				{ name: "Self Care", icon: "self_care", severity: "success" },
-				{ name: "Dentist", icon: "dentistry", severity: "success" },
-				{ name: "Gynecology", icon: "gynecology", severity: "success" },
-				{
-					name: "Stadia Controller",
-					icon: "stadia_controller",
-					severity: "success",
-				},
-			],
-		},
-	]);
+	const userHabbitsList = ref([]); // This will hold the user's selected habbits for each day
+
 	const selectedDayHabbits = computed(() => {
 		const key = toDateKey(refDate.value);
 		const entry = userHabbitsList.value.find((item) => item.date === key);
@@ -156,6 +113,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		{ name: "washing", icon: "local_laundry_service", severity: "success" },
 	]);
 
+	
 	const dailyGoalsColored = computed(() => {
 
 		const formatedGoals = []
@@ -191,12 +149,43 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 	})
 
+	// Firebase communication
+
+	const getDailyHabbitsInRange = async (startDate = null, endDate = null) => {
+		try {
+			const _startDate = startDate || new Date(new Date().setDate(new Date().getDate() - 7));
+			const _endDate = endDate || new Date();
+	
+			const habbitsRef = collection(db, "users", "user1", "habbits");
+			const q = query(
+				habbitsRef,
+				where("date", ">=", formatDateToDbFormat(_startDate)),
+				where("date", "<=", formatDateToDbFormat(_endDate))
+			);
+			const querySnapshot = await getDocs(q);
+	
+			querySnapshot.forEach((doc) => {
+				const { date, habbits } = doc.data();
+	
+				const alreadyExists = userHabbitsList.value.some((entry) => entry.date === date);
+	
+				if (!alreadyExists) {
+					userHabbitsList.value.push({ date, habbits });
+				}
+			});
+		} catch (error) {
+			console.error("Error fetching daily habbits:", error);
+		}
+	};
+
 
 	// Date functions
 	function changeDate(direction) {
-		refDate.value.setDate(refDate.value.getDate() + direction);
+		refDate.value.setUTCDate(refDate.value.getUTCDate() + direction);
+		refDate.value.setUTCHours(0, 0, 0, 0);
 		refDate.value = new Date(refDate.value);
 	}
+
 	function isToday() {
 		const today = new Date();
 		return (
@@ -229,9 +218,14 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	}
 
 	function deleteHabbitFromSelectedDay(habbit) {
-		const index = selectedDayHabbits.value.findIndex(t => t.name === habbit.name)
-		if (index !== -1) {
-			selectedDayHabbits.value.splice(index, 1)
+		const formattedDate = toDateKey(refDate.value);
+		const dayEntry = userHabbitsList.value.find((day) => day.date === formattedDate);
+	
+		if (dayEntry) {
+			const index = dayEntry.habbits.findIndex((t) => t.name === habbit.name);
+			if (index !== -1) {
+				dayEntry.habbits.splice(index, 1);
+			}
 		}
 	}
 
@@ -282,6 +276,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		addDailyGoal,
 		deleteDailyGoal,
 		dailyGoalsColored,
-		onGoalClick
+		onGoalClick,
+		getDailyHabbitsInRange
 	};
 });

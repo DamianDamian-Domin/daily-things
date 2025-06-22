@@ -56,10 +56,15 @@ const visible = ref(false);
 const calendarValue = ref(new Date());
 
 function onDateSelect(selectedDate) {
-	habbitsStore.setDate(selectedDate);
-	visible.value = false;
+    const utcDate = new Date(Date.UTC(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate()
+    ));
+
+    habbitsStore.setDate(utcDate); 
+    visible.value = false;
 }
 </script>
 
 <style scoped></style>
-@/stores/habbits

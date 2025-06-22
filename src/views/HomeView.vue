@@ -6,10 +6,16 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue';
+import { useHabbitsStore } from '../stores/habbits';
 import DatePicker from '@/components/home_view/DatePicker.vue';
 import HabbitsCard from '@/components/home_view/HabbitsCard.vue'
 
+const habbitsStore = useHabbitsStore();
 
+onMounted(() => {
+  habbitsStore.getDailyHabbitsInRange()
+});
 </script>
 
 <style scoped>
