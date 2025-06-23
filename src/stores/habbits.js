@@ -1,9 +1,8 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
-import { formatDate, toDateKey } from '@/utils/timeUtils'
+import { formatDate, toDateKey } from "@/utils/timeUtils";
 
 export const useHabbitsStore = defineStore("habbits", () => {
-
 	// Date refs
 	const refDate = ref(new Date());
 	const dateFormated = computed(() => formatDate(refDate.value));
@@ -143,10 +142,26 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			],
 		},
 	]);
-	const selectedDayHabbits = computed(() => {
-		const key = toDateKey(refDate.value);
-		const entry = userHabbitsList.value.find((item) => item.date === key);
-		return entry ? entry.habbits : [];
+	const selectedDayHabbits = computed({
+		get() {
+			const key = toDateKey(refDate.value);
+			const entry = userHabbitsList.value.find((item) => item.date === key);
+			return entry ? entry.habbits : [];
+		},
+		set(newHabbits) {
+			const key = toDateKey(refDate.value);
+			const index = userHabbitsList.value.findIndex(
+				(item) => item.date === key
+			);
+			if (index !== -1) {
+				userHabbitsList.value[index].habbits = newHabbits;
+			} else {
+				userHabbitsList.value.push({
+					date: key,
+					habbits: newHabbits,
+				});
+			}
+		},
 	});
 
 	// Goals refs
@@ -157,40 +172,35 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	]);
 
 	const dailyGoalsColored = computed(() => {
-
-		const formatedGoals = []
-		const counters = {}
+		const formatedGoals = [];
+		const counters = {};
 
 		for (const goal of dailyGoalsList.value) {
-
-			const currentDayTaskCount = selectedDayHabbits.value.filter(g => g.name === goal.name).length
+			const currentDayTaskCount = selectedDayHabbits.value.filter(
+				(g) => g.name === goal.name
+			).length;
 
 			if (!counters.hasOwnProperty(goal.name)) {
-				counters[goal.name] = 1
+				counters[goal.name] = 1;
+			} else {
+				counters[goal.name] = counters[goal.name] + 1;
 			}
-			else {
-				counters[goal.name] = counters[goal.name] + 1
-			}
-			console.log(counters)
+			console.log(counters);
 
-			if (counters[goal.name] <= currentDayTaskCount ) {
+			if (counters[goal.name] <= currentDayTaskCount) {
 				formatedGoals.push({
 					...goal,
-					severity: goal.severity
-				})
-			}
-			else {
+					severity: goal.severity,
+				});
+			} else {
 				formatedGoals.push({
 					...goal,
-					severity: 'empty'
-				})
-			} 
-
+					severity: "empty",
+				});
+			}
 		}
-		return formatedGoals
-
-	})
-
+		return formatedGoals;
+	});
 
 	// Date functions
 	function changeDate(direction) {
@@ -208,10 +218,9 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	function setDate(date) {
 		refDate.value = new Date(date);
 	}
-	
+
 	// Habbit functions
 	function addHabbitToSelectedDay(habbit) {
-
 		const formattedDate = refDate.value.toISOString().split("T")[0];
 		const dayEntry = userHabbitsList.value.find(
 			(day) => day.date === formattedDate
@@ -225,13 +234,14 @@ export const useHabbitsStore = defineStore("habbits", () => {
 				habbits: [habbit],
 			});
 		}
-
 	}
 
 	function deleteHabbitFromSelectedDay(habbit) {
-		const index = selectedDayHabbits.value.findIndex(t => t.name === habbit.name)
+		const index = selectedDayHabbits.value.findIndex(
+			(t) => t.name === habbit.name
+		);
 		if (index !== -1) {
-			selectedDayHabbits.value.splice(index, 1)
+			selectedDayHabbits.value.splice(index, 1);
 		}
 	}
 
@@ -245,26 +255,27 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	}
 
 	function deleteDailyGoal(goal) {
-		const index = dailyGoalsList.value.findIndex(g => g.name === goal.name)
+		const index = dailyGoalsList.value.findIndex((g) => g.name === goal.name);
 		if (index !== -1) {
-			dailyGoalsList.value.splice(index, 1)
+			dailyGoalsList.value.splice(index, 1);
 		}
 	}
-	
-	function onGoalClick(goal) {
 
+	function onGoalClick(goal) {
 		// It means that habbits is completed and we should remove habbit from current habbits
-		if (goal.severity !== 'empty') {
-			deleteHabbitFromSelectedDay(goal)
+		if (goal.severity !== "empty") {
+			deleteHabbitFromSelectedDay(goal);
 		}
 		// And that means it's not so we should add it to the list
 		else {
-			// change severity to original 
-			const goalFormatted = dailyGoalsList.value.find(g => g.name === goal.name)
-			addHabbitToSelectedDay(goalFormatted)
+			// change severity to original
+			const goalFormatted = dailyGoalsList.value.find(
+				(g) => g.name === goal.name
+			);
+			addHabbitToSelectedDay(goalFormatted);
 		}
-		
 	}
+	
 
 	return {
 		refDate,
@@ -282,6 +293,6 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		addDailyGoal,
 		deleteDailyGoal,
 		dailyGoalsColored,
-		onGoalClick
+		onGoalClick,
 	};
 });
