@@ -37,16 +37,24 @@
 		</div>
 		<div class="tasks-area mt-8 h-2/3">
 			<div class="flex flex-row flex-wrap h-min gap-2">
-				<HabbitItem
-					v-for="(habbit, index) in selectedDayHabbits"
-					:key="index"
-					:data="habbit"
-					@click="(e) => showTemplate(e, habbit)" />
+				<draggable
+					v-model="selectedDayHabbits"
+					item-key="name"
+					class="flex flex-row flex-wrap h-min gap-2"
+					ghost-class="opacity-40"
+					:animation="150">
+					<template #item="{ element }">
+						<HabbitItem
+							:data="getHabbitDisplayData(element)"
+							@click="() => toggleMarkHabbit(element)" />
+					</template>
+				</draggable>
 				<HabbitItem
 					@click="openAddHabbitDialog"
-					:data="{ severity: 'empty', icon: 'add' }"></HabbitItem>
+					:data="{ severity: 'empty', icon: 'add' }" />
 			</div>
 		</div>
+
 		<Divider></Divider>
 		<div class="flex flex-col gap-6 flex-grow">
 			<div class="text-center">
@@ -63,11 +71,26 @@
 			<div
 				ref="goalsContainerRef"
 				class="flex flex-row flex-wrap h-min gap-2">
-				<HabbitItem
-					v-for="goal in dailyGoalsColored"
-					:key="goal.name"
-					:data="getGoalDisplayData(goal)"
-					@click="editMode ? toggleMarkGoal(goal) : onReachGoal(goal)" />
+				<draggable
+					v-if="editMode"
+					v-model="dailyGoalsList"
+					item-key="name"
+					class="flex flex-row flex-wrap gap-2"
+					ghost-class="opacity-40"
+					:animation="150">
+					<template #item="{ element }">
+						<HabbitItem
+							:data="getGoalDisplayData(element)"
+							@click="toggleMarkGoal(element)" />
+					</template>
+				</draggable>
+				<template v-else>
+					<HabbitItem
+						v-for="goal in dailyGoalsColored"
+						:key="goal.name"
+						:data="getGoalDisplayData(goal)"
+						@click="onReachGoal(goal)" />
+				</template>
 				<HabbitItem
 					v-if="editMode"
 					@click="openaddDailyGoalDialog"
@@ -85,14 +108,19 @@ import ConfirmPopup from "primevue/confirmpopup";
 import { ref, computed, onBeforeUnmount, nextTick } from "vue";
 import { useHabbitsStore } from "@/stores/habbits";
 import { storeToRefs } from "pinia";
+import draggable from "vuedraggable";
 
 import { useConfirm } from "primevue/useconfirm";
 
 const confirm = useConfirm();
 
 const habbitsStore = useHabbitsStore();
-const { allHabbitsList, selectedDayHabbits, dailyGoalsColored } =
-	storeToRefs(habbitsStore);
+const {
+	allHabbitsList,
+	selectedDayHabbits,
+	dailyGoalsColored,
+	dailyGoalsList,
+} = storeToRefs(habbitsStore);
 
 const showHabbitDialog = ref(false);
 const addDialogMode = ref("");
@@ -233,6 +261,44 @@ function handleGlobalClick(event) {
 	if (editMode.value && container && !container.contains(event.target)) {
 		markedGoalToDelete.value = null;
 	}
+}
+const markedHabbitToDelete = ref(null);
+
+function toggleMarkHabbit(habbit) {
+	if (markedHabbitToDelete.value === habbit.name) {
+		habbitsStore.deleteHabbitFromSelectedDay(habbit);
+		markedHabbitToDelete.value = null;
+		document.removeEventListener("mousedown", handleHabbitClickOutside);
+	} else {
+		markedHabbitToDelete.value = habbit.name;
+		nextTick(() => {
+			document.addEventListener("mousedown", handleHabbitClickOutside);
+		});
+	}
+}
+
+function handleHabbitClickOutside(event) {
+	const container = document.querySelector(".tasks-area");
+	if (container && !container.contains(event.target)) {
+		markedHabbitToDelete.value = null;
+		document.removeEventListener("mousedown", handleHabbitClickOutside);
+	}
+}
+
+onBeforeUnmount(() => {
+	document.removeEventListener("mousedown", handleClickOutside);
+	document.removeEventListener("mousedown", handleHabbitClickOutside);
+});
+
+function getHabbitDisplayData(habbit) {
+	if (markedHabbitToDelete.value === habbit.name) {
+		return {
+			...habbit,
+			icon: "delete",
+			severity: "danger",
+		};
+	}
+	return habbit;
 }
 </script>
 @/stores/habbits

@@ -5,7 +5,6 @@ import { collection, query, where, getDocs, doc, updateDoc, setDoc, getDoc } fro
 import { db } from "@/firebase";
 
 export const useHabbitsStore = defineStore("habbits", () => {
-
 	// Date refs
 	const refDate = ref(new Date());
 	const dateFormated = computed(() => formatDate(refDate.value));
@@ -100,43 +99,56 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	]);
 	const userHabbitsList = ref([]); // This will hold the user's selected habbits for each day
 
-	const selectedDayHabbits = computed(() => {
-		const key = toDateKey(refDate.value);
-		const entry = userHabbitsList.value.find((item) => item.date === key);
-		return entry ? entry.habbits : [];
+	const selectedDayHabbits = computed({
+		get() {
+			const key = toDateKey(refDate.value);
+			const entry = userHabbitsList.value.find((item) => item.date === key);
+			return entry ? entry.habbits : [];
+		},
+		set(newHabbits) {
+			const key = toDateKey(refDate.value);
+			const index = userHabbitsList.value.findIndex(
+				(item) => item.date === key
+			);
+			if (index !== -1) {
+				userHabbitsList.value[index].habbits = newHabbits;
+			} else {
+				userHabbitsList.value.push({
+					date: key,
+					habbits: newHabbits,
+				});
+			}
+		},
 	});
 
 	// Goals refs
 	const dailyGoalsList = ref([]);
 	const dailyGoalsColored = computed(() => {
-
-		const formatedGoals = []
-		const counters = {}
+		const formatedGoals = [];
+		const counters = {};
 
 		for (const goal of dailyGoalsList.value) {
-
-			const currentDayTaskCount = selectedDayHabbits.value.filter(g => g.name === goal.name).length
+			const currentDayTaskCount = selectedDayHabbits.value.filter(
+				(g) => g.name === goal.name
+			).length;
 
 			if (!counters.hasOwnProperty(goal.name)) {
-				counters[goal.name] = 1
-			}
-			else {
-				counters[goal.name] = counters[goal.name] + 1
+				counters[goal.name] = 1;
+			} else {
+				counters[goal.name] = counters[goal.name] + 1;
 			}
 
 			if (counters[goal.name] <= currentDayTaskCount) {
 				formatedGoals.push({
 					...goal,
-					severity: goal.severity
-				})
-			}
-			else {
+					severity: goal.severity,
+				});
+			} else {
 				formatedGoals.push({
 					...goal,
-					severity: 'empty'
-				})
+					severity: "empty",
+				});
 			}
-
 		}
 		return formatedGoals
 
@@ -307,16 +319,17 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	}
 
 	function onGoalClick(goal) {
-
 		// It means that habbits is completed and we should remove habbit from current habbits
-		if (goal.severity !== 'empty') {
-			deleteHabbitFromSelectedDay(goal)
+		if (goal.severity !== "empty") {
+			deleteHabbitFromSelectedDay(goal);
 		}
 		// And that means it's not so we should add it to the list
 		else {
-			// change severity to original 
-			const goalFormatted = dailyGoalsList.value.find(g => g.name === goal.name)
-			addHabbitToSelectedDay(goalFormatted)
+			// change severity to original
+			const goalFormatted = dailyGoalsList.value.find(
+				(g) => g.name === goal.name
+			);
+			addHabbitToSelectedDay(goalFormatted);
 		}
 
 	}
