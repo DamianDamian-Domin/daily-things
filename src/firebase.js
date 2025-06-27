@@ -3,16 +3,17 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCwyPcoTZZl-nMgZTFMdsyT4uyEjbSxGxg",
-    authDomain: "daily-things-f7f48.firebaseapp.com",
-    databaseURL: "https://daily-things-f7f48-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "daily-things-f7f48",
-    storageBucket: "daily-things-f7f48.firebasestorage.app",
-    messagingSenderId: "648609105848",
-    appId: "1:648609105848:web:0b1b7fdbd94c561d69b14d"
-  };
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
 
 const app = initializeApp(firebaseConfig);
+
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
