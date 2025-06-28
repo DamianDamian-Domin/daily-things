@@ -65,7 +65,7 @@
 				class="text-right cursor-pointer"
 				@click="toggleEditMode">
 				<h4
-					class="inline-block border-b border-gray-300 hover:text-blue-600 transition-colors">
+					class="inline-block border-b text-border-success-hover-danger transition-colors">
 					{{ editMode ? "Close edit goals" : "Edit goals" }}
 				</h4>
 			</div>
