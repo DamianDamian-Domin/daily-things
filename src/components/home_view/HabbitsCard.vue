@@ -39,10 +39,11 @@
 			<div class="flex flex-row flex-wrap h-min gap-2">
 				<draggable
 					v-model="selectedDayHabbits"
-					item-key="name"
+					item-key="id"
 					class="flex flex-row flex-wrap h-min gap-2"
 					ghost-class="opacity-40"
-					:animation="150">
+					:animation="150"
+					@end="habbitsStore.updateHabbitsOrderInFirestore">
 					<template #item="{ element }">
 						<HabbitItem
 							:data="getHabbitDisplayData(element)"
@@ -74,10 +75,11 @@
 				<draggable
 					v-if="editMode"
 					v-model="dailyGoalsList"
-					item-key="name"
+					item-key="id"
 					class="flex flex-row flex-wrap gap-2"
 					ghost-class="opacity-40"
-					:animation="150">
+					:animation="150"
+					@end="habbitsStore.updateGoalsOrderInFirestore">
 					<template #item="{ element }">
 						<HabbitItem
 							:data="getGoalDisplayData(element)"
@@ -265,12 +267,12 @@ function handleGlobalClick(event) {
 const markedHabbitToDelete = ref(null);
 
 function toggleMarkHabbit(habbit) {
-	if (markedHabbitToDelete.value === habbit.name) {
+	if (markedHabbitToDelete.value === habbit.id) {
 		habbitsStore.deleteHabbitFromSelectedDay(habbit);
 		markedHabbitToDelete.value = null;
 		document.removeEventListener("mousedown", handleHabbitClickOutside);
 	} else {
-		markedHabbitToDelete.value = habbit.name;
+		markedHabbitToDelete.value = habbit.id;
 		nextTick(() => {
 			document.addEventListener("mousedown", handleHabbitClickOutside);
 		});
@@ -291,7 +293,7 @@ onBeforeUnmount(() => {
 });
 
 function getHabbitDisplayData(habbit) {
-	if (markedHabbitToDelete.value === habbit.name) {
+	if (markedHabbitToDelete.value === habbit.id) {
 		return {
 			...habbit,
 			icon: "delete",
