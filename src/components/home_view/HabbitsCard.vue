@@ -80,17 +80,17 @@
 					ghost-class="opacity-40"
 					:animation="150"
 					@end="habbitsStore.updateGoalsOrderInFirestore">
-					<template #item="{ element }">
+					<template #item="{ element: goal }">
 						<HabbitItem
-							:data="getGoalDisplayData(element)"
-							@click="toggleMarkGoal(element)" />
+							:data="getGoalDisplayData(goal)"
+							@click="toggleMarkGoal(goal)" />
 					</template>
 				</draggable>
 				<template v-else>
 					<HabbitItem
 						v-for="goal in dailyGoalsColored"
-						:key="goal.name"
-						:data="getGoalDisplayData(goal)"
+						:key="goal.id"
+						:data="{ ...goal, severity: habbitsStore.getGoalSeverity(goal) }"
 						@click="onReachGoal(goal)" />
 				</template>
 				<HabbitItem
@@ -228,12 +228,12 @@ function handleClickOutside(event) {
 }
 
 function toggleMarkGoal(goal) {
-	if (markedGoalToDelete.value === goal.name) {
+	if (markedGoalToDelete.value === goal.id) {
 		habbitsStore.deleteDailyGoal(goal);
 		markedGoalToDelete.value = null; // reset selection
 		document.removeEventListener("mousedown", handleClickOutside);
 	} else {
-		markedGoalToDelete.value = goal.name;
+		markedGoalToDelete.value = goal.id;
 		// Wait for DOM update to ensure ref is set
 		nextTick(() => {
 			document.addEventListener("mousedown", handleClickOutside);
@@ -247,7 +247,9 @@ onBeforeUnmount(() => {
 });
 
 function getGoalDisplayData(goal) {
-	if (editMode.value && markedGoalToDelete.value === goal.name) {
+	const severity = habbitsStore.getGoalSeverity(goal);
+
+	if (editMode.value && markedGoalToDelete.value === goal.id) {
 		return {
 			...goal,
 			icon: "delete",
@@ -255,7 +257,10 @@ function getGoalDisplayData(goal) {
 		};
 	}
 
-	return goal;
+	return {
+		...goal,
+		severity,
+	};
 }
 
 function handleGlobalClick(event) {
@@ -292,6 +297,8 @@ onBeforeUnmount(() => {
 	document.removeEventListener("mousedown", handleHabbitClickOutside);
 });
 
+// This function is used to get the display data for a habbit, including its icon and severity.
+// If the habbit is marked for deletion, it will show a delete icon and danger severity
 function getHabbitDisplayData(habbit) {
 	if (markedHabbitToDelete.value === habbit.id) {
 		return {
