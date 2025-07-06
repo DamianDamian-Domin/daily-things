@@ -14,7 +14,7 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted } from 'vue';
 import Button from 'primevue/button';
 import { useCommonStore } from '@/stores/common'

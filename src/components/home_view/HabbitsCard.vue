@@ -51,7 +51,7 @@
 				</draggable>
 				<HabbitItem
 					@click="openAddHabbitDialog"
-					:data="{ severity: 'empty', icon: 'add' }" />
+					:data="{ severity: 'empty', icon: 'add', name: 'add' }" />
 			</div>
 		</div>
 
@@ -94,13 +94,13 @@
 				<HabbitItem
 					v-if="editMode"
 					@click="openaddDailyGoalDialog"
-					:data="{ severity: 'empty', icon: 'add' }" />
+					:data="{ severity: 'empty', icon: 'add', name: 'add' }" />
 			</div>
 		</div>
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import HabbitItem from "@/components/home_view/HabbitItem.vue";
 import Divider from "primevue/divider";
 import Dialog from "primevue/dialog";
@@ -111,6 +111,7 @@ import { storeToRefs } from "pinia";
 import draggable from "vuedraggable";
 
 import { useConfirm } from "primevue/useconfirm";
+import { Habbit, Goal } from "@/libs/types";
 
 const confirm = useConfirm();
 
@@ -124,8 +125,8 @@ const {
 
 const showHabbitDialog = ref(false);
 const addDialogMode = ref("");
-const selectedTaskToDelete = ref(null);
-const selectedGoalToDelete = ref(null);
+const selectedTaskToDelete = ref<Habbit | null>(null);
+const selectedGoalToDelete = ref<Habbit | null>(null);
 
 const headerText = computed(() =>
 	addDialogMode.value === "habbit"
@@ -144,7 +145,7 @@ function openaddDailyGoalDialog() {
 	showHabbitDialog.value = true;
 }
 
-function handleHabbitSelect(habbit) {
+function handleHabbitSelect(habbit: Habbit) {
 	if (addDialogMode.value === "habbit") {
 		habbitsStore.addHabbitToSelectedDay(habbit);
 	} else if (addDialogMode.value === "goal") {
@@ -159,14 +160,14 @@ function deleteSelectedTask() {
 		habbitsStore.deleteHabbitFromSelectedDay(selectedTaskToDelete.value);
 	}
 }
-const onReachGoal = (goal) => {
+const onReachGoal = (goal: Goal) => {
 	habbitsStore.onGoalClick(goal);
 };
 
-const showTemplate = (event, habbit) => {
+const showTemplate = (event: MouseEvent, habbit: Habbit) => {
 	selectedTaskToDelete.value = habbit;
 	confirm.require({
-		target: event.currentTarget2,
+		target: event.currentTarget as HTMLElement,
 		group: "templating",
 		message: "Please confirm to proceed moving forward.",
 		icon: "pi pi-exclamation-circle",
@@ -180,7 +181,7 @@ const showTemplate = (event, habbit) => {
 			label: "Confirm",
 		},
 		accept: () => {
-			deleteSelectedTask(habbit);
+			deleteSelectedTask();
 		},
 	});
 };
@@ -189,11 +190,11 @@ function toggleEditMode() {
 	editMode.value = !editMode.value;
 }
 
-const showGoalDeletePopup = (event, goal) => {
+const showGoalDeletePopup = (event: MouseEvent, goal: Goal) => {
 	selectedGoalToDelete.value = goal;
 
 	confirm.require({
-		target: event.currentTarget,
+		target: event.currentTarget as HTMLElement,
 		group: "templating",
 		message: `Are you sure you want to delete "${goal.name}" from your goals?`,
 		icon: "pi pi-exclamation-circle",
@@ -207,30 +208,32 @@ const showGoalDeletePopup = (event, goal) => {
 			label: "Confirm",
 		},
 		accept: () => {
+			if (!selectedGoalToDelete.value) return;
 			habbitsStore.deleteDailyGoal(selectedGoalToDelete.value);
 			selectedGoalToDelete.value = null;
 		},
 	});
 };
 
-const markedGoalToDelete = ref(null);
-const goalsContainerRef = ref(null);
+const markedGoalToDelete = ref<string | null>(null);
+const goalsContainerRef = ref<Node | null>(null);
 
-function handleClickOutside(event) {
+function handleClickOutside(event: MouseEvent) {
 	if (
 		goalsContainerRef.value &&
-		!goalsContainerRef.value.contains(event.target)
+		!goalsContainerRef.value.contains(event.target as Node)
 	) {
 		markedGoalToDelete.value = null;
 	}
 }
 
-function toggleMarkGoal(goal) {
+function toggleMarkGoal(goal: Goal) {
 	if (markedGoalToDelete.value === goal.name) {
 		habbitsStore.deleteDailyGoal(goal);
 		markedGoalToDelete.value = null; // reset selection
 		document.removeEventListener("mousedown", handleClickOutside);
 	} else {
+
 		markedGoalToDelete.value = goal.name;
 		// Wait for DOM update to ensure ref is set
 		nextTick(() => {
@@ -244,7 +247,7 @@ onBeforeUnmount(() => {
 	document.removeEventListener("mousedown", handleClickOutside);
 });
 
-function getGoalDisplayData(goal) {
+function getGoalDisplayData(goal: Goal) {
 	if (editMode.value && markedGoalToDelete.value === goal.name) {
 		return {
 			...goal,
@@ -256,15 +259,15 @@ function getGoalDisplayData(goal) {
 	return goal;
 }
 
-function handleGlobalClick(event) {
+function handleGlobalClick(event: MouseEvent) {
 	const container = goalsContainerRef.value;
-	if (editMode.value && container && !container.contains(event.target)) {
+	if (editMode.value && container && !container.contains(event.target as Node)) {
 		markedGoalToDelete.value = null;
 	}
 }
-const markedHabbitToDelete = ref(null);
+const markedHabbitToDelete = ref<string |null>(null);
 
-function toggleMarkHabbit(habbit) {
+function toggleMarkHabbit(habbit: Habbit) {
 	if (markedHabbitToDelete.value === habbit.name) {
 		habbitsStore.deleteHabbitFromSelectedDay(habbit);
 		markedHabbitToDelete.value = null;
@@ -277,9 +280,9 @@ function toggleMarkHabbit(habbit) {
 	}
 }
 
-function handleHabbitClickOutside(event) {
+function handleHabbitClickOutside(event: MouseEvent) {
 	const container = document.querySelector(".tasks-area");
-	if (container && !container.contains(event.target)) {
+	if (container && !container.contains(event.target as Node)) {
 		markedHabbitToDelete.value = null;
 		document.removeEventListener("mousedown", handleHabbitClickOutside);
 	}
@@ -290,7 +293,7 @@ onBeforeUnmount(() => {
 	document.removeEventListener("mousedown", handleHabbitClickOutside);
 });
 
-function getHabbitDisplayData(habbit) {
+function getHabbitDisplayData(habbit: Habbit) {
 	if (markedHabbitToDelete.value === habbit.name) {
 		return {
 			...habbit,

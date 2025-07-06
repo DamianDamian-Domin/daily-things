@@ -1,8 +1,9 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
-import { formatDate, toDateKey, convertDateToDbFormat, formatDateToDbFormat } from '@/utils/timeUtils'
+import { formatDate, toDateKey } from '@/utils/timeUtils'
 import { collection, query, where, getDocs, doc, updateDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
+import { Goal, UserHabbits, Habbit } from "@/libs/types";
 
 export const useHabbitsStore = defineStore("habbits", () => {
 	// Date refs
@@ -10,7 +11,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	const dateFormated = computed(() => formatDate(refDate.value));
 
 	// Habbit refs
-	const allHabbitsList = ref([
+	const allHabbitsList = ref<Habbit[]>([
 		{
 			name: "gym",
 			icon: "fitness_center",
@@ -97,8 +98,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			severity: "success",
 		},
 	]);
-	const userHabbitsList = ref([]); // This will hold the user's selected habbits for each day
-
+	const userHabbitsList = ref<UserHabbits[]>([]); // This will hold the user's selected habbits for each day
 	const selectedDayHabbits = computed({
 		get() {
 			const key = toDateKey(refDate.value);
@@ -122,10 +122,10 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	});
 
 	// Goals refs
-	const dailyGoalsList = ref([]);
-	const dailyGoalsColored = computed(() => {
+	const dailyGoalsList = ref<Goal[]>([]);
+	const dailyGoalsColored = computed<Goal[]>(() => {
 		const formatedGoals = [];
-		const counters = {};
+		const counters: Record<string, number> ={};
 
 		for (const goal of dailyGoalsList.value) {
 			const currentDayTaskCount = selectedDayHabbits.value.filter(
@@ -156,7 +156,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 	const loadedStartDate = ref(new Date(new Date().setDate(new Date().getDate() - 7)));
 	const loadedEndDate = ref(new Date()); // today
-	async function loadHabbitsForDate(selectedDate) {
+	async function loadHabbitsForDate(selectedDate: Date) {
 		if (selectedDate < loadedStartDate.value || selectedDate > loadedEndDate.value) {
 			console.log('Laduje nowy zakres dat')
 
@@ -174,7 +174,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		}
 	}
 
-	const getDailyHabbitsInRange = async (startDate = null, endDate = null) => {
+	const getDailyHabbitsInRange = async (startDate: Date | null = null, endDate: Date | null = null) => {
 		try {
 			const _startDate = startDate || new Date(new Date().setDate(new Date().getDate() - 7));
 			const _endDate = endDate || new Date();
@@ -182,8 +182,8 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			const habbitsRef = collection(db, "users", "user1", "habbits");
 			const q = query(
 				habbitsRef,
-				where("date", ">=", formatDateToDbFormat(_startDate)),
-				where("date", "<=", formatDateToDbFormat(_endDate))
+				where("date", ">=", toDateKey(_startDate)),
+				where("date", "<=", toDateKey(_endDate))
 			);
 			const querySnapshot = await getDocs(q);
 
@@ -203,7 +203,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 
 	// Date functions
-	function changeDate(direction) {
+	function changeDate(direction: number) {
 		refDate.value.setUTCDate(refDate.value.getUTCDate() + direction);
 		refDate.value.setUTCHours(0, 0, 0, 0);
 		refDate.value = new Date(refDate.value);
@@ -217,12 +217,12 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			refDate.value.getFullYear() === today.getFullYear()
 		);
 	}
-	function setDate(date) {
+	function setDate(date: Date) {
 		refDate.value = new Date(date);
 	}
 
 	// Habbit functions
-	async function addHabbitToSelectedDay(habbit) {
+	async function addHabbitToSelectedDay(habbit: Habbit) {
 		const formattedDate = toDateKey(refDate.value);
 		const dayEntry = userHabbitsList.value.find(
 			(day) => day.date === formattedDate
@@ -251,9 +251,11 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		}
 	}
 
-	async function deleteHabbitFromSelectedDay(habbit) {
+	async function deleteHabbitFromSelectedDay(habbit: Habbit) {
 		const formattedDate = toDateKey(refDate.value);
 		const dayEntry = userHabbitsList.value.find((day) => day.date === formattedDate);
+
+		
 
 		if (dayEntry) {
 			const index = dayEntry.habbits.findIndex((t) => t.name === habbit.name);
@@ -289,7 +291,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
         }
     }
 
-	async function addDailyGoal(goal) {
+	async function addDailyGoal(goal: Goal) {
 		try {
 			const newGoal = { ...goal, severity: goal.severity };
 			const updatedList = [...dailyGoalsList.value, newGoal]; 
@@ -304,7 +306,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		}
 	}
 	
-	async function deleteDailyGoal(goal) {
+	async function deleteDailyGoal(goal: Goal) {
 		try {
 			const updatedList = dailyGoalsList.value.filter((g) => g.name !== goal.name); 
 	
@@ -318,7 +320,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		}
 	}
 
-	function onGoalClick(goal) {
+	function onGoalClick(goal: Goal) {
 		// It means that habbits is completed and we should remove habbit from current habbits
 		if (goal.severity !== "empty") {
 			deleteHabbitFromSelectedDay(goal);
@@ -329,6 +331,10 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			const goalFormatted = dailyGoalsList.value.find(
 				(g) => g.name === goal.name
 			);
+			if (!goalFormatted) {
+				console.error("Goal not found:", goal.name);
+				return;
+			}
 			addHabbitToSelectedDay(goalFormatted);
 		}
 

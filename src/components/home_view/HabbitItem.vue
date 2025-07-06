@@ -20,13 +20,13 @@
 	</Button>
 </template>
 
-<script setup>
-import { computed } from "vue";
+<script setup lang="ts">
 import { Button } from "primevue";
+import { Habbit } from "@/libs/types";
 
-const props = defineProps({
-	data: Object,
-});
+const props = defineProps<{
+	data: Habbit;
+}>();
 
 const emit = defineEmits(["select", "click"]);
 

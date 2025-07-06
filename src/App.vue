@@ -8,9 +8,10 @@
 </template>
 
 
-<script setup>
+<script setup lang="ts">
 import NavBar from '@/components/navbar/NavBar.vue'
 import Divider from 'primevue/divider';
+
 
 
 </script>
