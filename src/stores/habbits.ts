@@ -4,6 +4,7 @@ import { formatDate, toDateKey } from '@/utils/timeUtils'
 import { collection, query, where, getDocs, doc, updateDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import { Goal, UserHabbits, Habbit } from "@/libs/types";
+import { nanoid } from "nanoid";
 
 export const useHabbitsStore = defineStore("habbits", () => {
 	// Date refs
@@ -227,23 +228,24 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		const dayEntry = userHabbitsList.value.find(
 			(day) => day.date === formattedDate
 		);
+		const habbitWithId = { ...habbit, id: nanoid() };
 
 		try {
 			const habbitsRef = doc(db, "users", "user1", "habbits", formattedDate);
 
 			if (dayEntry) {
 				await updateDoc(habbitsRef, {
-					habbits: [...dayEntry.habbits, habbit],
+					habbits: [...dayEntry.habbits, habbitWithId],
 				});
-				dayEntry.habbits.push(habbit);
+				dayEntry.habbits.push(habbitWithId);
 			} else {
 				await setDoc(habbitsRef, {
 					date: formattedDate,
-					habbits: [habbit],
+					habbits: [habbitWithId],
 				});
 				userHabbitsList.value.push({
 					date: formattedDate,
-					habbits: [habbit],
+					habbits: [habbitWithId],
 				});
 			}
 		} catch (error) {
@@ -293,12 +295,12 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 	async function addDailyGoal(goal: Goal) {
 		try {
-			const newGoal = { ...goal, severity: goal.severity };
-			const updatedList = [...dailyGoalsList.value, newGoal]; 
-	
+			const newGoal = { ...goal, id: nanoid(), severity: goal.severity };
+			const updatedList = [...dailyGoalsList.value, newGoal];
+
 			const userDocRef = doc(db, "users", "user1");
 			await updateDoc(userDocRef, { dailyGoals: updatedList });
-	
+
 			dailyGoalsList.value = updatedList;
 			console.log("Daily goal added successfully.");
 		} catch (error) {
@@ -308,11 +310,11 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	
 	async function deleteDailyGoal(goal: Goal) {
 		try {
-			const updatedList = dailyGoalsList.value.filter((g) => g.name !== goal.name); 
-	
+			const updatedList = dailyGoalsList.value.filter((g) => g.id !== goal.id);
+
 			const userDocRef = doc(db, "users", "user1");
 			await updateDoc(userDocRef, { dailyGoals: updatedList });
-	
+
 			dailyGoalsList.value = updatedList;
 			console.log("Daily goal deleted successfully.");
 		} catch (error) {
@@ -340,6 +342,65 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 	}
 
+	//Update habbits after drag and drop
+	// This function updates the order of habbits in Firestore after drag and drop
+	async function updateHabbitsOrderInFirestore() {
+		const formattedDate = toDateKey(refDate.value);
+		const entryIndex = userHabbitsList.value.findIndex(
+			(day) => day.date === formattedDate
+		);
+		if (entryIndex === -1) return;
+
+		const habbitsRef = doc(db, "users", "user1", "habbits", formattedDate);
+		try {
+			await updateDoc(habbitsRef, {
+				habbits: userHabbitsList.value[entryIndex].habbits,
+			});
+			console.log("Habbits order updated in Firestore.");
+		} catch (error) {
+			console.error("Error updating habbits order in Firestore:", error);
+		}
+	}
+	//Update goals after drag and drop
+	// This function updates the order of daily goals in Firestore after drag and drop
+	async function updateGoalsOrderInFirestore() {
+		try {
+			const userDocRef = doc(db, "users", "user1");
+			await updateDoc(userDocRef, {
+				dailyGoals: dailyGoalsList.value,
+			});
+			console.log("Daily goals order updated in Firestore.");
+		} catch (error) {
+			console.error("Error updating daily goals order:", error);
+		}
+	}
+
+
+	function getGoalSeverity(goal: Goal) {
+		const habbitsForToday = selectedDayHabbits.value;
+		const matchingHabbits = habbitsForToday.filter((h) => h.name === goal.name);
+		const sameGoals = dailyGoalsList.value.filter((g) => g.name === goal.name);
+		const indexInSameGoals = sameGoals.findIndex((g) => g.id === goal.id);
+		if (indexInSameGoals !== -1 && indexInSameGoals < matchingHabbits.length) {
+			return goal.severity;
+		}
+		return "empty";
+	}
+	// Helper function to get the index of a goal instance in the list
+	// It checks the name and id of the goal to find its index
+	function getGoalInstanceIndex(goal: Goal, list: Goal[]) {
+		let count = 0;
+		for (let i = 0; i < list.length; i++) {
+			if (list[i].name === goal.name) {
+				if (list[i].id === goal.id) {
+					return count;
+				}
+				count++;
+			}
+		}
+		return -1;
+	}
+
 	return {
 		refDate,
 		dateFormated,
@@ -359,6 +420,10 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		onGoalClick,
 		getDailyHabbitsInRange,
 		loadHabbitsForDate,
+		updateHabbitsOrderInFirestore,
+		updateGoalsOrderInFirestore,
+		getGoalSeverity,
+		getGoalInstanceIndex,
 		loadDailyGoals
 	};
 });

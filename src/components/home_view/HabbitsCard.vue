@@ -39,10 +39,11 @@
 			<div class="flex flex-row flex-wrap h-min gap-2">
 				<draggable
 					v-model="selectedDayHabbits"
-					item-key="name"
+					item-key="id"
 					class="flex flex-row flex-wrap h-min gap-2"
 					ghost-class="opacity-40"
-					:animation="150">
+					:animation="150"
+					@end="habbitsStore.updateHabbitsOrderInFirestore">
 					<template #item="{ element }">
 						<HabbitItem
 							:data="getHabbitDisplayData(element)"
@@ -64,7 +65,7 @@
 				class="text-right cursor-pointer"
 				@click="toggleEditMode">
 				<h4
-					class="inline-block border-b border-gray-300 hover:text-blue-600 transition-colors">
+					class="inline-block border-b text-border-success-hover-danger transition-colors">
 					{{ editMode ? "Close edit goals" : "Edit goals" }}
 				</h4>
 			</div>
@@ -74,21 +75,22 @@
 				<draggable
 					v-if="editMode"
 					v-model="dailyGoalsList"
-					item-key="name"
+					item-key="id"
 					class="flex flex-row flex-wrap gap-2"
 					ghost-class="opacity-40"
-					:animation="150">
-					<template #item="{ element }">
+					:animation="150"
+					@end="habbitsStore.updateGoalsOrderInFirestore">
+					<template #item="{ element: goal }">
 						<HabbitItem
-							:data="getGoalDisplayData(element)"
-							@click="toggleMarkGoal(element)" />
+							:data="getGoalDisplayData(goal)"
+							@click="toggleMarkGoal(goal)" />
 					</template>
 				</draggable>
 				<template v-else>
 					<HabbitItem
 						v-for="goal in dailyGoalsColored"
-						:key="goal.name"
-						:data="getGoalDisplayData(goal)"
+						:key="goal.id"
+						:data="{ ...goal, severity: habbitsStore.getGoalSeverity(goal) }"
 						@click="onReachGoal(goal)" />
 				</template>
 				<HabbitItem
@@ -228,13 +230,14 @@ function handleClickOutside(event: MouseEvent) {
 }
 
 function toggleMarkGoal(goal: Goal) {
-	if (markedGoalToDelete.value === goal.name) {
+	if (markedGoalToDelete.value === goal.id) {
 		habbitsStore.deleteDailyGoal(goal);
 		markedGoalToDelete.value = null; // reset selection
 		document.removeEventListener("mousedown", handleClickOutside);
 	} else {
-
-		markedGoalToDelete.value = goal.name;
+		if (goal.id) {
+			markedGoalToDelete.value = goal.id;
+		}
 		// Wait for DOM update to ensure ref is set
 		nextTick(() => {
 			document.addEventListener("mousedown", handleClickOutside);
@@ -248,7 +251,9 @@ onBeforeUnmount(() => {
 });
 
 function getGoalDisplayData(goal: Goal) {
-	if (editMode.value && markedGoalToDelete.value === goal.name) {
+	const severity = habbitsStore.getGoalSeverity(goal);
+
+	if (editMode.value && markedGoalToDelete.value === goal.id) {
 		return {
 			...goal,
 			icon: "delete",
@@ -256,7 +261,10 @@ function getGoalDisplayData(goal: Goal) {
 		};
 	}
 
-	return goal;
+	return {
+		...goal,
+		severity,
+	};
 }
 
 function handleGlobalClick(event: MouseEvent) {
@@ -268,12 +276,14 @@ function handleGlobalClick(event: MouseEvent) {
 const markedHabbitToDelete = ref<string |null>(null);
 
 function toggleMarkHabbit(habbit: Habbit) {
-	if (markedHabbitToDelete.value === habbit.name) {
+	if (markedHabbitToDelete.value === habbit.id) {
 		habbitsStore.deleteHabbitFromSelectedDay(habbit);
 		markedHabbitToDelete.value = null;
 		document.removeEventListener("mousedown", handleHabbitClickOutside);
 	} else {
-		markedHabbitToDelete.value = habbit.name;
+		if (habbit.id) {
+			markedHabbitToDelete.value = habbit.id;
+		}
 		nextTick(() => {
 			document.addEventListener("mousedown", handleHabbitClickOutside);
 		});
@@ -293,8 +303,10 @@ onBeforeUnmount(() => {
 	document.removeEventListener("mousedown", handleHabbitClickOutside);
 });
 
+// This function is used to get the display data for a habbit, including its icon and severity.
+// If the habbit is marked for deletion, it will show a delete icon and danger severity
 function getHabbitDisplayData(habbit: Habbit) {
-	if (markedHabbitToDelete.value === habbit.name) {
+	if (markedHabbitToDelete.value === habbit.id) {
 		return {
 			...habbit,
 			icon: "delete",
