@@ -32,7 +32,7 @@
 			<div class="pt-1">
 				<DatePicker
 					v-model="calendarValue"
-					@update:modelValue="onDateSelect"
+					@update:modelValue="onDateSelect($event)"
 					inline
 					showWeek
 					:maxDate="new Date()"
@@ -42,7 +42,7 @@
 	</div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import Button from "primevue/button";
 import { useHabbitsStore } from "@/stores/habbits";
 import { storeToRefs } from "pinia";
@@ -55,8 +55,11 @@ const { refDate, dateFormated } = storeToRefs(habbitsStore);
 const visible = ref(false);
 const calendarValue = ref(new Date());
 
-function onDateSelect(selectedDate) {
-    const utcDate = new Date(Date.UTC(
+function onDateSelect(selectedDate: undefined | null | Date | Date[] | (null | Date)[]) {
+	if (!selectedDate || Array.isArray(selectedDate)) {
+		return;
+	}
+	const utcDate = new Date(Date.UTC(
         selectedDate.getFullYear(),
         selectedDate.getMonth(),
         selectedDate.getDate()

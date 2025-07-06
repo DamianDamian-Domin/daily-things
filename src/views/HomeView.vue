@@ -5,7 +5,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted } from 'vue';
 import { useHabbitsStore } from '../stores/habbits';
 import DatePicker from '@/components/home_view/DatePicker.vue';

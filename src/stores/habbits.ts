@@ -1,22 +1,9 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
-import {
-	formatDate,
-	toDateKey,
-	convertDateToDbFormat,
-	formatDateToDbFormat,
-} from "@/utils/timeUtils";
-import {
-	collection,
-	query,
-	where,
-	getDocs,
-	doc,
-	updateDoc,
-	setDoc,
-	getDoc,
-} from "firebase/firestore";
+import { formatDate, toDateKey } from '@/utils/timeUtils'
+import { collection, query, where, getDocs, doc, updateDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
+import { Goal, UserHabbits, Habbit } from "@/libs/types";
 import { nanoid } from "nanoid";
 
 export const useHabbitsStore = defineStore("habbits", () => {
@@ -25,7 +12,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	const dateFormated = computed(() => formatDate(refDate.value));
 
 	// Habbit refs
-	const allHabbitsList = ref([
+	const allHabbitsList = ref<Habbit[]>([
 		{
 			name: "gym",
 			icon: "fitness_center",
@@ -112,8 +99,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			severity: "success",
 		},
 	]);
-	const userHabbitsList = ref([]); // This will hold the user's selected habbits for each day
-
+	const userHabbitsList = ref<UserHabbits[]>([]); // This will hold the user's selected habbits for each day
 	const selectedDayHabbits = computed({
 		get() {
 			const key = toDateKey(refDate.value);
@@ -137,10 +123,10 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	});
 
 	// Goals refs
-	const dailyGoalsList = ref([]);
-	const dailyGoalsColored = computed(() => {
+	const dailyGoalsList = ref<Goal[]>([]);
+	const dailyGoalsColored = computed<Goal[]>(() => {
 		const formatedGoals = [];
-		const counters = {};
+		const counters: Record<string, number> ={};
 
 		for (const goal of dailyGoalsList.value) {
 			const currentDayTaskCount = selectedDayHabbits.value.filter(
@@ -165,19 +151,15 @@ export const useHabbitsStore = defineStore("habbits", () => {
 				});
 			}
 		}
-		return formatedGoals;
-	});
+		return formatedGoals
 
-	const loadedStartDate = ref(
-		new Date(new Date().setDate(new Date().getDate() - 7))
-	);
+	})
+
+	const loadedStartDate = ref(new Date(new Date().setDate(new Date().getDate() - 7)));
 	const loadedEndDate = ref(new Date()); // today
-	async function loadHabbitsForDate(selectedDate) {
-		if (
-			selectedDate < loadedStartDate.value ||
-			selectedDate > loadedEndDate.value
-		) {
-			console.log("Laduje nowy zakres dat");
+	async function loadHabbitsForDate(selectedDate: Date) {
+		if (selectedDate < loadedStartDate.value || selectedDate > loadedEndDate.value) {
+			console.log('Laduje nowy zakres dat')
 
 			const newStartDate = new Date(selectedDate);
 			newStartDate.setDate(newStartDate.getDate() - 7);
@@ -188,35 +170,28 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			await getDailyHabbitsInRange(newStartDate, newEndDate);
 
 			// Update the loaded range
-			loadedStartDate.value =
-				newStartDate < loadedStartDate.value
-					? newStartDate
-					: loadedStartDate.value;
-			loadedEndDate.value =
-				newEndDate > loadedEndDate.value ? newEndDate : loadedEndDate.value;
+			loadedStartDate.value = newStartDate < loadedStartDate.value ? newStartDate : loadedStartDate.value;
+			loadedEndDate.value = newEndDate > loadedEndDate.value ? newEndDate : loadedEndDate.value;
 		}
 	}
 
-	const getDailyHabbitsInRange = async (startDate = null, endDate = null) => {
+	const getDailyHabbitsInRange = async (startDate: Date | null = null, endDate: Date | null = null) => {
 		try {
-			const _startDate =
-				startDate || new Date(new Date().setDate(new Date().getDate() - 7));
+			const _startDate = startDate || new Date(new Date().setDate(new Date().getDate() - 7));
 			const _endDate = endDate || new Date();
 
 			const habbitsRef = collection(db, "users", "user1", "habbits");
 			const q = query(
 				habbitsRef,
-				where("date", ">=", formatDateToDbFormat(_startDate)),
-				where("date", "<=", formatDateToDbFormat(_endDate))
+				where("date", ">=", toDateKey(_startDate)),
+				where("date", "<=", toDateKey(_endDate))
 			);
 			const querySnapshot = await getDocs(q);
 
 			querySnapshot.forEach((doc) => {
 				const { date, habbits } = doc.data();
 
-				const alreadyExists = userHabbitsList.value.some(
-					(entry) => entry.date === date
-				);
+				const alreadyExists = userHabbitsList.value.some((entry) => entry.date === date);
 
 				if (!alreadyExists) {
 					userHabbitsList.value.push({ date, habbits });
@@ -227,8 +202,9 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		}
 	};
 
+
 	// Date functions
-	function changeDate(direction) {
+	function changeDate(direction: number) {
 		refDate.value.setUTCDate(refDate.value.getUTCDate() + direction);
 		refDate.value.setUTCHours(0, 0, 0, 0);
 		refDate.value = new Date(refDate.value);
@@ -242,12 +218,12 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			refDate.value.getFullYear() === today.getFullYear()
 		);
 	}
-	function setDate(date) {
+	function setDate(date: Date) {
 		refDate.value = new Date(date);
 	}
 
 	// Habbit functions
-	async function addHabbitToSelectedDay(habbit) {
+	async function addHabbitToSelectedDay(habbit: Habbit) {
 		const formattedDate = toDateKey(refDate.value);
 		const dayEntry = userHabbitsList.value.find(
 			(day) => day.date === formattedDate
@@ -277,11 +253,11 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		}
 	}
 
-	async function deleteHabbitFromSelectedDay(habbit) {
+	async function deleteHabbitFromSelectedDay(habbit: Habbit) {
 		const formattedDate = toDateKey(refDate.value);
-		const dayEntry = userHabbitsList.value.find(
-			(day) => day.date === formattedDate
-		);
+		const dayEntry = userHabbitsList.value.find((day) => day.date === formattedDate);
+
+		
 
 		if (dayEntry) {
 			const index = dayEntry.habbits.findIndex((t) => t.name === habbit.name);
@@ -289,13 +265,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			updatedHabbits.splice(index, 1);
 			if (index !== -1) {
 				try {
-					const habbitsRef = doc(
-						db,
-						"users",
-						"user1",
-						"habbits",
-						formattedDate
-					);
+					const habbitsRef = doc(db, "users", "user1", "habbits", formattedDate);
 					await updateDoc(habbitsRef, {
 						habbits: updatedHabbits,
 					});
@@ -309,21 +279,21 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 	// Goals functions
 	async function loadDailyGoals() {
-		try {
-			const userDocRef = doc(db, "users", "user1");
-			const userDoc = await getDoc(userDocRef);
+        try {
+            const userDocRef = doc(db, "users", "user1");
+            const userDoc = await getDoc(userDocRef);
 
-			if (userDoc.exists() && userDoc.data().dailyGoals) {
-				dailyGoalsList.value = userDoc.data().dailyGoals;
-			} else {
-				console.log("No dailyGoals found for the user.");
-			}
-		} catch (error) {
-			console.error("Error loading dailyGoals from Firestore:", error);
-		}
-	}
+            if (userDoc.exists() && userDoc.data().dailyGoals) {
+                dailyGoalsList.value = userDoc.data().dailyGoals;
+            } else {
+                console.log("No dailyGoals found for the user.");
+            }
+        } catch (error) {
+            console.error("Error loading dailyGoals from Firestore:", error);
+        }
+    }
 
-	async function addDailyGoal(goal) {
+	async function addDailyGoal(goal: Goal) {
 		try {
 			const newGoal = { ...goal, id: nanoid(), severity: goal.severity };
 			const updatedList = [...dailyGoalsList.value, newGoal];
@@ -337,8 +307,8 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			console.error("Error adding daily goal to Firestore:", error);
 		}
 	}
-
-	async function deleteDailyGoal(goal) {
+	
+	async function deleteDailyGoal(goal: Goal) {
 		try {
 			const updatedList = dailyGoalsList.value.filter((g) => g.id !== goal.id);
 
@@ -352,7 +322,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		}
 	}
 
-	function onGoalClick(goal) {
+	function onGoalClick(goal: Goal) {
 		// It means that habbits is completed and we should remove habbit from current habbits
 		if (goal.severity !== "empty") {
 			deleteHabbitFromSelectedDay(goal);
@@ -363,8 +333,13 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			const goalFormatted = dailyGoalsList.value.find(
 				(g) => g.name === goal.name
 			);
+			if (!goalFormatted) {
+				console.error("Goal not found:", goal.name);
+				return;
+			}
 			addHabbitToSelectedDay(goalFormatted);
 		}
+
 	}
 
 	//Update habbits after drag and drop
@@ -400,9 +375,8 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		}
 	}
 
-	// Helper function to get the severity of a goal based on today's habbits
-	// It checks if the goal is achieved today and returns its severity
-	function getGoalSeverity(goal) {
+
+	function getGoalSeverity(goal: Goal) {
 		const habbitsForToday = selectedDayHabbits.value;
 		const matchingHabbits = habbitsForToday.filter((h) => h.name === goal.name);
 		const sameGoals = dailyGoalsList.value.filter((g) => g.name === goal.name);
@@ -414,7 +388,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	}
 	// Helper function to get the index of a goal instance in the list
 	// It checks the name and id of the goal to find its index
-	function getGoalInstanceIndex(goal, list) {
+	function getGoalInstanceIndex(goal: Goal, list: Goal[]) {
 		let count = 0;
 		for (let i = 0; i < list.length; i++) {
 			if (list[i].name === goal.name) {
@@ -446,9 +420,10 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		onGoalClick,
 		getDailyHabbitsInRange,
 		loadHabbitsForDate,
-		loadDailyGoals,
 		updateHabbitsOrderInFirestore,
 		updateGoalsOrderInFirestore,
 		getGoalSeverity,
+		getGoalInstanceIndex,
+		loadDailyGoals
 	};
 });
