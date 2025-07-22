@@ -1,7 +1,16 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
-import { formatDate, toDateKey } from '@/utils/timeUtils'
-import { collection, query, where, getDocs, doc, updateDoc, setDoc, getDoc } from "firebase/firestore";
+import { formatDate, toDateKey } from "@/utils/timeUtils";
+import {
+	collection,
+	query,
+	where,
+	getDocs,
+	doc,
+	updateDoc,
+	setDoc,
+	getDoc,
+} from "firebase/firestore";
 import { db } from "@/firebase";
 import { Goal, UserHabbits, Habbit } from "@/libs/types";
 import { nanoid } from "nanoid";
@@ -17,88 +26,1094 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			name: "gym",
 			icon: "fitness_center",
 			severity: "success",
+			tags: ["sport", "fitness", "health", "routine"],
 		},
 		{
 			name: "cook",
 			icon: "skillet",
 			severity: "success",
+			tags: ["home", "cooking", "routine", "responsibility"],
 		},
 		{
 			name: "washing",
 			icon: "local_laundry_service",
 			severity: "success",
+			tags: ["home", "cleaning", "responsibility", "routine"],
 		},
 		{
 			name: "vacuum",
 			icon: "vacuum",
 			severity: "success",
+			tags: ["home", "cleaning", "responsibility", "organization"],
 		},
 		{
 			name: "mop",
 			icon: "mop",
 			severity: "success",
+			tags: ["home", "cleaning", "routine", "organization"],
 		},
 		{
 			name: "dishwasher",
 			icon: "dishwasher",
 			severity: "success",
+			tags: ["home", "cleaning", "routine", "responsibility"],
 		},
 		{
 			name: "Meet",
 			icon: "groups",
 			severity: "success",
+			tags: ["social", "relationships", "connection", "community"],
 		},
 		{
 			name: "Learn",
 			icon: "school",
 			severity: "success",
+			tags: ["learning", "growth", "education", "knowledge"],
 		},
 		{
 			name: "shop",
 			icon: "shopping_cart",
 			severity: "success",
+			tags: ["home", "responsibility", "preparedness"],
 		},
 		{
 			name: "bike",
 			icon: "pedal_bike",
 			severity: "success",
+			tags: ["sport", "health", "outdoors", "movement"],
 		},
 		{
 			name: "refuel the car",
 			icon: "local_gas_station",
 			severity: "success",
+			tags: ["home", "maintenance", "responsibility", "routine"],
 		},
 		{
 			name: "wash the car",
 			icon: "local_car_wash",
 			severity: "success",
+			tags: ["home", "cleaning", "maintenance", "responsibility"],
 		},
 		{
 			name: "Car repair",
 			icon: "car_repair",
 			severity: "success",
+			tags: ["home", "maintenance", "responsibility", "safety"],
 		},
 		{
 			name: "Self Care",
 			icon: "self_care",
 			severity: "success",
+			tags: ["health", "self-care", "mental health", "wellness"],
 		},
 		{
 			name: "Dentist",
 			icon: "dentistry",
 			severity: "success",
+			tags: ["health", "self-care", "hygiene", "wellness"],
 		},
 		{
 			name: "Gynecology",
 			icon: "gynecology",
 			severity: "success",
+			tags: ["health", "wellness", "self-care", "routine"],
 		},
 		{
 			name: "Stadia Controller",
 			icon: "stadia_controller",
 			severity: "success",
+			tags: ["hobby", "fun", "entertainment", "gaming"],
+		},
+		{
+			name: "Meditation or mindfulness",
+			icon: "self_improvement",
+			severity: "success",
+			tags: ["mental health", "relaxation", "focus", "self-care"],
+		},
+		{
+			name: "Healthy meal",
+			icon: "local_dining",
+			severity: "success",
+			tags: ["nutrition", "health", "food", "meal"],
+		},
+		{
+			name: "Drink tea or coffee",
+			icon: "emoji_food_beverage",
+			severity: "success",
+			tags: ["routine", "relaxation", "morning", "beverage"],
+		},
+		{
+			name: "Read a book",
+			icon: "book",
+			severity: "success",
+			tags: ["education", "relaxation", "self-improvement", "focus"],
+		},
+		{
+			name: "Listen to music",
+			icon: "music_note",
+			severity: "success",
+			tags: ["relaxation", "entertainment", "mood", "creativity"],
+		},
+		{
+			name: "Painting or drawing",
+			icon: "brush",
+			severity: "success",
+			tags: ["creativity", "art", "expression", "relaxation"],
+		},
+		{
+			name: "Swimming",
+			icon: "pool",
+			severity: "success",
+			tags: ["fitness", "health", "fun", "sport"],
+		},
+		{
+			name: "Relaxation time",
+			icon: "spa",
+			severity: "success",
+			tags: ["self-care", "mental health", "calm", "relaxation"],
+		},
+		{
+			name: "Wake up early",
+			icon: "alarm",
+			severity: "success",
+			tags: ["routine", "discipline", "morning", "productivity"],
+		},
+		{
+			name: "Go to bed early",
+			icon: "hotel",
+			severity: "success",
+			tags: ["sleep", "rest", "health", "routine"],
+		},
+		{
+			name: "Reflect on emotions",
+			icon: "psychology",
+			severity: "success",
+			tags: ["mental health", "journaling", "reflection", "awareness"],
+		},
+		// {
+		// 	name: "auto_stories",
+		// 	icon: "journal",
+		// 	severity: "success",
+		// 	tags: ["writing", "reflection", "planning", "focus"],
+		// },
+		{
+			name: "Gardening",
+			icon: "yard",
+			severity: "success",
+			tags: ["outdoors", "nature", "health", "relaxation"],
+		},
+		{
+			name: "Take care of pets",
+			icon: "pets",
+			severity: "success",
+			tags: ["responsibility", "routine", "animals", "care"],
+		},
+		{
+			name: "Sunlight exposure",
+			icon: "light_mode",
+			severity: "success",
+			tags: ["health", "vitamin D", "outdoors", "mood"],
+		},
+		{
+			name: "Evening walk",
+			icon: "dark_mode",
+			severity: "success",
+			tags: ["relaxation", "fitness", "routine", "outdoors"],
+		},
+		{
+			name: "Practice mindfulness",
+			icon: "visibility",
+			severity: "success",
+			tags: ["focus", "calm", "mental health", "clarity"],
+		},
+		{
+			name: "Study",
+			icon: "school",
+			severity: "success",
+			tags: ["education", "discipline", "growth", "focus"],
+		},
+		{
+			name: "Learn coding",
+			icon: "code",
+			severity: "success",
+			tags: ["skills", "learning", "focus", "career"],
+		},
+		{
+			name: "Learn language",
+			icon: "language",
+			severity: "success",
+			tags: ["skills", "communication", "growth", "learning"],
+		},
+		{
+			name: "Play soccer",
+			icon: "sports_soccer",
+			severity: "success",
+			tags: ["sport", "fitness", "fun", "teamwork"],
+		},
+		{
+			name: "Play tennis",
+			icon: "sports_tennis",
+			severity: "success",
+			tags: ["sport", "agility", "health", "fun"],
+		},
+		{
+			name: "Play handball",
+			icon: "sports_handball",
+			severity: "success",
+			tags: ["sport", "fitness", "teamwork", "exercise"],
+		},
+		{
+			name: "Running",
+			icon: "run_circle",
+			severity: "success",
+			tags: ["sport", "endurance", "health", "cardio"],
+		},
+		{
+			name: "Go hiking",
+			icon: "hiking",
+			severity: "success",
+			tags: ["outdoors", "nature", "fitness", "relaxation"],
+		},
+		{
+			name: "Rowing exercise",
+			icon: "rowing",
+			severity: "success",
+			tags: ["fitness", "cardio", "health", "discipline"],
+		},
+		{
+			name: "Sprint training",
+			icon: "directions_run",
+			severity: "success",
+			tags: ["speed", "athletics", "fitness", "training"],
+		},
+		{
+			name: "Walking",
+			icon: "directions_walk",
+			severity: "success",
+			tags: ["fitness", "health", "routine", "outdoors"],
+		},
+		{
+			name: "Climb stairs",
+			icon: "stairs",
+			severity: "success",
+			tags: ["fitness", "routine", "cardio", "discipline"],
+		},
+		{
+			name: "Evening routine",
+			icon: "bedtime",
+			severity: "success",
+			tags: ["sleep", "routine", "calm", "mental health"],
+		},
+		{
+			name: "Make coffee",
+			icon: "coffee",
+			severity: "success",
+			tags: ["morning", "routine", "focus", "comfort"],
+		},
+		{
+			name: "House cleaning",
+			icon: "cleaning_services",
+			severity: "success",
+			tags: ["organization", "productivity", "routine", "discipline"],
+		},
+		{
+			name: "Do laundry",
+			icon: "laundry",
+			severity: "success",
+			tags: ["routine", "chores", "cleanliness", "home"],
+		},
+		{
+			name: "Grocery shopping",
+			icon: "shopping_cart",
+			severity: "success",
+			tags: ["planning", "home", "food", "responsibility"],
+		},
+		{
+			name: "Manage budget",
+			icon: "credit_card",
+			severity: "success",
+			tags: ["finance", "responsibility", "planning", "discipline"],
+		},
+		{
+			name: "Track heart rate",
+			icon: "monitor_heart",
+			severity: "success",
+			tags: ["health", "monitoring", "fitness", "technology"],
+		},
+		{
+			name: "Donate blood",
+			icon: "bloodtype",
+			severity: "success",
+			tags: ["health", "help", "charity", "community"],
+		},
+		{
+			name: "Express gratitude",
+			icon: "favorite",
+			severity: "success",
+			tags: ["mental health", "self-care", "relationships", "happiness"],
+		},
+		{
+			icon: "volunteer_activism",
+			name: "Volunteer work",
+			severity: "success",
+			tags: ["help", "community", "charity", "purpose"],
+		},
+		{
+			name: "Meaningful conversation",
+			icon: "forum",
+			severity: "success",
+			tags: ["connection", "social", "mental health", "relationships"],
+		},
+		{
+			name: "Time in nature",
+			icon: "emoji_nature",
+			severity: "success",
+			tags: ["outdoors", "relaxation", "health", "calm"],
+		},
+		{
+			name: "Doodle or sketch",
+			icon: "draw",
+			severity: "success",
+			tags: ["creativity", "relaxation", "art", "mindfulness"],
+		},
+		{
+			name: "Cold shower",
+			icon: "bolt",
+			severity: "success",
+			tags: ["health", "energy", "discipline", "routine"],
+		},
+		{
+			name: "Morning sunlight",
+			icon: "wb_sunny",
+			severity: "success",
+			tags: ["vitamin D", "routine", "energy", "mood"],
+		},
+		{
+			name: "Boating or sailing",
+			icon: "sailing",
+			severity: "success",
+			tags: ["leisure", "outdoors", "water", "relaxation"],
+		},
+		{
+			name: "kitesurfing",
+			icon: "Kitesurfing",
+			severity: "success",
+			tags: ["sport", "adventure", "water", "fun"],
+		},
+		{
+			name: "surfing",
+			icon: "Surfing",
+			severity: "success",
+			tags: ["sport", "water", "health", "adventure"],
+		},
+		{
+			name: "Visit a park",
+			icon: "park",
+			severity: "success",
+			tags: ["outdoors", "nature", "relaxation", "leisure"],
+		},
+		{
+			name: "Walk in the forest",
+			icon: "forest",
+			severity: "success",
+			tags: ["nature", "calm", "outdoors", "mental health"],
+		},
+		{
+			name: "Attend an event",
+			icon: "event",
+			severity: "success",
+			tags: ["social", "community", "entertainment", "fun"],
+		},
+		{
+			name: "Socialize with friends",
+			icon: "group",
+			severity: "success",
+			tags: ["social", "connection", "mental health", "fun"],
+		},
+		{
+			name: "Skincare routine",
+			icon: "face",
+			severity: "success",
+			tags: ["self-care", "health", "beauty", "routine"],
+		},
+		{
+			name: "Face massage",
+			icon: "face_retouching_natural",
+			severity: "success",
+			tags: ["relaxation", "routine", "self-care", "calm"],
+		},
+		{
+			name: "Make a decision",
+			icon: "gavel",
+			severity: "success",
+			tags: ["focus", "productivity", "clarity", "planning"],
+		},
+		{
+			name: "Explore new places",
+			icon: "travel_explore",
+			severity: "success",
+			tags: ["travel", "adventure", "curiosity", "discovery"],
+		},
+		{
+			name: "Watch documentary",
+			icon: "public",
+			severity: "success",
+			tags: ["education", "learning", "entertainment", "growth"],
+		},
+		{
+			icon: "theaters",
+			name: "Watch a movie",
+			severity: "success",
+			tags: ["entertainment", "relaxation", "fun", "media"],
+		},
+		{
+			name: "Play basketball",
+			icon: "sports_basketball",
+			severity: "success",
+			tags: ["sport", "fitness", "teamwork", "fun"],
+		},
+		{
+			icon: "sports_esports",
+			name: "Play video games",
+			severity: "success",
+			tags: ["fun", "relaxation", "entertainment", "tech"],
+		},
+		{
+			icon: "sports_mma",
+			name: "Martial arts training",
+			severity: "success",
+			tags: ["discipline", "fitness", "strength", "focus"],
+		},
+		{
+			name: "skateboarding",
+			icon: "Skateboarding",
+			severity: "success",
+			tags: ["sport", "balance", "fun", "outdoors"],
+		},
+		{
+			name: "roller skating",
+			icon: "roller_skating",
+			severity: "success",
+			tags: ["fitness", "fun", "sport", "recreation"],
+		},
+		{
+			name: "snowboarding",
+			icon: "Snowboarding",
+			severity: "success",
+			tags: ["winter", "sport", "adventure", "fun"],
+		},
+		{
+			name: "ice_skating",
+			icon: "ice_skating",
+			severity: "success",
+			tags: ["winter", "fun", "fitness", "balance"],
+		},
+		{
+			name: "kayaking",
+			icon: "Kayaking",
+			severity: "success",
+			tags: ["water", "adventure", "fitness", "outdoors"],
+		},
+		{
+			name: "paragliding",
+			icon: "Paragliding",
+			severity: "success",
+			tags: ["adventure", "extreme", "outdoors", "travel"],
+		},
+		{
+			name: "Stretching exercises",
+			icon: "back_hand",
+			severity: "success",
+			tags: ["mobility", "health", "fitness", "routine"],
+		},
+		{
+			name: "Take supplements",
+			icon: "health_and_safety",
+			severity: "success",
+			tags: ["health", "routine", "self-care", "vitamins"],
+		},
+		{
+			icon: "medication",
+			name: "Take medicine",
+			severity: "success",
+			tags: ["health", "routine", "treatment", "discipline"],
+		},
+		{
+			icon: "wifi",
+			name: "Limit screen time",
+			severity: "success",
+			tags: ["focus", "mental health", "productivity", "routine"],
+		},
+		{
+			name: "Nap or rest",
+			icon: "bed",
+			severity: "success",
+			tags: ["rest", "energy", "routine", "health"],
+		},
+		{
+			name: "Digital detox",
+			icon: "visibility_off",
+			severity: "success",
+			tags: ["focus", "mental health", "tech", "relaxation"],
+		},
+		{
+			name: "Call family",
+			icon: "call",
+			severity: "success",
+			tags: ["connection", "relationships", "love", "support"],
+		},
+		{
+			name: "Ask for help",
+			icon: "support",
+			severity: "success",
+			tags: ["mental health", "community", "communication", "growth"],
+		},
+		{
+			name: "Offer help",
+			icon: "handshake",
+			severity: "success",
+			tags: ["kindness", "support", "community", "connection"],
+		},
+		{
+			name: "Watch clouds",
+			icon: "cloud",
+			severity: "success",
+			tags: ["relaxation", "outdoors", "mental health", "mindfulness"],
+		},
+		{
+			name: "Read affirmations",
+			icon: "light",
+			severity: "success",
+			tags: ["mental health", "self-care", "positivity", "focus"],
+		},
+		{
+			name: "Set goals",
+			icon: "star",
+			severity: "success",
+			tags: ["productivity", "motivation", "planning", "growth"],
+		},
+		{
+			name: "Review goals",
+			icon: "edit_note",
+			severity: "success",
+			tags: ["planning", "reflection", "focus", "routine"],
+		},
+		{
+			name: "Plan the week",
+			icon: "calendar_month",
+			severity: "success",
+			tags: ["productivity", "planning", "routine", "organization"],
+		},
+		{
+			name: "Set reminders",
+			icon: "alarm_on",
+			severity: "success",
+			tags: ["planning", "routine", "focus", "organization"],
+		},
+		{
+			name: "Limit notifications",
+			icon: "notifications_active",
+			severity: "success",
+			tags: ["focus", "mental health", "productivity", "routine"],
+		},
+		{
+			name: "Organize digital files",
+			icon: "devices",
+			severity: "success",
+			tags: ["tech", "organization", "productivity", "routine"],
+		},
+		{
+			name: "Take a photo",
+			icon: "photo_camera",
+			severity: "success",
+			tags: ["creativity", "fun", "memory", "expression"],
+		},
+		{
+			name: "Backup files",
+			icon: "cloud_upload",
+			severity: "success",
+			tags: ["tech", "security", "organization", "productivity"],
+		},
+		{
+			name: "Recycle",
+			icon: "recycling",
+			severity: "success",
+			tags: ["environment", "responsibility", "routine", "awareness"],
+		},
+		{
+			name: "Sustainable action",
+			icon: "eco",
+			severity: "success",
+			tags: ["eco", "responsibility", "green", "awareness"],
+		},
+		{
+			name: "Compost food waste",
+			icon: "compost",
+			severity: "success",
+			tags: ["eco", "home", "environment", "routine"],
+		},
+		{
+			name: "Save energy",
+			icon: "energy_savings_leaf",
+			severity: "success",
+			tags: ["eco", "responsibility", "home", "sustainability"],
+		},
+		{
+			name: "Water plants",
+			icon: "local_florist",
+			severity: "success",
+			tags: ["home", "routine", "nature", "care"],
+		},
+		{
+			name: "Organize closet",
+			icon: "inventory",
+			severity: "success",
+			tags: ["organization", "home", "routine", "minimalism"],
+		},
+		{
+			name: "Organize documents",
+			icon: "folder",
+			severity: "success",
+			tags: ["productivity", "organization", "routine", "focus"],
+		},
+		{
+			name: "Send a gift",
+			icon: "redeem",
+			severity: "success",
+			tags: ["kindness", "relationships", "social", "gratitude"],
+		},
+		{
+			name: "Practice balance",
+			icon: "balance",
+			severity: "success",
+			tags: ["mobility", "fitness", "focus", "health"],
+		},
+		{
+			name: "travel_luggage",
+			icon: "Pack travel bag",
+			severity: "success",
+			tags: ["planning", "travel", "routine", "organization"],
+		},
+		{
+			name: "Connect with strangers",
+			icon: "connect_without_contact",
+			severity: "success",
+			tags: ["social", "connection", "growth", "confidence"],
+		},
+		{
+			name: "Play with children",
+			icon: "child_friendly",
+			severity: "success",
+			tags: ["family", "fun", "connection", "care"],
+		},
+		{
+			name: "Smile at a stranger",
+			icon: "emoji_emotions",
+			severity: "success",
+			tags: ["positivity", "social", "kindness", "connection"],
+		},
+		{
+			name: "Practice drawing",
+			icon: "draw",
+			severity: "success",
+			tags: ["creativity", "art", "fun", "expression"],
+		},
+		{
+			name: "Paint or color",
+			icon: "brush",
+			severity: "success",
+			tags: ["art", "creativity", "relaxation", "expression"],
+		},
+		{
+			name: "Listen to music",
+			icon: "music_note",
+			severity: "success",
+			tags: ["relaxation", "fun", "mental health", "entertainment"],
+		},
+		{
+			name: "Practice instrument",
+			icon: "piano",
+			severity: "success",
+			tags: ["creativity", "music", "discipline", "growth"],
+		},
+		{
+			name: "Cook new recipe",
+			icon: "soup_kitchen",
+			severity: "success",
+			tags: ["food", "creativity", "fun", "home"],
+		},
+		{
+			name: "Eat out",
+			icon: "restaurant",
+			severity: "success",
+			tags: ["food", "fun", "social", "pleasure"],
+		},
+		{
+			name: "Fast for health",
+			icon: "no_food",
+			severity: "success",
+			tags: ["health", "discipline", "routine", "wellness"],
+		},
+		{
+			name: "Dress up nicely",
+			icon: "style",
+			severity: "success",
+			tags: ["confidence", "self-care", "style", "routine"],
+		},
+		{
+			name: "Positive self-talk",
+			icon: "mindfulness",
+			severity: "success",
+			tags: ["mental health", "growth", "self-care", "confidence"],
+		},
+		{
+			name: "Complete a task",
+			icon: "task_alt",
+			severity: "success",
+			tags: ["productivity", "focus", "routine", "success"],
+		},
+		{
+			name: "Finish a project",
+			icon: "done_outline",
+			severity: "success",
+			tags: ["focus", "success", "work", "growth"],
+		},
+		{
+			name: "Wind down before bed",
+			icon: "shield_moon",
+			severity: "success",
+			tags: ["sleep", "routine", "health", "relaxation"],
+		},
+		{
+			name: "Morning coffee",
+			icon: "coffee",
+			severity: "success",
+			tags: ["routine", "energy", "pleasure", "habit"],
+		},
+		{
+			name: "Avoid alcohol",
+			icon: "no_drinks",
+			severity: "success",
+			tags: ["health", "discipline", "routine", "mental health"],
+		},
+		{
+			name: "Avoid smoking",
+			icon: "smoke_free",
+			severity: "success",
+			tags: ["health", "discipline", "wellness", "routine"],
+		},
+		{
+			name: "Organize meds",
+			icon: "local_pharmacy",
+			severity: "success",
+			tags: ["health", "routine", "self-care", "home"],
+		},
+		{
+			name: "Change password",
+			icon: "security",
+			severity: "success",
+			tags: ["security", "tech", "routine", "digital"],
+		},
+		{
+			name: "Report a bug",
+			icon: "bug_report",
+			severity: "success",
+			tags: ["tech", "help", "support", "maintenance"],
+		},
+		{
+			name: "Get sunlight",
+			icon: "light_mode",
+			severity: "success",
+			tags: ["health", "vitamin d", "wellness", "outdoors"],
+		},
+		{
+			name: "Adjust room temp",
+			icon: "thermostat",
+			severity: "success",
+			tags: ["comfort", "wellness", "routine", "home"],
+		},
+		{
+			name: "Order food",
+			icon: "takeout_dining",
+			severity: "success",
+			tags: ["food", "comfort", "leisure", "convenience"],
+		},
+		{
+			name: "Organize garage",
+			icon: "garage",
+			severity: "success",
+			tags: ["home", "organization", "cleaning", "routine"],
+		},
+		{
+			name: "Tidy up",
+			icon: "cleaning_services",
+			severity: "success",
+			tags: ["cleaning", "routine", "productivity", "home"],
+		},
+		{
+			name: "Fix something",
+			icon: "plumbing",
+			severity: "success",
+			tags: ["home", "maintenance", "responsibility", "task"],
+		},
+		{
+			name: "Play with pet",
+			icon: "pets",
+			severity: "success",
+			tags: ["animals", "joy", "connection", "care"],
+		},
+		{
+			name: "Yard work",
+			icon: "yard",
+			severity: "success",
+			tags: ["home", "outdoors", "cleaning", "routine"],
+		},
+		{
+			name: "Enjoy cozy time",
+			icon: "fireplace",
+			severity: "success",
+			tags: ["comfort", "relaxation", "home", "mental health"],
+		},
+		{
+			name: "Check first aid kit",
+			icon: "emergency",
+			severity: "success",
+			tags: ["safety", "health", "preparedness", "home"],
+		},
+		{
+			name: "Grocery shopping",
+			icon: "shopping_cart",
+			severity: "success",
+			tags: ["food", "routine", "home", "task"],
+		},
+		{
+			name: "Track expenses",
+			icon: "receipt_long",
+			severity: "success",
+			tags: ["finance", "discipline", "organization", "planning"],
+		},
+		{
+			name: "Pay bills",
+			icon: "credit_card",
+			severity: "success",
+			tags: ["finance", "routine", "responsibility", "organization"],
+		},
+		{
+			name: "Reward yourself",
+			icon: "redeem",
+			severity: "success",
+			tags: ["self-care", "motivation", "pleasure", "growth"],
+		},
+		{
+			name: "Reflect on progress",
+			icon: "equalizer",
+			severity: "success",
+			tags: ["growth", "planning", "reflection", "routine"],
+		},
+		{
+			name: "Check statistics",
+			icon: "leaderboard",
+			severity: "success",
+			tags: ["data", "planning", "routine", "productivity"],
+		},
+		{
+			name: "Solve a quiz",
+			icon: "quiz",
+			severity: "success",
+			tags: ["fun", "brain", "mental health", "learning"],
+		},
+		{
+			name: "Do therapy",
+			icon: "psychology",
+			severity: "success",
+			tags: ["mental health", "support", "self-care", "growth"],
+		},
+		{
+			name: "Take a class",
+			icon: "school",
+			severity: "success",
+			tags: ["learning", "growth", "education", "discipline"],
+		},
+		{
+			name: "Practice coding",
+			icon: "code",
+			severity: "success",
+			tags: ["tech", "learning", "growth", "discipline"],
+		},
+		{
+			name: "Learn a language",
+			icon: "translate",
+			severity: "success",
+			tags: ["learning", "growth", "education", "brain"],
+		},
+		{
+			name: "Think of new idea",
+			icon: "lightbulb",
+			severity: "success",
+			tags: ["creativity", "growth", "productivity", "brainstorm"],
+		},
+		{
+			name: "Do volunteer work",
+			icon: "volunteer_activism",
+			severity: "success",
+			tags: ["kindness", "community", "support", "values"],
+		},
+		{
+			name: "Work on self",
+			icon: "self_improvement",
+			severity: "success",
+			tags: ["growth", "mental health", "reflection", "discipline"],
+		},
+		{
+			name: "Track goal progress",
+			icon: "flag",
+			severity: "success",
+			tags: ["planning", "growth", "productivity", "routine"],
+		},
+		{
+			name: "Read saved content",
+			icon: "bookmark",
+			severity: "success",
+			tags: ["learning", "relaxation", "focus", "media"],
+		},
+		{
+			name: "Sync data",
+			icon: "cloud_sync",
+			severity: "success",
+			tags: ["tech", "routine", "organization", "maintenance"],
+		},
+		{
+			name: "Adjust lighting",
+			icon: "nightlight",
+			severity: "success",
+			tags: ["comfort", "sleep", "routine", "health"],
+		},
+		{
+			name: "Take a mindful pause",
+			icon: "hourglass_top",
+			severity: "success",
+			tags: ["mental health", "mindfulness", "focus", "routine"],
+		},
+		{
+			name: "Practice gratitude",
+			icon: "sentiment_satisfied",
+			severity: "success",
+			tags: ["positivity", "mental health", "routine", "growth"],
+		},
+		{
+			name: "Do something you love",
+			icon: "favorite",
+			severity: "success",
+			tags: ["joy", "mental health", "pleasure", "balance"],
 		},
 	]);
+
+	const tag_categories = {
+		sport: [
+			"sport",
+			"fitness",
+			"movement",
+			"exercise",
+			"outdoors",
+			"discipline",
+			"routine",
+		],
+		health: [
+			"health",
+			"mental health",
+			"wellness",
+			"self-care",
+			"body",
+			"hygiene",
+			"sleep",
+			"relaxation",
+			"balance",
+			"energy",
+			"vitamin d",
+		],
+		work: [
+			"work",
+			"productivity",
+			"focus",
+			"routine",
+			"task",
+			"planning",
+			"organization",
+			"responsibility",
+			"discipline",
+			"success",
+			"data",
+			"statistics",
+		],
+		learning: [
+			"learning",
+			"growth",
+			"education",
+			"brain",
+			"reading",
+			"study",
+			"reflection",
+			"knowledge",
+		],
+		relax: [
+			"mindfulness",
+			"relaxation",
+			"mental health",
+			"routine",
+			"gratitude",
+			"pause",
+			"comfort",
+			"sleep",
+			"joy",
+			"balance",
+			"positivity",
+			"self-care",
+		],
+		home: [
+			"home",
+			"cleaning",
+			"cooking",
+			"organization",
+			"maintenance",
+			"comfort",
+			"routine",
+			"preparedness",
+			"safety",
+			"responsibility",
+		],
+		social: [
+			"social",
+			"kindness",
+			"connection",
+			"community",
+			"support",
+			"relationships",
+			"values",
+			"positivity",
+		],
+		hobby: [
+			"creativity",
+			"fun",
+			"expression",
+			"entertainment",
+			"art",
+			"hobby",
+			"music",
+			"pleasure",
+			"style",
+			"media",
+			"brainstorm",
+			"joy",
+		],
+		finance: [
+			"finance",
+			"discipline",
+			"responsibility",
+			"planning",
+			"organization",
+		],
+		tech: ["tech", "security", "digital", "maintenance", "data", "support"],
+	};
 	const userHabbitsList = ref<UserHabbits[]>([]); // This will hold the user's selected habbits for each day
 	const selectedDayHabbits = computed({
 		get() {
@@ -126,7 +1141,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	const dailyGoalsList = ref<Goal[]>([]);
 	const dailyGoalsColored = computed<Goal[]>(() => {
 		const formatedGoals = [];
-		const counters: Record<string, number> ={};
+		const counters: Record<string, number> = {};
 
 		for (const goal of dailyGoalsList.value) {
 			const currentDayTaskCount = selectedDayHabbits.value.filter(
@@ -151,15 +1166,19 @@ export const useHabbitsStore = defineStore("habbits", () => {
 				});
 			}
 		}
-		return formatedGoals
+		return formatedGoals;
+	});
 
-	})
-
-	const loadedStartDate = ref(new Date(new Date().setDate(new Date().getDate() - 7)));
+	const loadedStartDate = ref(
+		new Date(new Date().setDate(new Date().getDate() - 7))
+	);
 	const loadedEndDate = ref(new Date()); // today
 	async function loadHabbitsForDate(selectedDate: Date) {
-		if (selectedDate < loadedStartDate.value || selectedDate > loadedEndDate.value) {
-			console.log('Laduje nowy zakres dat')
+		if (
+			selectedDate < loadedStartDate.value ||
+			selectedDate > loadedEndDate.value
+		) {
+			console.log("Laduje nowy zakres dat");
 
 			const newStartDate = new Date(selectedDate);
 			newStartDate.setDate(newStartDate.getDate() - 7);
@@ -170,14 +1189,22 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			await getDailyHabbitsInRange(newStartDate, newEndDate);
 
 			// Update the loaded range
-			loadedStartDate.value = newStartDate < loadedStartDate.value ? newStartDate : loadedStartDate.value;
-			loadedEndDate.value = newEndDate > loadedEndDate.value ? newEndDate : loadedEndDate.value;
+			loadedStartDate.value =
+				newStartDate < loadedStartDate.value
+					? newStartDate
+					: loadedStartDate.value;
+			loadedEndDate.value =
+				newEndDate > loadedEndDate.value ? newEndDate : loadedEndDate.value;
 		}
 	}
 
-	const getDailyHabbitsInRange = async (startDate: Date | null = null, endDate: Date | null = null) => {
+	const getDailyHabbitsInRange = async (
+		startDate: Date | null = null,
+		endDate: Date | null = null
+	) => {
 		try {
-			const _startDate = startDate || new Date(new Date().setDate(new Date().getDate() - 7));
+			const _startDate =
+				startDate || new Date(new Date().setDate(new Date().getDate() - 7));
 			const _endDate = endDate || new Date();
 
 			const habbitsRef = collection(db, "users", "user1", "habbits");
@@ -191,7 +1218,9 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			querySnapshot.forEach((doc) => {
 				const { date, habbits } = doc.data();
 
-				const alreadyExists = userHabbitsList.value.some((entry) => entry.date === date);
+				const alreadyExists = userHabbitsList.value.some(
+					(entry) => entry.date === date
+				);
 
 				if (!alreadyExists) {
 					userHabbitsList.value.push({ date, habbits });
@@ -201,7 +1230,6 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			console.error("Error fetching daily habbits:", error);
 		}
 	};
-
 
 	// Date functions
 	function changeDate(direction: number) {
@@ -255,9 +1283,9 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 	async function deleteHabbitFromSelectedDay(habbit: Habbit) {
 		const formattedDate = toDateKey(refDate.value);
-		const dayEntry = userHabbitsList.value.find((day) => day.date === formattedDate);
-
-		
+		const dayEntry = userHabbitsList.value.find(
+			(day) => day.date === formattedDate
+		);
 
 		if (dayEntry) {
 			const index = dayEntry.habbits.findIndex((t) => t.name === habbit.name);
@@ -265,7 +1293,13 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			updatedHabbits.splice(index, 1);
 			if (index !== -1) {
 				try {
-					const habbitsRef = doc(db, "users", "user1", "habbits", formattedDate);
+					const habbitsRef = doc(
+						db,
+						"users",
+						"user1",
+						"habbits",
+						formattedDate
+					);
 					await updateDoc(habbitsRef, {
 						habbits: updatedHabbits,
 					});
@@ -279,19 +1313,19 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 	// Goals functions
 	async function loadDailyGoals() {
-        try {
-            const userDocRef = doc(db, "users", "user1");
-            const userDoc = await getDoc(userDocRef);
+		try {
+			const userDocRef = doc(db, "users", "user1");
+			const userDoc = await getDoc(userDocRef);
 
-            if (userDoc.exists() && userDoc.data().dailyGoals) {
-                dailyGoalsList.value = userDoc.data().dailyGoals;
-            } else {
-                console.log("No dailyGoals found for the user.");
-            }
-        } catch (error) {
-            console.error("Error loading dailyGoals from Firestore:", error);
-        }
-    }
+			if (userDoc.exists() && userDoc.data().dailyGoals) {
+				dailyGoalsList.value = userDoc.data().dailyGoals;
+			} else {
+				console.log("No dailyGoals found for the user.");
+			}
+		} catch (error) {
+			console.error("Error loading dailyGoals from Firestore:", error);
+		}
+	}
 
 	async function addDailyGoal(goal: Goal) {
 		try {
@@ -307,7 +1341,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			console.error("Error adding daily goal to Firestore:", error);
 		}
 	}
-	
+
 	async function deleteDailyGoal(goal: Goal) {
 		try {
 			const updatedList = dailyGoalsList.value.filter((g) => g.id !== goal.id);
@@ -339,7 +1373,6 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			}
 			addHabbitToSelectedDay(goalFormatted);
 		}
-
 	}
 
 	//Update habbits after drag and drop
@@ -374,7 +1407,6 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			console.error("Error updating daily goals order:", error);
 		}
 	}
-
 
 	function getGoalSeverity(goal: Goal) {
 		const habbitsForToday = selectedDayHabbits.value;
@@ -424,6 +1456,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		updateGoalsOrderInFirestore,
 		getGoalSeverity,
 		getGoalInstanceIndex,
-		loadDailyGoals
+		loadDailyGoals,
+		tag_categories,
 	};
 });
