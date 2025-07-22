@@ -7,12 +7,7 @@
 		<div class="flex flex-col gap-4">
 			<span class="p-text-secondary block mb-5">Update your information.</span>
 			<div class="flex flex-row flex-wrap gap-2">
-				<HabbitItem
-					v-for="habbit in allHabbitsList"
-					:key="habbit.icon"
-					:data="habbit"
-					@select="handleHabbitSelect"
-					@click="showHabbitDialog = false"></HabbitItem>
+				<HabbitSearch @select="handleHabbitSelect" />
 			</div>
 		</div>
 	</Dialog>
@@ -104,7 +99,9 @@
 
 <script setup lang="ts">
 import HabbitItem from "@/components/home_view/HabbitItem.vue";
+import HabbitSearch from "@/components/home_view/HabbitSearch.vue";
 import Divider from "primevue/divider";
+
 import Dialog from "primevue/dialog";
 import ConfirmPopup from "primevue/confirmpopup";
 import { ref, computed, onBeforeUnmount, nextTick } from "vue";
@@ -269,11 +266,15 @@ function getGoalDisplayData(goal: Goal) {
 
 function handleGlobalClick(event: MouseEvent) {
 	const container = goalsContainerRef.value;
-	if (editMode.value && container && !container.contains(event.target as Node)) {
+	if (
+		editMode.value &&
+		container &&
+		!container.contains(event.target as Node)
+	) {
 		markedGoalToDelete.value = null;
 	}
 }
-const markedHabbitToDelete = ref<string |null>(null);
+const markedHabbitToDelete = ref<string | null>(null);
 
 function toggleMarkHabbit(habbit: Habbit) {
 	if (markedHabbitToDelete.value === habbit.id) {
