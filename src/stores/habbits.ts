@@ -190,12 +190,6 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			severity: "success",
 			tags: ["mental health", "journaling", "reflection", "awareness"],
 		},
-		// {
-		// 	name: "auto_stories",
-		// 	icon: "journal",
-		// 	severity: "success",
-		// 	tags: ["writing", "reflection", "planning", "focus"],
-		// },
 		{
 			name: "Gardening",
 			icon: "yard",
