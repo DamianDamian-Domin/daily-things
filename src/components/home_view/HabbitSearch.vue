@@ -3,7 +3,7 @@
 		<!-- Pole tekstowe -->
 		<InputText
 			v-model="searchQuery"
-			placeholder="Wyszukaj na podstawie nazwy..."
+			placeholder="Search by name..."
 			class="w-full" />
 
 		<!-- Kategorie tagów -->
@@ -12,7 +12,13 @@
 				v-for="(tags, category) in tag_categories"
 				:key="category"
 				:label="category"
-				:severity="selectedCategory === category ? 'primary' : 'secondary'"
+				:severity="
+					category === 'negative'
+						? 'danger'
+						: selectedCategory === category
+						? 'primary'
+						: 'secondary'
+				"
 				@click="onCategoryClick(category)"
 				size="small" />
 		</div>
@@ -51,6 +57,7 @@ import { useHabbitsStore } from "@/stores/habbits";
 import HabbitItem from "./HabbitItem.vue";
 import InputText from "primevue/inputtext";
 import Button from "primevue/button";
+import { nextTick } from "vue";
 
 const selectedCategory = ref<TagCategory | null>(null);
 const selectedTags = ref<string[]>([]);
@@ -83,9 +90,15 @@ function onCategoryClick(category: TagCategory) {
 		selectedCategory.value = null;
 		selectedTags.value = [];
 	} else {
-		// Zmiana kategorii - ustaw kategorię i zaznacz wszystkie jej tagi
-		selectedCategory.value = category;
-		selectedTags.value = [...tag_categories[category]];
+		// Resetujemy kategorię na null, żeby wyczyścić listę przed zmianą
+		selectedCategory.value = null;
+		selectedTags.value = [];
+
+		nextTick(() => {
+			// Po odświeżeniu DOM ustawiamy nową kategorię i tagi
+			selectedCategory.value = category;
+			selectedTags.value = [...tag_categories[category]];
+		});
 	}
 }
 

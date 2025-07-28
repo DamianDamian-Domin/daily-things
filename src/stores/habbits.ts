@@ -1000,6 +1000,120 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			severity: "success",
 			tags: ["joy", "mental health", "pleasure", "balance"],
 		},
+		{
+			name: "procrastinating important tasks",
+			icon: "hourglass_disabled",
+			severity: "danger",
+			tags: ["procrastination", "laziness"],
+		},
+		{
+			name: "browsing TikTok endlessly",
+			icon: "smartphone",
+			severity: "danger",
+			tags: ["distraction", "addiction"],
+		},
+		{
+			name: "eating chips late at night",
+			icon: "fastfood",
+			severity: "danger",
+			tags: ["junk food", "addiction"],
+		},
+		{
+			name: "starting the day without a plan",
+			icon: "event_busy",
+			severity: "danger",
+			tags: ["procrastination", "stress"],
+		},
+		{
+			name: "doomscrolling social media",
+			icon: "public_off",
+			severity: "danger",
+			tags: ["distraction", "addiction"],
+		},
+		{
+			name: "snacking out of boredom",
+			icon: "restaurant",
+			severity: "danger",
+			tags: ["junk food", "stress"],
+		},
+		{
+			name: "avoiding difficult tasks",
+			icon: "block",
+			severity: "danger",
+			tags: ["procrastination", "stress"],
+		},
+		{
+			name: "not getting up from desk for hours",
+			icon: "chair",
+			severity: "danger",
+			tags: ["stress", "addiction"],
+		},
+		{
+			name: "skipping workouts regularly",
+			icon: "fitness_center",
+			severity: "danger",
+			tags: ["laziness", "procrastination"],
+		},
+		{
+			name: "working until burnout",
+			icon: "work",
+			severity: "danger",
+			tags: ["stress", "addiction"],
+		},
+		{
+			name: "eating fast food several times a week",
+			icon: "lunch_dining",
+			severity: "danger",
+			tags: ["junk food", "addiction"],
+		},
+		{
+			name: "watching series all night",
+			icon: "tv",
+			severity: "danger",
+			tags: ["distraction", "laziness"],
+		},
+		{
+			name: "checking phone first thing in the morning",
+			icon: "phone_android",
+			severity: "danger",
+			tags: ["addiction", "distraction"],
+		},
+		{
+			name: "not preparing meals",
+			icon: "no_meals",
+			severity: "danger",
+			tags: ["junk food", "laziness"],
+		},
+		{
+			name: "leaving tasks to the last minute",
+			icon: "alarm_off",
+			severity: "danger",
+			tags: ["procrastination", "stress"],
+		},
+		{
+			name: "skipping breakfast",
+			icon: "breakfast_dining",
+			severity: "danger",
+			tags: ["junk food", "laziness"],
+		},
+		{
+			name: "overeating out of emotion",
+			icon: "sentiment_very_dissatisfied",
+			severity: "danger",
+			tags: ["stress", "junk food"],
+		},
+		{
+			name: "sleeping until noon",
+			icon: "bedtime_off",
+			severity: "danger",
+			tags: ["laziness", "procrastination"],
+		},
+		{
+			name: "ignoring to-do list",
+			icon: "playlist_remove",
+			severity: "danger",
+			tags: ["procrastination", "laziness"],
+		},
 	]);
 
 	const tag_categories = {
@@ -1107,6 +1221,14 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			"organization",
 		],
 		tech: ["tech", "security", "digital", "maintenance", "data", "support"],
+		negative: [
+			"procrastination",
+			"addiction",
+			"junk food",
+			"distraction",
+			"stress",
+			"laziness",
+		],
 	};
 	const userHabbitsList = ref<UserHabbits[]>([]); // This will hold the user's selected habbits for each day
 	const selectedDayHabbits = computed({
