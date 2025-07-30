@@ -18,3 +18,4 @@ export interface Goal {
 	id?: string;
 	tags: string[];
 }
+

@@ -317,12 +317,6 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			tags: ["routine", "chores", "cleanliness", "home"],
 		},
 		{
-			name: "Grocery shopping",
-			icon: "shopping_cart",
-			severity: "success",
-			tags: ["planning", "home", "food", "responsibility"],
-		},
-		{
 			name: "Manage budget",
 			icon: "credit_card",
 			severity: "success",
@@ -1230,6 +1224,9 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			"laziness",
 		],
 	};
+
+	const recentHabbits = ref<string[]>([]); // This will hold the recently used habbits
+
 	const userHabbitsList = ref<UserHabbits[]>([]); // This will hold the user's selected habbits for each day
 	const selectedDayHabbits = computed({
 		get() {
@@ -1392,6 +1389,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 					habbits: [habbitWithId],
 				});
 			}
+			addToRecentHabbits(habbit.name);
 		} catch (error) {
 			console.error("Error adding habbit to Firestore:", error);
 		}
@@ -1549,6 +1547,56 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		return -1;
 	}
 
+	// Recent habbits functions
+
+	function addToRecentHabbits(habbitName: string) {
+		const index = recentHabbits.value.indexOf(habbitName);
+
+		if (index !== -1) {
+			recentHabbits.value.splice(index, 1); // przenieś na początek
+		}
+		recentHabbits.value.unshift(habbitName); // dodaj na początek
+
+		// Twarde przycięcie do 10
+		recentHabbits.value = recentHabbits.value.slice(0, 10);
+
+		saveRecentHabbits(recentHabbits.value);
+	}
+
+	// This function saves the recent habbits to the user's document in Firestore
+	async function saveRecentHabbits(recentHabbits: string[]) {
+		try {
+			const userDocRef = doc(db, "users", "user1");
+			await updateDoc(userDocRef, {
+				recentlyUsed: recentHabbits,
+			});
+			console.log("recentHabbits saved to Firestore.");
+		} catch (error) {
+			console.error("Error saving recentHabbits to Firestore:", error);
+		}
+	}
+
+	// This function loads the recent habbits from the user's document in Firestore
+	// It will be called when the store is initialized
+	// and when the user logs in
+	// It will also be called when the user updates their recent habbits
+	async function loadRecentHabbits() {
+		try {
+			const userDocRef = doc(db, "users", "user1");
+			const docSnap = await getDoc(userDocRef);
+
+			if (docSnap.exists()) {
+				const data = docSnap.data();
+				if (data.recentlyUsed && Array.isArray(data.recentlyUsed)) {
+					recentHabbits.value = data.recentlyUsed;
+					console.log("recentHabbits loaded from Firestore.");
+				}
+			}
+		} catch (error) {
+			console.error("Error loading recentHabbits from Firestore:", error);
+		}
+	}
+
 	return {
 		refDate,
 		dateFormated,
@@ -1574,5 +1622,8 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		getGoalInstanceIndex,
 		loadDailyGoals,
 		tag_categories,
+		recentHabbits,
+		addToRecentHabbits,
+		loadRecentHabbits,
 	};
 });
