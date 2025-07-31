@@ -50,12 +50,21 @@
 		<!-- Wyniki wyszukiwania -->
 		<div
 			v-if="isSearching || selectedSpecialFilter === 'recently'"
-			class="flex flex-row flex-wrap h-min gap-2">
-			<HabbitItem
-				v-for="habit in filteredHabbits"
-				:key="habit.name"
-				:data="habit"
-				@click="emit('select', habit)"></HabbitItem>
+			class="flex flex-col w-full gap-4">
+			<div
+				v-if="filteredHabbits.length > 0"
+				class="flex flex-row flex-wrap h-min gap-2">
+				<HabbitItem
+					v-for="habit in filteredHabbits"
+					:key="habit.name"
+					:data="habit"
+					@click="emit('select', habit)" />
+			</div>
+			<p
+				v-else
+				class="text-center text-gray-500 italic mt-2">
+				You haven't added any habit yet. Add your first habit!
+			</p>
 		</div>
 	</div>
 </template>
@@ -78,7 +87,7 @@ const tag_categories = habbitsStore.tag_categories;
 const availableSpecialFilters = ["recently", "all"] as const;
 const selectedSpecialFilter = ref<string | null>(null);
 const filterLabelMap = {
-	recently: "restly",
+	recently: "recently",
 	all: "all",
 } as const;
 
