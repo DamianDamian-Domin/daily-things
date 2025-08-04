@@ -66,18 +66,40 @@
 				You haven't added any habit yet. Add your first habit!
 			</p>
 		</div>
+
+		<!-- Lista habitów pogrupowana po kategoriach (ALL) -->
+		<div
+			v-else-if="selectedSpecialFilter === 'all'"
+			class="flex flex-col w-full gap-6">
+			<div
+				v-for="(habits, category) in groupedHabbitsByCategory"
+				:key="category"
+				class="flex flex-col gap-2">
+				<h3 class="text-lg font-semibold text-gray-700 capitalize">
+					{{ category }}
+				</h3>
+
+				<div class="flex flex-row flex-wrap gap-2">
+					<HabbitItem
+						v-for="habit in habits"
+						:key="habit.name"
+						:data="habit"
+						@click="emit('select', habit)" />
+				</div>
+			</div>
+		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
 type TagCategory = keyof typeof habbitsStore.tag_categories;
-
-import { ref, computed, onMounted } from "vue";
+import { ref, computed } from "vue";
 import { useHabbitsStore } from "@/stores/habbits";
 import HabbitItem from "./HabbitItem.vue";
 import InputText from "primevue/inputtext";
 import Button from "primevue/button";
 import { nextTick } from "vue";
+import { Habbit } from "@/libs/types";
 
 const selectedCategory = ref<TagCategory | null>(null);
 const selectedTags = ref<string[]>([]);
@@ -126,7 +148,7 @@ const availableTags = computed(() =>
 	selectedCategory.value ? tag_categories[selectedCategory.value] : []
 );
 
-// FUNKCJA do togglowania tagu w selectedTags
+// Funkcja do trzymania tagu w selectedTags
 // Jeśli tag jest już w selectedTags, to go usuwamy, jeśli nie ma, to go dodajemy
 // Dzięki temu możemy łatwo dodawać i usuwać tagi z listy
 function toggleTag(tag: string) {
@@ -150,6 +172,10 @@ const filteredHabbits = computed(() => {
 		return habbitsStore.allHabbitsList.filter((habbit) =>
 			habbitsStore.recentHabbits.includes(habbit.name)
 		);
+	}
+	// Obsługa filtra "all" - zwraca wszystkie habbity
+	if (selectedSpecialFilter.value === "all") {
+		return habbitsStore.allHabbitsList;
 	}
 	// Standardowe filtrowanie po wyszukiwaniu i tagach
 	return habbitsStore.allHabbitsList.filter((habbit) => {
@@ -188,6 +214,36 @@ function onSpecialFilterClick(filter: string) {
 	selectedCategory.value = null;
 	selectedTags.value = [];
 }
+
+// Funkcja do pobrania kategorii dla danego habbita
+// Przechodzi przez wszystkie kategorie tagów i sprawdza, czy habit ma jakikolwiek tag z tej kategorii
+// Jeśli tak, to zwraca nazwę kategorii
+function getCategoryForHabit(habit: Habbit): string {
+	for (const [category, tags] of Object.entries(tag_categories)) {
+		if (habit.tags.some((tag) => tags.includes(tag))) {
+			return category;
+		}
+	}
+	return "other"; // domyślnie, jeśli nie pasuje do żadnej kategorii
+}
+
+// Grupowanie habbitów po kategoriach
+// Jeśli wybrano filtr "all", to grupujemy habbity po kategoriach
+const groupedHabbitsByCategory = computed(() => {
+	if (selectedSpecialFilter.value !== "all") return null;
+
+	const grouped: Record<string, Habbit[]> = {};
+
+	habbitsStore.allHabbitsList.forEach((habit) => {
+		const category = getCategoryForHabit(habit);
+		if (!grouped[category]) {
+			grouped[category] = [];
+		}
+		grouped[category].push(habit);
+	});
+
+	return grouped;
+});
 </script>
 
 <style scoped>

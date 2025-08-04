@@ -149,12 +149,6 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			tags: ["education", "relaxation", "self-improvement", "focus"],
 		},
 		{
-			name: "Listen to music",
-			icon: "music_note",
-			severity: "success",
-			tags: ["relaxation", "entertainment", "mood", "creativity"],
-		},
-		{
 			name: "Painting or drawing",
 			icon: "brush",
 			severity: "success",
