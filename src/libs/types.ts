@@ -4,6 +4,8 @@ export interface Habbit {
 	severity: string;
 	id?: string;
 	tags: string[];
+	origin: string;
+	display_name: string;
 }
 
 export interface UserHabbits {
@@ -17,5 +19,6 @@ export interface Goal {
 	icon: string;
 	id?: string;
 	tags: string[];
+	origin: string;
+	display_name: string;
 }
-
