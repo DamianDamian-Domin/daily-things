@@ -35,12 +35,12 @@
 		<!-- Wyniki wyszukiwania -->
 		<div
 			v-if="isSearching"
-			class="flex flex-row flex-wrap h-min gap-2">
-			<HabbitItem
-				v-for="habit in filteredHabbits"
-				:key="habit.name"
-				:data="habit"
-				@click="emit('select', habit)"></HabbitItem>
+			class="flex flex-row flex-wrap h-min gap-4">
+			<div v-for="habit in filteredHabbits"
+					:key="habit.name" class="flex flex-col gap-2 items-center max-w-[48px]">
+				<HabbitItem :data="habit" @click="emit('select', habit)"></HabbitItem>
+				<span class="text-xs"> {{ habit.name }} </span>
+			</div>
 		</div>
 	</div>
 </template>
