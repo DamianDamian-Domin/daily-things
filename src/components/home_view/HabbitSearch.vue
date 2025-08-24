@@ -58,6 +58,7 @@
 					v-for="habit in filteredHabbits"
 					:key="habit.name"
 					:data="habit"
+					:showLabel="true"
 					@click="emit('select', habit)" />
 			</div>
 			<p
@@ -75,15 +76,16 @@
 				v-for="(habits, category) in groupedHabbitsByCategory"
 				:key="category"
 				class="flex flex-col gap-2">
-				<h3 class="text-lg font-semibold text-gray-700 capitalize">
+				<h2 class="font-semibold text-gray-700 capitalize italic">
 					{{ category }}
-				</h3>
+				</h2>
 
 				<div class="flex flex-row flex-wrap gap-2">
 					<HabbitItem
 						v-for="habit in habits"
 						:key="habit.name"
 						:data="habit"
+						:showLabel="true"
 						@click="emit('select', habit)" />
 				</div>
 			</div>

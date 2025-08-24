@@ -1,23 +1,27 @@
 <template>
-	<Button
-		@click="handleClick()"
-		class="w-12 h-12 border-dashed"
-		severity="secondary"
-		variant="outlined"
-		v-if="props.data.severity === 'empty'">
-		<span class="material-icons material-symbols-outlined">{{
-			data.icon
-		}}</span>
-	</Button>
-	<Button
-		@click="handleClick()"
-		:severity="props.data.severity"
-		class="w-12 h-12"
-		v-else>
-		<span class="material-icons material-symbols-outlined">{{
-			data.icon
-		}}</span>
-	</Button>
+	<div class="flex flex-col items-center w-13">
+		<!-- Ikona w przycisku -->
+		<Button
+			@click="handleClick()"
+			:severity="
+				props.data.severity === 'empty' ? 'secondary' : props.data.severity
+			"
+			:variant="props.data.severity === 'empty' ? 'outlined' : undefined"
+			:class="props.data.severity === 'empty' ? 'border-dashed' : ''"
+			class="w-12 h-12 flex items-center justify-center">
+			<span
+				class="material-icons material-symbols-outlined text-[24px] leading-none">
+				{{ data.icon }}
+			</span>
+		</Button>
+
+		<!-- Nazwa pod ikoną -->
+		<span
+			v-if="props.showLabel"
+			class="text-c text-xs text-gray-600 text-center mt-1 leading-tight break-words italic">
+			{{ data.display_name }}
+		</span>
+	</div>
 </template>
 
 <script setup lang="ts">
@@ -26,6 +30,7 @@ import { Habbit } from "@/libs/types";
 
 const props = defineProps<{
 	data: Habbit;
+	showLabel?: boolean;
 }>();
 
 const emit = defineEmits(["select", "click"]);
