@@ -117,6 +117,14 @@ const filterLabelMap = {
 
 const emit = defineEmits(["select"]);
 
+// Inicjalizacja selectedSpecialFilter przy montowaniu komponentu
+// Jeśli są recentHabbits, to ustawiamy na "recently", w przeciwnym razie na "all"
+if (habbitsStore.recentHabbits && habbitsStore.recentHabbits.length > 0) {
+	selectedSpecialFilter.value = "recently";
+} else {
+	selectedSpecialFilter.value = "all";
+}
+
 //Kategorie tagów
 
 //Funkcja obsługująca kliknięcie kategorii
