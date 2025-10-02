@@ -10,7 +10,12 @@
 			:class="props.data.severity === 'empty' ? 'border-dashed' : ''"
 			class="w-12 h-12 flex items-center justify-center">
 			<span
-				class="material-icons material-symbols-outlined text-[24px] leading-none">
+				class="material-icons material-symbols-outlined text-[24px] leading-none"
+				v-tooltip.bottom="
+					props.showTooltip !== false && props.data.icon !== 'add'
+						? props.data.display_name || props.data.name
+						: false
+				">
 				{{ data.icon }}
 			</span>
 		</Button>
@@ -31,6 +36,7 @@ import { Habbit } from "@/libs/types";
 const props = defineProps<{
 	data: Habbit;
 	showLabel?: boolean;
+	showTooltip?: boolean;
 }>();
 
 const emit = defineEmits(["select", "click"]);
@@ -41,4 +47,21 @@ function handleClick() {
 }
 </script>
 
-<style scoped></style>
+<style>
+.p-tooltip {
+	background: transparent !important;
+	box-shadow: none !important;
+	border: none !important;
+	margin-top: 7px;
+	margin-bottom: 7px;
+}
+
+.p-tooltip .p-tooltip-text {
+	font-size: 0.8rem;
+	font-style: italic;
+	border-radius: 5px;
+	padding: 2px 6px;
+	background: rgba(0, 0, 0, 0.7); /* czarne półprzezroczyste tło */
+	color: #fff; /* biały tekst */
+}
+</style>

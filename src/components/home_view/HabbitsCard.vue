@@ -42,11 +42,13 @@
 					<template #item="{ element }">
 						<HabbitItem
 							:data="getHabbitDisplayData(element)"
+							:showTooltip="!editMode"
 							@click="() => toggleMarkHabbit(element)" />
 					</template>
 				</draggable>
 				<HabbitItem
 					@click="openAddHabbitDialog"
+					:showTooltip="!editMode"
 					:data="{ severity: 'empty', icon: 'add', name: 'add' }" />
 			</div>
 		</div>
@@ -78,6 +80,7 @@
 					<template #item="{ element: goal }">
 						<HabbitItem
 							:data="getGoalDisplayData(goal)"
+							:showTooltip="!editMode"
 							@click="toggleMarkGoal(goal)" />
 					</template>
 				</draggable>
@@ -85,7 +88,11 @@
 					<HabbitItem
 						v-for="goal in dailyGoalsColored"
 						:key="goal.id"
-						:data="{ ...goal, severity: habbitsStore.getGoalSeverity(goal) }"
+						:data="{
+							...getFullGoalData(goal),
+							severity: habbitsStore.getGoalSeverity(goal),
+						}"
+						:showTooltip="!editMode"
 						@click="onReachGoal(goal)" />
 				</template>
 				<HabbitItem
@@ -264,6 +271,12 @@ function getGoalDisplayData(goal: Goal) {
 	};
 }
 
+function getFullGoalData(goal: Goal) {
+	if (goal.display_name) return goal;
+	const original = allHabbitsList.value.find((h) => h.name === goal.name);
+	return original ? { ...original, ...goal } : goal;
+}
+
 function handleGlobalClick(event: MouseEvent) {
 	const container = goalsContainerRef.value;
 	if (
@@ -314,7 +327,16 @@ function getHabbitDisplayData(habbit: Habbit) {
 			severity: "danger",
 		};
 	}
-	return habbit;
+	return getFullHabbitData(habbit);
+}
+// This function merges the habbit data with the original data from allHabbitsList to ensure
+// that we have the most complete information, especially for display_name and icon.
+function getFullHabbitData(habbit: Habbit) {
+	// Jeśli już jest display_name, zwróć oryginał
+	if (habbit.display_name) return habbit;
+	// Szukaj w allHabbitsList po name
+	const original = allHabbitsList.value.find((h) => h.name === habbit.name);
+	return original ? { ...original, ...habbit } : habbit;
 }
 </script>
 @/stores/habbits
