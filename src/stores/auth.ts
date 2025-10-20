@@ -6,13 +6,27 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  User
+  User,
+  setPersistence,
+  browserLocalPersistence
 } from "firebase/auth";
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref<User | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const initialized = ref(false);
+
+  const initAuth = () => {
+    return new Promise<void>(async (resolve) => {
+      await setPersistence(auth, browserLocalPersistence);
+      onAuthStateChanged(auth, (firebaseUser) => {
+        user.value = firebaseUser;
+        initialized.value = true;
+        resolve();
+      });
+    });
+  };
 
   const login = async (email: string, password: string) => {
     loading.value = true;
@@ -60,5 +74,7 @@ export const useAuthStore = defineStore("auth", () => {
     login,
     register,
     logout,
+    initAuth,
+    initialized
   };
 });

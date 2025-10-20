@@ -20,6 +20,6 @@ const route = useRoute();
 
 // ukryj navbar np. na login i register
 const showNavbar = computed(() => {
-  return !["/", "/login", "/register"].includes(route.path);
+  return !["/login", "/register"].includes(route.path);
 });
 </script>
