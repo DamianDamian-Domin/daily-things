@@ -14,50 +14,23 @@
             </span>
         </div>
 
-        <!-- Card -->
-        <div class="card-a surface-content w-full max-w-md flex flex-col items-center relative z-10">
-            <!-- Logo -->
-            <img :src="logo" alt="Logo" class="h-24 mb-4" />
-
-            <h2 class="text-center mb-6 text-a font-bold text-2xl">Zaloguj się</h2>
-
-            <!-- Form -->
-            <form @submit.prevent="onLogin" class="space-y-4 w-full">
-                <div>
-                    <label for="email" class="block mb-1 text-b">Email</label>
-                    <InputText v-model="email" id="email" type="email" class="w-full" placeholder="example@example.com"
-                        required />
+            <div class="card-a surface-content w-full max-w-md flex flex-col items-center relative z-10">
+                <img :src="logo" alt="Logo" class="h-24 mb-4" />
+                <LoginForm v-if="form == 'login'"></LoginForm>
+                <RegisterForm v-if="form == 'register'"></RegisterForm>
+                <!-- Register link -->
+                <div class="text-center text-sm mb-4" v-if="form === 'login'">
+                    <span class="text-b">Nie masz konta? </span>
+                    <Button label="Załóż konto" link class="text-primary" @click="openRegisterForm" />
+                </div>
+                <div class="text-center text-sm mb-4" v-if="form === 'register'">
+                    <span class="text-b">Masz już konto? </span>
+                    <Button label="Zaloguj się" link class="text-primary" @click="openLoginForm" />
                 </div>
 
-                <div>
-                    <label for="password" class="block mb-1 text-b">Hasło</label>
-                    <InputText type="password" v-model="password" id="password" class="w-full" placeholder="••••••"
-                        required />
-                </div>
-
-                <div class="flex flex-col text-sm">
-                    <Button label="Zaloguj się" type="submit" class="w-full" />
-                    <div class="flex justify-end">
-                        <Button label="Przypomnij hasło" link class="text-primary" @click="onForgotPassword" />
-                    </div>
-                </div>
-            </form>
-
-            <!-- Social login -->
-            <div class="my-6 flex items-center justify-center gap-4">
-                <Button icon="pi pi-google" rounded outlined aria-label="Login with Google" class="p-button-lg" />
-                <Button icon="pi pi-facebook" rounded outlined aria-label="Login with Facebook" class="p-button-lg" />
+                <!-- Footer -->
+                <p class="text-xs text-c text-center">© Daily Things 2025</p>
             </div>
-
-            <!-- Register link -->
-            <div class="text-center text-sm mb-4">
-                <span class="text-b">Nie masz konta? </span>
-                <Button label="Załóż konto" link class="text-primary" @click="onRegister" />
-            </div>
-
-            <!-- Footer -->
-            <p class="text-xs text-c text-center">© Daily Things 2025</p>
-        </div>
     </div>
 </template>
 
@@ -71,28 +44,19 @@ import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
 
-const router = useRouter();
-const authStore = useAuthStore();
+import LoginForm from "@/components/login_view/LoginForm.vue";
+import RegisterForm from "@/components/login_view/RegisterForm.vue";
 
 const habbitsStore = useHabbitsStore();
 const { allHabbitsList } = storeToRefs(habbitsStore);
 const logo = logoFile;
 
-const email = ref("");
-const password = ref("");
-
-const onLogin = async () => {
-    try {
-        await authStore.login(email.value, password.value);
-        console.log("Login");
-        router.push("/")
-    } catch (e) {
-        console.error("Failed to login", e);
-    }
-}
+const form = ref('login')
 
 const onForgotPassword = () => console.log("Forgot password clicked");
-const onRegister = () => console.log("Register clicked");
+
+const openRegisterForm = () => form.value = 'register';
+const openLoginForm = () => form.value = 'login';
 
 function getRandomHabbits(count: number) {
     const shuffled = [...allHabbitsList.value].sort(() => 0.5 - Math.random());
