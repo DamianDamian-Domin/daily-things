@@ -1579,6 +1579,12 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		],
 	};
 
+	const specialFilters = [
+		{ name: "recently", display_name: "Recently", icon: "pi pi-clock" },
+		{ name: "all", display_name: "All", icon: "pi pi-list" },
+		{ name: "user", display_name: "User", icon: "pi pi-user" },
+	];
+
 	const recentHabbits = ref<string[]>([]); // This will hold the recently used habbits
 
 	const userHabbitsList = ref<UserHabbits[]>([]); // This will hold the user's selected habbits for each day
@@ -1979,5 +1985,6 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		recentHabbits,
 		addToRecentHabbits,
 		loadRecentHabbits,
+		specialFilters,
 	};
 });
