@@ -127,6 +127,22 @@ const activeCategories = ref<string[]>([]);
 
 const emit = defineEmits(["select"]);
 
+// Inicjalizacja selectedSpecialFilter przy montowaniu komponentu
+// Jeśli są recentHabbits, to ustawiamy na "recently", w przeciwnym razie na "all"
+if (habbitsStore.recentHabbits && habbitsStore.recentHabbits.length > 0) {
+	selectedSpecialFilter.value = "recently";
+} else {
+	selectedSpecialFilter.value = "all";
+}
+
+// Inicjalizacja selectedSpecialFilter przy montowaniu komponentu
+// Jeśli są recentHabbits, to ustawiamy na "recently", w przeciwnym razie na "all"
+if (habbitsStore.recentHabbits && habbitsStore.recentHabbits.length > 0) {
+	selectedSpecialFilter.value = "recently";
+} else {
+	selectedSpecialFilter.value = "all";
+}
+
 // Specjalne filtry
 
 // Funkcja obsługująca zmianę specjalnego filtra
