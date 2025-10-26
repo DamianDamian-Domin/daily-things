@@ -10,12 +10,15 @@ import {
   setPersistence,
   browserLocalPersistence
 } from "firebase/auth";
+import { useRouter } from "vue-router";
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref<User | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
   const initialized = ref(false);
+  
+  const router = useRouter()
 
   const initAuth = () => {
     return new Promise<void>(async (resolve) => {
@@ -61,6 +64,7 @@ export const useAuthStore = defineStore("auth", () => {
   const logout = async () => {
     await signOut(auth);
     user.value = null;
+    router.push('/login');
   };
 
   onAuthStateChanged(auth, (firebaseUser) => {

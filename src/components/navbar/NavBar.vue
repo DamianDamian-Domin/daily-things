@@ -11,7 +11,7 @@
             <Button class="w-12 h-12" rounded icon="pi pi-ellipsis-v" severity="secondary"></Button>
             <Button @click="toggle" class="w-12 h-12" rounded label="DD" severity="primary"></Button>
             <Popover ref="op">
-                <div class="flex flex-col gap-2 w-[12rem]">
+                <div class="flex flex-col gap-2 items-start w-[8rem]">
                     <Button size="small" text label="Profile" icon="pi pi-user" severity="secondary" />
                     <Button size="small" text label="Settings" icon="pi pi-cog" severity="secondary" />
                     <Button @click="authStore.logout()" size="small" text label="Logout" icon="pi pi-sign-out" severity="danger" />
@@ -51,6 +51,10 @@ const toggleDarkMode = () => {
 
 const toggle = (event: MouseEvent) => {
     op.value.toggle(event);
+}
+
+const logOut = () => {
+    authStore.logout()
 }
 
 onMounted(() => {
