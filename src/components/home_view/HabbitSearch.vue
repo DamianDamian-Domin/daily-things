@@ -1,4 +1,22 @@
 <template>
+	<div>
+		<p>Special filters</p>
+		<div class="mb-2 mt-2">
+			<SelectButton
+				v-model="selectedSpecialFilter"
+				:options="habbitsStore.specialFilters"
+				optionLabel="display_name"
+				dataKey="name"
+				optionValue="name"
+				@change="onSpecialFilterChange"
+				class="w-full flex flex-wrap gap-2 justify-center md:justify-start rounded-full">
+				<template #option="slotProps">
+					<p :class="[slotProps.option.icon, 'mr-2 rounded-full']"></p>
+					{{ slotProps.option.name }}
+				</template>
+			</SelectButton>
+		</div>
+	</div>
 	<div class="flex flex-col gap-4 w-full">
 		<!-- Pole tekstowe -->
 		<InputText
@@ -7,18 +25,11 @@
 			class="w-full" />
 
 		<!-- Kategorie tagów + Specjalne filtry -->
+		<div>
+			<p>Categories</p>
+		</div>
 
 		<div class="flex flex-wrap gap-2">
-			<!-- Specjalne filtry -->
-			<Button
-				v-for="filter in availableSpecialFilters"
-				:key="filter"
-				:label="filterLabelMap[filter]"
-				size="small"
-				:severity="selectedSpecialFilter === filter ? 'primary' : 'secondary'"
-				@click="onSpecialFilterClick(filter)" />
-
-			<!--Kategorie tagów -->
 			<Button
 				v-for="(tags, category) in tag_categories"
 				:key="category"
@@ -26,6 +37,8 @@
 				:severity="
 					category === 'negative'
 						? 'danger'
+						: isCategoryActive(category)
+						? 'primary'
 						: selectedCategory === category
 						? 'primary'
 						: 'secondary'
@@ -94,26 +107,23 @@
 </template>
 
 <script setup lang="ts">
-type TagCategory = keyof typeof habbitsStore.tag_categories;
-import { ref, computed } from "vue";
+import { ref, computed, nextTick } from "vue";
 import { useHabbitsStore } from "@/stores/habbits";
 import HabbitItem from "./HabbitItem.vue";
 import InputText from "primevue/inputtext";
 import Button from "primevue/button";
-import { nextTick } from "vue";
+import SelectButton from "primevue/selectbutton";
 import { Habbit } from "@/libs/types";
+
+const habbitsStore = useHabbitsStore();
+const tag_categories = habbitsStore.tag_categories;
+type TagCategory = keyof typeof tag_categories;
 
 const selectedCategory = ref<TagCategory | null>(null);
 const selectedTags = ref<string[]>([]);
 const searchQuery = ref("");
-const habbitsStore = useHabbitsStore();
-const tag_categories = habbitsStore.tag_categories;
-const availableSpecialFilters = ["recently", "all"] as const;
 const selectedSpecialFilter = ref<string | null>(null);
-const filterLabelMap = {
-	recently: "recently",
-	all: "all",
-} as const;
+const activeCategories = ref<string[]>([]);
 
 const emit = defineEmits(["select"]);
 
@@ -125,12 +135,79 @@ if (habbitsStore.recentHabbits && habbitsStore.recentHabbits.length > 0) {
 	selectedSpecialFilter.value = "all";
 }
 
-//Kategorie tagów
+// Inicjalizacja selectedSpecialFilter przy montowaniu komponentu
+// Jeśli są recentHabbits, to ustawiamy na "recently", w przeciwnym razie na "all"
+if (habbitsStore.recentHabbits && habbitsStore.recentHabbits.length > 0) {
+	selectedSpecialFilter.value = "recently";
+} else {
+	selectedSpecialFilter.value = "all";
+}
+
+// Specjalne filtry
+
+// Funkcja obsługująca zmianę specjalnego filtra
+// Resetuje kategorię i tagi przy zmianie filtra
+// Jeśli kliknięto ponownie ten sam filtr, to go wyłącza
+function onSpecialFilterChange(event: any) {
+	// Jeśli kliknięto ponownie ten sam filtr → wyłącz go
+	if (event.originalEvent && selectedSpecialFilter.value === event.value) {
+		selectedSpecialFilter.value = null;
+		activeCategories.value = [];
+		return;
+	}
+	// event.value zawiera nowy wybrany filtr
+	selectedSpecialFilter.value = event.value;
+	if (event.value === "all") {
+		activeCategories.value = Object.keys(tag_categories);
+	} else {
+		activeCategories.value = [];
+	}
+
+	// Reset kategorii i tagów
+	selectedCategory.value = null;
+	selectedTags.value = [];
+
+	// console.log(activeCategories.value);
+}
+
+//Kategorie
+
+// Sprawdzenie, czy kategoria jest aktywna (dla przycisków)
+// Zwraca true, jeśli kategoria jest w activeCategories
+// computed - automatycznie aktualizuje się przy zmianie activeCategories
+// Używane do ustawiania stylu przycisków kategorii
+const isCategoryActive = (category: string) =>
+	activeCategories.value.includes(category);
+
+// Funkcja do trzymania kategorii w activeCategories
+// Jeśli kategoria jest już w activeCategories, to ją usuwamy, jeśli nie ma, to ją dodajemy
+// Dzięki temu możemy łatwo dodawać i usuwać kategorie z listy
+function toggleCategory(category: string) {
+	const index = activeCategories.value.indexOf(category);
+	if (index > -1) {
+		activeCategories.value.splice(index, 1);
+	} else {
+		activeCategories.value.push(category);
+	}
+}
 
 //Funkcja obsługująca kliknięcie kategorii
+// Resetuje specjalny filtr i ustawia wybraną kategorię oraz tagi
+// Jeśli kliknięto ponownie tę samą kategorię, to ją odznacza i resetuje tagi
+// Używa nextTick, aby poczekać na odświeżenie DOM przed ustawieniem nowej kategorii i tagów
 function onCategoryClick(category: TagCategory) {
+	// Obsługa filtra "all" - pozwala na wielokrotny wybór kategorii
+	// bez zmiany selectedCategory i selectedTags
+	if (selectedSpecialFilter.value === "all") {
+		toggleCategory(category);
+
+		console.log("OnCategoryClick", activeCategories.value);
+		return; // kończymy funkcję — nic więcej nie robimy
+	}
+
 	// Reset specjalnego filtra
 	selectedSpecialFilter.value = null;
+	activeCategories.value = [];
 
 	if (selectedCategory.value === category) {
 		// Odkliknięcie - reset wszystkiego
@@ -149,14 +226,29 @@ function onCategoryClick(category: TagCategory) {
 	}
 }
 
+// Funkcja do określenia kategorii habbitu na podstawie jego tagów
+// Przechodzi przez wszystkie kategorie i ich tagi
+// Jeśli habbit ma tag z danej kategorii, to zwraca tę kategorię
+// Jeśli nie pasuje do żadnej kategorii, to zwraca "other"
+function getCategoryForHabit(habit: Habbit): string {
+	for (const [category, tags] of Object.entries(tag_categories)) {
+		if (habit.tags.some((tag) => tags.includes(tag))) {
+			return category;
+		}
+	}
+	return "other";
+}
+
 //Tagi
 
 // Wybrany tag
-// Jeśli nie ma wybranego tagu, to będzie null
-// Jeśli jest wybrana kategoria, to będzie tag z tej kategorii
-const availableTags = computed(() =>
-	selectedCategory.value ? tag_categories[selectedCategory.value] : []
-);
+// Lista dostępnych tagów na podstawie wybranej kategorii
+// Jeśli nie wybrano kategorii, to lista jest pusta
+// Jeśli wybrano kategorię, to lista zawiera tagi z tej kategorii
+// computed - automatycznie aktualizuje się przy zmianie selectedCategory
+const availableTags = computed(() => {
+	return selectedCategory.value ? tag_categories[selectedCategory.value] : [];
+});
 
 // Funkcja do trzymania tagu w selectedTags
 // Jeśli tag jest już w selectedTags, to go usuwamy, jeśli nie ma, to go dodajemy
@@ -187,9 +279,19 @@ const filteredHabbits = computed(() => {
 	if (selectedSpecialFilter.value === "all") {
 		return habbitsStore.allHabbitsList;
 	}
+
+	//	PRZYGOTOWAWNE DO PRZYSZŁOŚCI
+
+	// Obsługa filtra "user" - zwraca habbity z tagiem "user"
+	// if (selectedSpecialFilter.value === "user") {
+	// 	return habbitsStore.allHabbitsList.filter((habbit) =>
+	// 		habbit.tags.includes("user")
+	// 	);
+	// }
+
 	// Standardowe filtrowanie po wyszukiwaniu i tagach
 	return habbitsStore.allHabbitsList.filter((habbit) => {
-		const matchesText =
+		const matchesSearch =
 			searchQuery.value === "" ||
 			habbit.name.toLowerCase().includes(searchQuery.value.toLowerCase());
 
@@ -198,50 +300,21 @@ const filteredHabbits = computed(() => {
 				? true
 				: habbit.tags.some((tag) => selectedTags.value.includes(tag));
 
-		return matchesText && matchesTags;
+		const matchesCategory =
+			selectedCategory.value === null
+				? true
+				: habbit.tags.some((tag) =>
+						tag_categories[selectedCategory.value!].includes(tag)
+				  );
+
+		return matchesSearch && matchesTags && matchesCategory;
 	});
 });
-
-// Sprawdzenie, czy jest aktywne wyszukiwanie
-const isSearching = computed(() => {
-	return (
-		(searchQuery.value?.trim().length ?? 0) > 0 || selectedTags.value.length > 0
-	);
-});
-
-// Sprawdzenie, czy jest wybrany specjalny filtr
-// Jeśli jest wybrany filtr "recently", to zwracamy true
-// W przeciwnym razie zwracamy false
-function onSpecialFilterClick(filter: string) {
-	if (selectedSpecialFilter.value === filter) {
-		// Odznaczamy filtr, jeśli jest już wybrany
-		selectedSpecialFilter.value = null;
-	} else {
-		selectedSpecialFilter.value = filter;
-	}
-
-	// Reset kategorii i tagów
-	selectedCategory.value = null;
-	selectedTags.value = [];
-}
-
-// Funkcja do pobrania kategorii dla danego habbita
-// Przechodzi przez wszystkie kategorie tagów i sprawdza, czy habit ma jakikolwiek tag z tej kategorii
-// Jeśli tak, to zwraca nazwę kategorii
-function getCategoryForHabit(habit: Habbit): string {
-	for (const [category, tags] of Object.entries(tag_categories)) {
-		if (habit.tags.some((tag) => tags.includes(tag))) {
-			return category;
-		}
-	}
-	return "other"; // domyślnie, jeśli nie pasuje do żadnej kategorii
-}
-
-// Grupowanie habbitów po kategoriach
-// Jeśli wybrano filtr "all", to grupujemy habbity po kategoriach
+// Funkcja do grupowania habbitów po kategoriach
+// Przechodzi przez wszystkie habbity i przypisuje je do odpowiednich kategorii
+// Następnie filtruje kategorie na podstawie activeCategories
+// Zwraca obiekt z kategoriami jako kluczami i tablicami habbitów jako wartościami
 const groupedHabbitsByCategory = computed(() => {
-	if (selectedSpecialFilter.value !== "all") return null;
-
 	const grouped: Record<string, Habbit[]> = {};
 
 	habbitsStore.allHabbitsList.forEach((habit) => {
@@ -252,7 +325,24 @@ const groupedHabbitsByCategory = computed(() => {
 		grouped[category].push(habit);
 	});
 
-	return grouped;
+	const filtered: Record<string, Habbit[]> = {};
+
+	for (const [category, habits] of Object.entries(grouped)) {
+		if (activeCategories.value.includes(category)) {
+			filtered[category] = habits;
+		}
+	}
+
+	return filtered;
+});
+
+// Funkcje pomocnicze
+
+// Sprawdzenie, czy jest aktywne wyszukiwanie
+const isSearching = computed(() => {
+	return (
+		(searchQuery.value?.trim().length ?? 0) > 0 || selectedTags.value.length > 0
+	);
 });
 </script>
 
