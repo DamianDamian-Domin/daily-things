@@ -43,8 +43,6 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 const authStore = useAuthStore();
 
-const logo = logoFile;
-
 const email = ref("");
 const password = ref("");
 

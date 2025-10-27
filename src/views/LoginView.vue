@@ -36,13 +36,10 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import InputText from "primevue/inputtext";
 import Button from "primevue/button";
 import logoFile from "@/assets/logo.png";
 import { useHabbitsStore } from "@/stores/habbits";
 import { storeToRefs } from "pinia";
-import { useAuthStore } from "@/stores/auth";
-import { useRouter } from "vue-router";
 
 import LoginForm from "@/components/login_view/LoginForm.vue";
 import RegisterForm from "@/components/login_view/RegisterForm.vue";
@@ -52,8 +49,6 @@ const { allHabbitsList } = storeToRefs(habbitsStore);
 const logo = logoFile;
 
 const form = ref('login')
-
-const onForgotPassword = () => console.log("Forgot password clicked");
 
 const openRegisterForm = () => form.value = 'register';
 const openLoginForm = () => form.value = 'login';
