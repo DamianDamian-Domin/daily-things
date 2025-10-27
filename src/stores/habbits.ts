@@ -1798,7 +1798,8 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			if (userDoc.exists() && userDoc.data().dailyGoals) {
 				dailyGoalsList.value = userDoc.data().dailyGoals;
 			} else {
-				console.log("No dailyGoals found for the user.");
+				setDoc(userDocRef, { dailyGoals: [] }, { merge: true });
+				console.log("No dailyGoals found for the user. Creating empty entry");
 			}
 		} catch (error) {
 			console.error("Error loading dailyGoals from Firestore:", error);
@@ -1811,6 +1812,9 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			const updatedList = [...dailyGoalsList.value, newGoal];
 
 			const userDocRef = doc(db, "users", userUid.value!!);
+
+			
+
 			await updateDoc(userDocRef, { dailyGoals: updatedList });
 
 			dailyGoalsList.value = updatedList;
@@ -1930,7 +1934,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	// This function saves the recent habbits to the user's document in Firestore
 	async function saveRecentHabbits(recentHabbits: string[]) {
 		try {
-			const userDocRef = doc(db, "users", "user1");
+			const userDocRef = doc(db, "users", userUid.value!!);
 			await updateDoc(userDocRef, {
 				recentlyUsed: recentHabbits,
 			});
@@ -1946,7 +1950,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	// It will also be called when the user updates their recent habbits
 	async function loadRecentHabbits() {
 		try {
-			const userDocRef = doc(db, "users", "user1");
+			const userDocRef = doc(db, "users", userUid.value!!);
 			const docSnap = await getDoc(userDocRef);
 
 			if (docSnap.exists()) {
