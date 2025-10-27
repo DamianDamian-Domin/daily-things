@@ -1,5 +1,5 @@
 import { ref, computed } from "vue";
-import { defineStore } from "pinia";
+import { defineStore, storeToRefs } from "pinia";
 import { formatDate, toDateKey } from "@/utils/timeUtils";
 import {
 	collection,
@@ -14,8 +14,13 @@ import {
 import { db } from "@/firebase";
 import { Goal, UserHabbits, Habbit } from "@/libs/types";
 import { nanoid } from "nanoid";
+import { useAuthStore } from "./auth";
 
 export const useHabbitsStore = defineStore("habbits", () => {
+
+	const authStore = useAuthStore()
+	const { userUid } = storeToRefs(authStore)
+
 	// Date refs
 	const refDate = ref(new Date());
 	const dateFormated = computed(() => formatDate(refDate.value));
@@ -1679,8 +1684,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			const _startDate =
 				startDate || new Date(new Date().setDate(new Date().getDate() - 7));
 			const _endDate = endDate || new Date();
-
-			const habbitsRef = collection(db, "users", "user1", "habbits");
+			const habbitsRef = collection(db, "users", userUid.value!!, "habbits");
 			const q = query(
 				habbitsRef,
 				where("date", ">=", toDateKey(_startDate)),
@@ -1732,7 +1736,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		const habbitWithId = { ...habbit, id: nanoid() };
 
 		try {
-			const habbitsRef = doc(db, "users", "user1", "habbits", formattedDate);
+			const habbitsRef = doc(db, "users", userUid.value!!, "habbits", formattedDate);
 
 			if (dayEntry) {
 				await updateDoc(habbitsRef, {
@@ -1770,7 +1774,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 					const habbitsRef = doc(
 						db,
 						"users",
-						"user1",
+						userUid.value!!,
 						"habbits",
 						formattedDate
 					);
@@ -1788,7 +1792,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	// Goals functions
 	async function loadDailyGoals() {
 		try {
-			const userDocRef = doc(db, "users", "user1");
+			const userDocRef = doc(db, "users", userUid.value!!);
 			const userDoc = await getDoc(userDocRef);
 
 			if (userDoc.exists() && userDoc.data().dailyGoals) {
@@ -1806,7 +1810,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			const newGoal = { ...goal, id: nanoid(), severity: goal.severity };
 			const updatedList = [...dailyGoalsList.value, newGoal];
 
-			const userDocRef = doc(db, "users", "user1");
+			const userDocRef = doc(db, "users", userUid.value!!);
 			await updateDoc(userDocRef, { dailyGoals: updatedList });
 
 			dailyGoalsList.value = updatedList;
@@ -1820,7 +1824,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		try {
 			const updatedList = dailyGoalsList.value.filter((g) => g.id !== goal.id);
 
-			const userDocRef = doc(db, "users", "user1");
+			const userDocRef = doc(db, "users", userUid.value!!);
 			await updateDoc(userDocRef, { dailyGoals: updatedList });
 
 			dailyGoalsList.value = updatedList;
@@ -1858,7 +1862,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		);
 		if (entryIndex === -1) return;
 
-		const habbitsRef = doc(db, "users", "user1", "habbits", formattedDate);
+		const habbitsRef = doc(db, "users", userUid.value!!, "habbits", formattedDate);
 		try {
 			await updateDoc(habbitsRef, {
 				habbits: userHabbitsList.value[entryIndex].habbits,
@@ -1872,7 +1876,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	// This function updates the order of daily goals in Firestore after drag and drop
 	async function updateGoalsOrderInFirestore() {
 		try {
-			const userDocRef = doc(db, "users", "user1");
+			const userDocRef = doc(db, "users", userUid.value!!);
 			await updateDoc(userDocRef, {
 				dailyGoals: dailyGoalsList.value,
 			});

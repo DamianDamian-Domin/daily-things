@@ -9,19 +9,36 @@
             <Button class="w-12 h-12" text v-if="isDarkMode" icon="pi pi-sun" severity="secondary" @click="toggleDarkMode()" />
             <Button class="w-12 h-12" text v-else icon="pi pi-moon" severity="secondary" @click="toggleDarkMode()" />
             <Button class="w-12 h-12" rounded icon="pi pi-ellipsis-v" severity="secondary"></Button>
-            <Button class="w-12 h-12" rounded label="DD" severity="primary"></Button>
+            <Button @click="toggle" class="w-12 h-12" rounded label="DD" severity="primary"></Button>
+            <Popover ref="op">
+                <div class="flex flex-col gap-2 items-start w-[8rem]">
+                    <Button size="small" text label="Profile" icon="pi pi-user" severity="secondary" />
+                    <Button size="small" text label="Settings" icon="pi pi-cog" severity="secondary" />
+                    <Button @click="logOut()" size="small" text label="Logout" icon="pi pi-sign-out" severity="danger" />
+                </div>
+            </Popover>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import Button from 'primevue/button';
+import Popover from 'primevue/popover';
 import { useCommonStore } from '@/stores/common'
 import { storeToRefs } from 'pinia';
+import { useAuthStore } from '@/stores/auth';
+import { useHabbitsStore } from '@/stores/habbits';
 
 const commonStore = useCommonStore()
 const { isDarkMode } = storeToRefs(commonStore)
+
+const habbitsStore = useHabbitsStore()
+const { dailyGoalsList, userHabbitsList } = storeToRefs(habbitsStore)
+
+const authStore = useAuthStore()
+
+const op = ref();
 
 const toggleDarkMode = () => {
 
@@ -34,6 +51,16 @@ const toggleDarkMode = () => {
         localStorage.setItem('theme', 'light')
     }
 
+}
+
+const toggle = (event: MouseEvent) => {
+    op.value.toggle(event);
+}
+
+const logOut = () => {
+    authStore.logout()
+    dailyGoalsList.value = []
+    userHabbitsList.value = []
 }
 
 onMounted(() => {

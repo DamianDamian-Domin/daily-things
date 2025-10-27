@@ -14,6 +14,9 @@ import Tooltip from "primevue/tooltip";
 import Aura from "@primeuix/themes/aura";
 
 import { definePreset } from "@primeuix/themes";
+import { useAuthStore } from "@/stores/auth";
+
+import { useHabbitsStore } from "./stores/habbits";
 
 const app = createApp(App);
 
@@ -119,5 +122,11 @@ app.use(PrimeVue, {
 });
 
 app.directive("tooltip", Tooltip);
-app.mount("#app");
 app.use(ConfirmationService);
+
+const authStore = useAuthStore();
+
+
+authStore.initAuth().then(() => {
+	app.mount("#app");
+});
