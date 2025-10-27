@@ -9,6 +9,7 @@ import router from "./router";
 
 import PrimeVue from "primevue/config";
 import "primeicons/primeicons.css";
+import Tooltip from "primevue/tooltip";
 
 import Aura from "@primeuix/themes/aura";
 
@@ -119,6 +120,8 @@ app.use(PrimeVue, {
 		},
 	},
 });
+
+app.directive("tooltip", Tooltip);
 app.use(ConfirmationService);
 
 const authStore = useAuthStore();
