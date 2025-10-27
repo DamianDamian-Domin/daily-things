@@ -17,7 +17,7 @@
         </div>
 
         <div class="flex flex-col text-sm">
-            <Button label="Zarejestruj się" type="submit" class="w-full" />
+            <Button label="Zaloguj się" type="submit" class="w-full" />
             <div class="flex justify-end">
                 <Button label="Przypomnij hasło" link class="text-primary" @click="onForgotPassword" />
             </div>

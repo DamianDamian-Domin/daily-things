@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+import { defineStore, storeToRefs } from "pinia";
 import { ref } from "vue";
 import { auth } from "@/firebase";
 import {
@@ -11,9 +11,11 @@ import {
   browserLocalPersistence
 } from "firebase/auth";
 import { useRouter } from "vue-router";
+import { useHabbitsStore } from "./habbits";
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref<User | null>(null);
+  const userUid = ref<string | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
   const initialized = ref(false);
@@ -22,9 +24,9 @@ export const useAuthStore = defineStore("auth", () => {
 
   const initAuth = () => {
     return new Promise<void>(async (resolve) => {
-      await setPersistence(auth, browserLocalPersistence);
       onAuthStateChanged(auth, (firebaseUser) => {
         user.value = firebaseUser;
+        userUid.value = firebaseUser ? firebaseUser.uid : null;
         initialized.value = true;
         resolve();
       });
@@ -37,6 +39,7 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       user.value = userCredential.user;
+      userUid.value = userCredential.user.uid;
       return userCredential.user;
     } catch (err: any) {
       error.value = err.message;
@@ -52,6 +55,7 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       user.value = userCredential.user;
+      userCredential.user.uid;
       return userCredential.user;
     } catch (err: any) {
       error.value = err.message;
@@ -67,10 +71,6 @@ export const useAuthStore = defineStore("auth", () => {
     router.push('/login');
   };
 
-  onAuthStateChanged(auth, (firebaseUser) => {
-    user.value = firebaseUser;
-  });
-
   return {
     user,
     loading,
@@ -78,7 +78,8 @@ export const useAuthStore = defineStore("auth", () => {
     login,
     register,
     logout,
+    initialized,
     initAuth,
-    initialized
+    userUid
   };
 });

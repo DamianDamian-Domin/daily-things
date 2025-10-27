@@ -14,7 +14,7 @@
                 <div class="flex flex-col gap-2 items-start w-[8rem]">
                     <Button size="small" text label="Profile" icon="pi pi-user" severity="secondary" />
                     <Button size="small" text label="Settings" icon="pi pi-cog" severity="secondary" />
-                    <Button @click="authStore.logout()" size="small" text label="Logout" icon="pi pi-sign-out" severity="danger" />
+                    <Button @click="logOut()" size="small" text label="Logout" icon="pi pi-sign-out" severity="danger" />
                 </div>
             </Popover>
         </div>
@@ -28,9 +28,13 @@ import Popover from 'primevue/popover';
 import { useCommonStore } from '@/stores/common'
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/auth';
+import { useHabbitsStore } from '@/stores/habbits';
 
 const commonStore = useCommonStore()
 const { isDarkMode } = storeToRefs(commonStore)
+
+const habbitsStore = useHabbitsStore()
+const { dailyGoalsList, userHabbitsList } = storeToRefs(habbitsStore)
 
 const authStore = useAuthStore()
 
@@ -55,6 +59,8 @@ const toggle = (event: MouseEvent) => {
 
 const logOut = () => {
     authStore.logout()
+    dailyGoalsList.value = []
+    userHabbitsList.value = []
 }
 
 onMounted(() => {

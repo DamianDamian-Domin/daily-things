@@ -3,7 +3,7 @@
     <h2 class="text-center mb-6 text-a font-bold text-2xl">Zarejestruj się</h2>
 
     <!-- Form -->
-    <form @submit.prevent="onLogin" class="space-y-4 w-full">
+    <form @submit.prevent="onRegister" class="space-y-4 w-full">
         <div>
             <label for="email" class="block mb-1 text-b">Email</label>
             <InputText v-model="email" id="email" type="email" class="w-full" placeholder="example@example.com"
@@ -35,16 +35,9 @@
 import { ref } from "vue";
 import InputText from "primevue/inputtext";
 import Button from "primevue/button";
-import logoFile from "@/assets/logo.png";
-import { storeToRefs } from "pinia";
-import { useAuthStore } from "@/stores/auth.ts";
-import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
 
-const router = useRouter();
 const authStore = useAuthStore();
-
-const logo = logoFile;
-
 const email = ref("");
 const password = ref("");
 const passwordRepeat = ref("")

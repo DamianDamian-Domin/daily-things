@@ -22,17 +22,17 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to) => {
-  const auth = useAuthStore();
+  const authStore = useAuthStore();
 
-  if (!auth.initialized) {
-    await auth.initAuth();
+  if (!authStore.initialized) {
+    await authStore.initAuth();
   }
 
-  if (to.meta.requiresAuth && !auth.user) {
+  if (to.meta.requiresAuth && !authStore.user) {
     return { name: "login" };
   }
 
-  if (to.meta.guestOnly && auth.user) {
+  if (to.meta.guestOnly && authStore.user) {
     return { name: "home" };
   }
 });
