@@ -1,0 +1,114 @@
+{
+	"sport": [
+		"sport",
+		"fitness",
+		"movement",
+		"exercise",
+		"outdoors",
+		"discipline",
+		"routine"
+	],
+	"health": [
+		"health",
+		"mental health",
+		"wellness",
+		"self-care",
+		"body",
+		"hygiene",
+		"sleep",
+		"relaxation",
+		"balance",
+		"energy",
+		"vitamin d"
+	],
+	"work": [
+		"work",
+		"productivity",
+		"focus",
+		"routine",
+		"task",
+		"planning",
+		"organization",
+		"responsibility",
+		"discipline",
+		"success",
+		"data",
+		"statistics"
+	],
+	"learning": [
+		"learning",
+		"growth",
+		"education",
+		"brain",
+		"reading",
+		"study",
+		"reflection",
+		"knowledge"
+	],
+	"relax": [
+		"mindfulness",
+		"relaxation",
+		"mental health",
+		"routine",
+		"gratitude",
+		"pause",
+		"comfort",
+		"sleep",
+		"joy",
+		"balance",
+		"positivity",
+		"self-care"
+	],
+	"home": [
+		"home",
+		"cleaning",
+		"cooking",
+		"organization",
+		"maintenance",
+		"comfort",
+		"routine",
+		"preparedness",
+		"safety",
+		"responsibility"
+	],
+	"social": [
+		"social",
+		"kindness",
+		"connection",
+		"community",
+		"support",
+		"relationships",
+		"values",
+		"positivity"
+	],
+	"hobby": [
+		"creativity",
+		"fun",
+		"expression",
+		"entertainment",
+		"art",
+		"hobby",
+		"music",
+		"pleasure",
+		"style",
+		"media",
+		"brainstorm",
+		"joy"
+	],
+	"finance": [
+		"finance",
+		"discipline",
+		"responsibility",
+		"planning",
+		"organization"
+	],
+	"tech": ["tech", "security", "digital", "maintenance", "data", "support"],
+	"negative": [
+		"procrastination",
+		"addiction",
+		"junk food",
+		"distraction",
+		"stress",
+		"laziness"
+	]
+}
