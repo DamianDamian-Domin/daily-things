@@ -2,14 +2,14 @@ import "./style.css";
 
 import { createApp } from "vue";
 import { createPinia } from "pinia";
-import ConfirmationService from "primevue/confirmationservice";
 
 import App from "./App.vue";
 import router from "./router";
 
 import PrimeVue from "primevue/config";
-import "primeicons/primeicons.css";
 import Tooltip from "primevue/tooltip";
+import ConfirmationService from "primevue/confirmationservice";
+import "primeicons/primeicons.css";
 
 import Aura from "@primeuix/themes/aura";
 
@@ -120,12 +120,10 @@ app.use(PrimeVue, {
 		},
 	},
 });
-
-app.directive("tooltip", Tooltip);
 app.use(ConfirmationService);
+app.directive("tooltip", Tooltip);
 
 const authStore = useAuthStore();
-
 
 authStore.initAuth().then(() => {
 	app.mount("#app");
