@@ -16,6 +16,7 @@ import { Goal, UserHabbits, Habbit } from "@/libs/types";
 import { nanoid } from "nanoid";
 import { useAuthStore } from "./auth";
 import { useLoaderStore } from "./loader";
+import { handleAsyncAction } from "@/stores/asyncActionHandler";
 
 export const useHabbitsStore = defineStore("habbits", () => {
 	const authStore = useAuthStore();
@@ -1760,74 +1761,84 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 	// Habbit functions
 	async function addHabbitToSelectedDay(habbit: Habbit) {
-		await loader.run(async () => {
-			const formattedDate = toDateKey(refDate.value);
-			const dayEntry = userHabbitsList.value.find(
-				(day) => day.date === formattedDate
-			);
-			const habbitWithId = { ...habbit, id: nanoid() };
-
-			try {
-				const habbitsRef = doc(
-					db,
-					"users",
-					userUid.value!!,
-					"habbits",
-					formattedDate
+		await handleAsyncAction(
+			async () => {
+				const formattedDate = toDateKey(refDate.value);
+				const dayEntry = userHabbitsList.value.find(
+					(day) => day.date === formattedDate
 				);
+				const habbitWithId = { ...habbit, id: nanoid() };
 
-				if (dayEntry) {
-					await updateDoc(habbitsRef, {
-						habbits: [...dayEntry.habbits, habbitWithId],
-					});
-					dayEntry.habbits.push(habbitWithId);
-				} else {
-					await setDoc(habbitsRef, {
-						date: formattedDate,
-						habbits: [habbitWithId],
-					});
-					userHabbitsList.value.push({
-						date: formattedDate,
-						habbits: [habbitWithId],
-					});
+				try {
+					const habbitsRef = doc(
+						db,
+						"users",
+						userUid.value!!,
+						"habbits",
+						formattedDate
+					);
+
+					if (dayEntry) {
+						await updateDoc(habbitsRef, {
+							habbits: [...dayEntry.habbits, habbitWithId],
+						});
+						dayEntry.habbits.push(habbitWithId);
+					} else {
+						await setDoc(habbitsRef, {
+							date: formattedDate,
+							habbits: [habbitWithId],
+						});
+						userHabbitsList.value.push({
+							date: formattedDate,
+							habbits: [habbitWithId],
+						});
+					}
+					addToRecentHabbits(habbit.name);
+				} catch (error) {
+					console.error("Error adding habbit to Firestore:", error);
 				}
-				addToRecentHabbits(habbit.name);
-			} catch (error) {
-				console.error("Error adding habbit to Firestore:", error);
-			}
-		});
+			},
+			"Habbit added!",
+			"Failed to add habbit."
+		);
 	}
 
 	async function deleteHabbitFromSelectedDay(habbit: Habbit) {
-		await loader.run(async () => {
-			const formattedDate = toDateKey(refDate.value);
-			const dayEntry = userHabbitsList.value.find(
-				(day) => day.date === formattedDate
-			);
+		await handleAsyncAction(
+			async () => {
+				const formattedDate = toDateKey(refDate.value);
+				const dayEntry = userHabbitsList.value.find(
+					(day) => day.date === formattedDate
+				);
 
-			if (dayEntry) {
-				const index = dayEntry.habbits.findIndex((t) => t.name === habbit.name);
-				const updatedHabbits = [...dayEntry.habbits];
-				updatedHabbits.splice(index, 1);
-				if (index !== -1) {
-					try {
-						const habbitsRef = doc(
-							db,
-							"users",
-							userUid.value!!,
-							"habbits",
-							formattedDate
-						);
-						await updateDoc(habbitsRef, {
-							habbits: updatedHabbits,
-						});
-						dayEntry.habbits.splice(index, 1);
-					} catch (error) {
-						console.error("Error removing habbit from Firestore:", error);
+				if (dayEntry) {
+					const index = dayEntry.habbits.findIndex(
+						(t) => t.name === habbit.name
+					);
+					const updatedHabbits = [...dayEntry.habbits];
+					updatedHabbits.splice(index, 1);
+					if (index !== -1) {
+						try {
+							const habbitsRef = doc(
+								db,
+								"users",
+								userUid.value!!,
+								"habbits",
+								formattedDate
+							);
+							await updateDoc(habbitsRef, {
+								habbits: updatedHabbits,
+							});
+							dayEntry.habbits.splice(index, 1);
+						} catch (error) {
+							console.error("Error removing habbit from Firestore:", error);
+						}
 					}
 				}
-			}
-		});
+			},
+			"Habbit deleted!",
+			"Failed to deleted habbit."
+		);
 	}
 
 	// Goals functions
@@ -1850,39 +1861,47 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	}
 
 	async function addDailyGoal(goal: Goal) {
-		await loader.run(async () => {
-			try {
-				const newGoal = { ...goal, id: nanoid(), severity: goal.severity };
-				const updatedList = [...dailyGoalsList.value, newGoal];
+		await handleAsyncAction(
+			async () => {
+				try {
+					const newGoal = { ...goal, id: nanoid(), severity: goal.severity };
+					const updatedList = [...dailyGoalsList.value, newGoal];
 
-				const userDocRef = doc(db, "users", userUid.value!!);
+					const userDocRef = doc(db, "users", userUid.value!!);
 
-				await updateDoc(userDocRef, { dailyGoals: updatedList });
+					await updateDoc(userDocRef, { dailyGoals: updatedList });
 
-				dailyGoalsList.value = updatedList;
-				console.log("Daily goal added successfully.");
-			} catch (error) {
-				console.error("Error adding daily goal to Firestore:", error);
-			}
-		});
+					dailyGoalsList.value = updatedList;
+					console.log("Daily goal added successfully.");
+				} catch (error) {
+					console.error("Error adding daily goal to Firestore:", error);
+				}
+			},
+			"Goal added!",
+			"Failed to add goal."
+		);
 	}
 
 	async function deleteDailyGoal(goal: Goal) {
-		await loader.run(async () => {
-			try {
-				const updatedList = dailyGoalsList.value.filter(
-					(g) => g.id !== goal.id
-				);
+		await handleAsyncAction(
+			async () => {
+				try {
+					const updatedList = dailyGoalsList.value.filter(
+						(g) => g.id !== goal.id
+					);
 
-				const userDocRef = doc(db, "users", userUid.value!!);
-				await updateDoc(userDocRef, { dailyGoals: updatedList });
+					const userDocRef = doc(db, "users", userUid.value!!);
+					await updateDoc(userDocRef, { dailyGoals: updatedList });
 
-				dailyGoalsList.value = updatedList;
-				console.log("Daily goal deleted successfully.");
-			} catch (error) {
-				console.error("Error deleting daily goal from Firestore:", error);
-			}
-		});
+					dailyGoalsList.value = updatedList;
+					console.log("Daily goal deleted successfully.");
+				} catch (error) {
+					console.error("Error deleting daily goal from Firestore:", error);
+				}
+			},
+			"Goal deleted!",
+			"Failed to deleted goal."
+		);
 	}
 
 	function onGoalClick(goal: Goal) {
@@ -2009,19 +2028,15 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	// It will also be called when the user updates their recent habbits
 	async function loadRecentHabbits() {
 		await loader.run(async () => {
-			try {
-				const userDocRef = doc(db, "users", userUid.value!!);
-				const docSnap = await getDoc(userDocRef);
+			const userDocRef = doc(db, "users", userUid.value!!);
+			const docSnap = await getDoc(userDocRef);
 
-				if (docSnap.exists()) {
-					const data = docSnap.data();
-					if (data.recentlyUsed && Array.isArray(data.recentlyUsed)) {
-						recentHabbits.value = data.recentlyUsed;
-						console.log("recentHabbits loaded from Firestore.");
-					}
+			if (docSnap.exists()) {
+				const data = docSnap.data();
+				if (data.recentlyUsed && Array.isArray(data.recentlyUsed)) {
+					recentHabbits.value = data.recentlyUsed;
+					console.log("recentHabbits loaded from Firestore.");
 				}
-			} catch (error) {
-				console.error("Error loading recentHabbits from Firestore:", error);
 			}
 		});
 	}
