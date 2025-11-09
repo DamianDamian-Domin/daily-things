@@ -2,6 +2,7 @@
 	<Dialog
 		v-model:visible="showHabbitDialog"
 		modal
+		dismissableMask
 		:header="headerText"
 		class="w-[clamp(20rem,50%,60rem)]">
 		<div class="flex flex-col gap-4">
@@ -11,18 +12,6 @@
 			</div>
 		</div>
 	</Dialog>
-
-	<ConfirmPopup group="templating">
-		<template #message="slotProps">
-			<div
-				class="flex flex-col items-center w-full gap-4 border-b border-surface-200 dark:border-surface-700 p-4 mb-4 pb-0">
-				<i
-					:class="slotProps.message.icon"
-					class="text-6xl text-primary-500"></i>
-				<p>{{ slotProps.message.message }}</p>
-			</div>
-		</template>
-	</ConfirmPopup>
 
 	<div
 		class="flex flex-col card-a sm:w-[480px] surface-content w-full h-4/5 min-h-[30rem] max-h-[50rem] overflow-auto"
@@ -110,17 +99,12 @@ import HabbitSearch from "@/components/home_view/HabbitSearch.vue";
 import Divider from "primevue/divider";
 
 import Dialog from "primevue/dialog";
-import ConfirmPopup from "primevue/confirmpopup";
 import { ref, computed, onBeforeUnmount, nextTick } from "vue";
 import { useHabbitsStore } from "@/stores/habbits";
 import { storeToRefs } from "pinia";
 import draggable from "vuedraggable";
 
-import { useConfirm } from "primevue/useconfirm";
 import { Habbit, Goal } from "@/libs/types";
-
-
-const confirm = useConfirm();
 
 const habbitsStore = useHabbitsStore();
 const {
@@ -171,56 +155,9 @@ const onReachGoal = (goal: Goal) => {
 	habbitsStore.onGoalClick(goal);
 };
 
-const showTemplate = (event: MouseEvent, habbit: Habbit) => {
-	selectedTaskToDelete.value = habbit;
-	confirm.require({
-		target: event.currentTarget as HTMLElement,
-		group: "templating",
-		message: "Please confirm to proceed moving forward.",
-		icon: "pi pi-exclamation-circle",
-		rejectProps: {
-			icon: "pi pi-times",
-			label: "Cancel",
-			outlined: true,
-		},
-		acceptProps: {
-			icon: "pi pi-check",
-			label: "Confirm",
-		},
-		accept: () => {
-			deleteSelectedTask();
-		},
-	});
-};
-
 function toggleEditMode() {
 	editMode.value = !editMode.value;
 }
-
-const showGoalDeletePopup = (event: MouseEvent, goal: Goal) => {
-	selectedGoalToDelete.value = goal;
-
-	confirm.require({
-		target: event.currentTarget as HTMLElement,
-		group: "templating",
-		message: `Are you sure you want to delete "${goal.name}" from your goals?`,
-		icon: "pi pi-exclamation-circle",
-		rejectProps: {
-			icon: "pi pi-times",
-			label: "Cancel",
-			outlined: true,
-		},
-		acceptProps: {
-			icon: "pi pi-check",
-			label: "Confirm",
-		},
-		accept: () => {
-			if (!selectedGoalToDelete.value) return;
-			habbitsStore.deleteDailyGoal(selectedGoalToDelete.value);
-			selectedGoalToDelete.value = null;
-		},
-	});
-};
 
 const markedGoalToDelete = ref<string | null>(null);
 const goalsContainerRef = ref<Node | null>(null);
