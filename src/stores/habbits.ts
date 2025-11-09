@@ -323,7 +323,6 @@ export const useHabbitsStore = defineStore("habbits", () => {
 					const newGoal = { ...goal, id: nanoid(), severity: goal.severity };
 					const updatedList = [...dailyGoalsList.value, newGoal];
 
-	
 					const userDocRef = doc(db, "users", userUid.value!!);
 
 					await updateDoc(userDocRef, { dailyGoals: updatedList });

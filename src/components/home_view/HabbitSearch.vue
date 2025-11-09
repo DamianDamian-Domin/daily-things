@@ -50,14 +50,23 @@
 		<!-- Tagi (jeśli wybrano kategorię) -->
 		<div
 			v-if="availableTags.length"
-			class="flex flex-wrap gap-2 mt-2">
-			<Button
-				v-for="tag in availableTags"
-				:key="tag"
-				:label="tag"
-				:severity="selectedTags.includes(tag) ? 'primary' : 'secondary'"
-				@click="toggleTag(tag)"
-				size="small" />
+			class="mt-2">
+			<p class="mb-2">Tags</p>
+
+			<div class="flex flex-wrap gap-2 mb-2">
+				<button
+					v-for="tag in availableTags"
+					:key="tag"
+					@click="toggleTag(tag)"
+					class="transition-all duration-200 cursor-pointer select-none text-sm italic"
+					:class="
+						selectedTags.includes(tag)
+							? 'text-primary underline font-semibold'
+							: 'text-gray-500 hover:text-primary'
+					">
+					{{ tag }}
+				</button>
+			</div>
 		</div>
 
 		<!-- Wyniki wyszukiwania -->
