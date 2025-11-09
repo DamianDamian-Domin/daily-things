@@ -278,28 +278,22 @@ function toggleTag(tag: string) {
 // Jeśli wybrano filtr "recently", to zwracamy tylko te habbity, które są w liście recentHabbits
 // W przeciwnym razie zwracamy habbity, które pasują do wyszukiwania i tagów
 const filteredHabbits = computed(() => {
-	// Obsługa filtra "recently"
+	let baseList = habbitsStore.allHabbitsList;
+
+	//  Specjalne filtry
 	if (selectedSpecialFilter.value === "recently") {
-		return habbitsStore.allHabbitsList.filter((habbit) =>
+		// Pokazujemy tylko ostatnio używane habbity
+		baseList = baseList.filter((habbit) =>
 			habbitsStore.recentHabbits.includes(habbit.name)
 		);
+	} else if (selectedSpecialFilter.value === "all") {
+		// Pokazujemy wszystkie habbity (bez ograniczania)
+		baseList = habbitsStore.allHabbitsList;
 	}
-	// Obsługa filtra "all" - zwraca wszystkie habbity
-	if (selectedSpecialFilter.value === "all") {
-		return habbitsStore.allHabbitsList;
-	}
+	// (tu można dodać inne filtry w przyszłości, np. "user")
 
-	//	PRZYGOTOWAWNE DO PRZYSZŁOŚCI
-
-	// Obsługa filtra "user" - zwraca habbity z tagiem "user"
-	// if (selectedSpecialFilter.value === "user") {
-	// 	return habbitsStore.allHabbitsList.filter((habbit) =>
-	// 		habbit.tags.includes("user")
-	// 	);
-	// }
-
-	// Standardowe filtrowanie po wyszukiwaniu i tagach
-	return habbitsStore.allHabbitsList.filter((habbit) => {
+	// Filtry wyszukiwania, tagów i kategorii
+	return baseList.filter((habbit) => {
 		const matchesSearch =
 			searchQuery.value === "" ||
 			habbit.name.toLowerCase().includes(searchQuery.value.toLowerCase());
@@ -319,6 +313,7 @@ const filteredHabbits = computed(() => {
 		return matchesSearch && matchesTags && matchesCategory;
 	});
 });
+
 // Funkcja do grupowania habbitów po kategoriach
 // Przechodzi przez wszystkie habbity i przypisuje je do odpowiednich kategorii
 // Następnie filtruje kategorie na podstawie activeCategories
