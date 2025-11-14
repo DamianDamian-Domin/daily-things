@@ -12,6 +12,7 @@ import {
 } from "firebase/auth";
 import { useRouter } from "vue-router";
 import { useHabbitsStore } from "./habbits";
+import { FirebaseError } from "firebase/app";
 
 export const useAuthStore = defineStore("auth", () => {
   const user = ref<User | null>(null);
@@ -21,6 +22,30 @@ export const useAuthStore = defineStore("auth", () => {
   const initialized = ref(false);
   
   const router = useRouter()
+
+
+  const mapFirebaseError = (code: string) => {
+    switch (code) {
+        case "auth/email-already-in-use":
+            return "This email is already registered.";
+
+        case "auth/invalid-email":
+            return "Invalid email format.";
+
+        case "auth/weak-password":
+            return "Password is too weak.";
+
+        case "auth/network-request-failed":
+            return "Network error. Check your connection.";
+
+        case "auth/operation-not-allowed":
+            return "This account type is disabled.";
+
+        default:
+            return "An unexpected error occurred. Try again later.";
+    }
+};
+
 
   const initAuth = () => {
     return new Promise<void>(async (resolve) => {
@@ -42,7 +67,7 @@ export const useAuthStore = defineStore("auth", () => {
       userUid.value = userCredential.user.uid;
       return userCredential.user;
     } catch (err: any) {
-      error.value = err.message;
+      error.value = mapFirebaseError(err.code || "");;
       throw err;
     } finally {
       loading.value = false;
@@ -58,7 +83,7 @@ export const useAuthStore = defineStore("auth", () => {
       userCredential.user.uid;
       return userCredential.user;
     } catch (err: any) {
-      error.value = err.message;
+      error.value = mapFirebaseError(err.code || "");;
       throw err;
     } finally {
       loading.value = false;
