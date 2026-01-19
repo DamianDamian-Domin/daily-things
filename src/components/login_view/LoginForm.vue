@@ -22,6 +22,10 @@
                 <Button label="Przypomnij hasło" link class="text-primary" @click="onForgotPassword" />
             </div>
         </div>
+
+        <p v-if="error" class="text-danger text-sm mt-2">
+            {{ error }}
+        </p>
     </form>
 
     <!-- Social login -->
@@ -43,8 +47,12 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 const authStore = useAuthStore();
 
+const { error } = storeToRefs(authStore);
+
 const email = ref("");
 const password = ref("");
+
+
 
 const onLogin = async () => {
     try {

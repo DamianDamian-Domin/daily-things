@@ -41,6 +41,12 @@ export const useAuthStore = defineStore("auth", () => {
         case "auth/operation-not-allowed":
             return "This account type is disabled.";
 
+        case "auth/invalid-credential":
+            return "Invalid authentication credentials.";
+
+        case "auth/user-disabled":
+            return "This user account has been disabled.";
+
         default:
             return "An unexpected error occurred. Try again later.";
     }
