@@ -1,7 +1,7 @@
 <template>
 	<div class="flex flex-col gap-6 items-center flex-grow">
 		<DatePicker></DatePicker>
-		<HabbitsCard></HabbitsCard>
+		<CarouselView />
 	</div>
 </template>
 
@@ -9,7 +9,7 @@
 import { onMounted, watch } from "vue";
 import { useHabbitsStore } from "../stores/habbits";
 import DatePicker from "@/components/home_view/DatePicker.vue";
-import HabbitsCard from "@/components/home_view/HabbitsCard.vue";
+import CarouselView from "./CarouselView.vue";
 
 const habbitsStore = useHabbitsStore();
 
@@ -18,9 +18,6 @@ onMounted(() => {
 	habbitsStore.loadDailyGoals();
 	habbitsStore.loadRecentHabbits();
 });
-
-
-
 </script>
 
 <style scoped></style>

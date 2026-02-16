@@ -22,3 +22,14 @@ export interface Goal {
 	origin: string;
 	display_name: string;
 }
+
+type CarouselCardId = "manage" | "textAdd" | "stats";
+
+export interface CarouselCardConfig {
+	id: CarouselCardId;
+	order: number;
+}
+export interface CarouselCardConfig {
+	id: "manage" | "textAdd" | "stats";
+	order: number;
+}
