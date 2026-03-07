@@ -1,15 +1,16 @@
 <template>
-	<div>
+	<div
+		class="flex flex-col card-a sm:w-[480px] surface-content w-full h-4/5 min-h-[30rem] max-h-[50rem] overflow-auto">
 		<h2>STATS</h2>
 		<p v-if="isActive">AKTYWNA</p>
-	</div>
-	<div>
-		<button
-			:disabled="!isActive"
-			@click="testAction"
-			style="margin-top: 12px">
-			Test akcji
-		</button>
+		<div>
+			<button
+				:disabled="!isActive"
+				@click="testAction"
+				style="margin-top: 12px">
+				Test akcji
+			</button>
+		</div>
 	</div>
 </template>
 

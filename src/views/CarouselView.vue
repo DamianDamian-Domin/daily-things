@@ -95,9 +95,23 @@ function onPointerUp(e: PointerEvent) {
 	align-items: center;
 	gap: 4px;
 
+	/* make the carousel have a stable height so children with percentage
+	   heights (h-4/5 etc) don’t grow indefinitely */
+	height: 80vh;
+	max-height: 80vh;
+
 	/* KLUCZOWE DLA rotateY */
 	perspective: 1200px;
 	touch-action: pan-y;
+}
+
+/* force cards to occupy full height of carousel container */
+.carousel-card {
+	/* height: 100%; */
+	display: flex;
+	/* let contents stretch to fill the card height */
+	align-items: stretch;
+	justify-content: center;
 }
 
 /* BAZA KARTY */
