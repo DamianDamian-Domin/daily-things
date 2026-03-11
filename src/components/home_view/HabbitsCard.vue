@@ -1,5 +1,5 @@
 <template>
-	<!-- <Dialog
+	<Dialog
 		v-model:visible="showHabbitDialog"
 		modal
 		dismissableMask
@@ -11,7 +11,7 @@
 				<HabbitSearch @select="handleHabbitSelect" />
 			</div>
 		</div>
-	</Dialog> -->
+	</Dialog>
 	<div
 		class="card-root"
 		:data-active="isActive">

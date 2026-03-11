@@ -97,6 +97,12 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { useTodosStore } from "@/stores/todos";
+import { storeToRefs } from "pinia";
+import { onMounted } from "vue";
+
+const todosStore = useTodosStore();
+const { selectedDayTodos } = storeToRefs(todosStore);
 
 defineProps<{ isActive: boolean }>();
 
@@ -106,7 +112,7 @@ interface TodoItem {
 	completed: boolean;
 }
 
-const items = ref<TodoItem[]>([]);
+const items = selectedDayTodos;
 const newText = ref("");
 
 const editingId = ref<string | null>(null);
@@ -123,17 +129,11 @@ function generateId() {
 /* =========================
    ADD
 ========================= */
-
 function addItem() {
 	const text = newText.value.trim();
 	if (!text) return;
 
-	items.value.push({
-		id: generateId(),
-		text,
-		completed: true,
-	});
-
+	todosStore.addTodo(text);
 	newText.value = "";
 }
 
@@ -155,7 +155,7 @@ function toggleMarkTask(item: TodoItem) {
 }
 
 function deleteTask(item: TodoItem) {
-	items.value = items.value.filter((i) => i.id !== item.id);
+	todosStore.deleteTodo(item.id);
 }
 
 /* =========================
@@ -177,12 +177,18 @@ function confirmEdit(item: TodoItem) {
 	if (!text) {
 		deleteTask(item);
 	} else {
-		item.text = text;
+		todosStore.updateTodo(item.id, text);
 	}
 
 	editingId.value = null;
 	editingText.value = "";
 }
+onMounted(() => {
+	todosStore.loadTodosForDate(new Date());
+});
+onMounted(() => {
+	todosStore.loadTodosForDate(new Date());
+});
 </script>
 <style scoped>
 /* <-- Input area --> */
