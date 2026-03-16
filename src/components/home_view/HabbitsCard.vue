@@ -12,82 +12,85 @@
 			</div>
 		</div>
 	</Dialog>
-
 	<div
-		class="flex flex-col card-a sm:w-[480px] surface-content w-full h-4/5 min-h-[30rem] max-h-[50rem] overflow-auto"
-		@click.capture="handleGlobalClick">
-		<div class="text-center">
-			<h3 class="text-c">You are doing well !</h3>
-		</div>
-		<div class="tasks-area mt-8 h-2/3">
-			<div class="flex flex-row flex-wrap h-min gap-2">
-				<draggable
-					v-model="selectedDayHabbits"
-					item-key="id"
-					class="flex flex-row flex-wrap h-min gap-2"
-					ghost-class="opacity-40"
-					:animation="150"
-					@end="habbitsStore.updateHabbitsOrderInFirestore">
-					<template #item="{ element }">
-						<HabbitItem
-							:data="getHabbitDisplayData(element)"
-							:showTooltip="!editMode"
-							@click="() => toggleMarkHabbit(element)" />
-					</template>
-				</draggable>
-				<HabbitItem
-					@click="openAddHabbitDialog"
-					:showTooltip="!editMode"
-					:data="{ severity: 'empty', icon: 'add', name: 'add' }" />
-			</div>
-		</div>
-
-		<Divider></Divider>
-		<div class="flex flex-col gap-6 flex-grow">
+		class="card-root"
+		:data-active="isActive">
+		<div
+			class="flex flex-col card-a sm:w-[480px] surface-content w-full h-4/5 min-h-[30rem] max-h-[50rem] overflow-auto"
+			@click.capture="handleGlobalClick">
 			<div class="text-center">
-				<h3>Daily goals</h3>
+				<h3 class="text-c">You are doing well !</h3>
 			</div>
-			<div
-				class="text-right cursor-pointer"
-				@click="toggleEditMode">
-				<h4
-					class="inline-block border-b text-border-success-hover-danger transition-colors">
-					{{ editMode ? "Close edit goals" : "Edit goals" }}
-				</h4>
-			</div>
-			<div
-				ref="goalsContainerRef"
-				class="flex flex-row flex-wrap h-min gap-2">
-				<draggable
-					v-if="editMode"
-					v-model="dailyGoalsList"
-					item-key="id"
-					class="flex flex-row flex-wrap gap-2"
-					ghost-class="opacity-40"
-					:animation="150"
-					@end="habbitsStore.updateGoalsOrderInFirestore">
-					<template #item="{ element: goal }">
-						<HabbitItem
-							:data="getGoalDisplayData(goal)"
-							:showTooltip="!editMode"
-							@click="toggleMarkGoal(goal)" />
-					</template>
-				</draggable>
-				<template v-else>
+			<div class="tasks-area mt-8 h-2/3">
+				<div class="flex flex-row flex-wrap h-min gap-2">
+					<draggable
+						v-model="selectedDayHabbits"
+						item-key="id"
+						class="flex flex-row flex-wrap h-min gap-2"
+						ghost-class="opacity-40"
+						:animation="150"
+						@end="habbitsStore.updateHabbitsOrderInFirestore">
+						<template #item="{ element }">
+							<HabbitItem
+								:data="getHabbitDisplayData(element)"
+								:showTooltip="!editMode"
+								@click="() => toggleMarkHabbit(element)" />
+						</template>
+					</draggable>
 					<HabbitItem
-						v-for="goal in dailyGoalsColored"
-						:key="goal.id"
-						:data="{
-							...getFullGoalData(goal),
-							severity: habbitsStore.getGoalSeverity(goal),
-						}"
+						@click="openAddHabbitDialog"
 						:showTooltip="!editMode"
-						@click="onReachGoal(goal)" />
-				</template>
-				<HabbitItem
-					v-if="editMode"
-					@click="openaddDailyGoalDialog"
-					:data="{ severity: 'empty', icon: 'add', name: 'add' }" />
+						:data="{ severity: 'empty', icon: 'add', name: 'add' }" />
+				</div>
+			</div>
+
+			<Divider></Divider>
+			<div class="flex flex-col gap-6 flex-grow">
+				<div class="text-center">
+					<h3>Daily goals</h3>
+				</div>
+				<div
+					class="text-right cursor-pointer"
+					@click="toggleEditMode">
+					<h4
+						class="inline-block border-b text-border-success-hover-danger transition-colors">
+						{{ editMode ? "Close edit goals" : "Edit goals" }}
+					</h4>
+				</div>
+				<div
+					ref="goalsContainerRef"
+					class="flex flex-row flex-wrap h-min gap-2">
+					<draggable
+						v-if="editMode"
+						v-model="dailyGoalsList"
+						item-key="id"
+						class="flex flex-row flex-wrap gap-2"
+						ghost-class="opacity-40"
+						:animation="150"
+						@end="habbitsStore.updateGoalsOrderInFirestore">
+						<template #item="{ element: goal }">
+							<HabbitItem
+								:data="getGoalDisplayData(goal)"
+								:showTooltip="!editMode"
+								@click="toggleMarkGoal(goal)" />
+						</template>
+					</draggable>
+					<template v-else>
+						<HabbitItem
+							v-for="goal in dailyGoalsColored"
+							:key="goal.id"
+							:data="{
+								...getFullGoalData(goal),
+								severity: habbitsStore.getGoalSeverity(goal),
+							}"
+							:showTooltip="!editMode"
+							@click="onReachGoal(goal)" />
+					</template>
+					<HabbitItem
+						v-if="editMode"
+						@click="openaddDailyGoalDialog"
+						:data="{ severity: 'empty', icon: 'add', name: 'add' }" />
+				</div>
 			</div>
 		</div>
 	</div>
@@ -114,6 +117,10 @@ const {
 	dailyGoalsList,
 } = storeToRefs(habbitsStore);
 
+const props = defineProps<{
+	isActive: boolean;
+}>();
+
 const showHabbitDialog = ref(false);
 const addDialogMode = ref("");
 const selectedTaskToDelete = ref<Habbit | null>(null);
@@ -122,7 +129,7 @@ const selectedGoalToDelete = ref<Habbit | null>(null);
 const headerText = computed(() =>
 	addDialogMode.value === "habbit"
 		? "Add a daily habbit"
-		: "Add a goal to complete"
+		: "Add a goal to complete",
 );
 const editMode = ref(false);
 
@@ -277,4 +284,10 @@ function getFullHabbitData(habbit: Habbit) {
 	return original ? { ...original, ...habbit } : habbit;
 }
 </script>
-@/stores/habbits
+<style scoped>
+.card-root[data-active="false"] {
+	pointer-events: none;
+	user-select: none;
+	opacity: 0.7;
+}
+</style>
