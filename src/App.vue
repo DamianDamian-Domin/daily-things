@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="flex flex-col gap-1 w-screen h-screen surface-ground px-4 py-2 overflow-auto">
+		class="flex flex-col w-screen h-screen surface-ground px-4 py-2 overflow-hidden">
 		<!-- NavBar tylko na wybranych trasach -->
 		<NavBar v-if="showNavbar" />
 
@@ -11,7 +11,9 @@
 		<FeedbackCheck
 			:isVisible="feedbackCheckStore.isVisible"
 			:typeCheck="feedbackCheckStore.typeCheck" />
-		<RouterView />
+		<div class="flex-1 flex flex-col overflow-hidden">
+			<RouterView />
+		</div>
 	</div>
 </template>
 

@@ -15,6 +15,8 @@ export interface TodoItem {
 	id: string;
 	text: string;
 	completed: boolean;
+	description?: string; // NOWE: Opcjonalny opis zadania
+	createdAt?: number; // NOWE: Znacznik czasu do sortowania (od najnowszych)
 }
 
 export interface UserTodos {
@@ -33,14 +35,27 @@ export const useTodosStore = defineStore("todos", () => {
 	const userTodosList = ref<UserTodos[]>([]);
 
 	// =========================
-	// SELECTED DAY TODOS
+	// SELECTED DAY TODOS (Z SORTOWANIEM)
 	// =========================
 
 	const selectedDayTodos = computed({
 		get() {
 			const key = toDateKey(refDate.value);
 			const entry = userTodosList.value.find((item) => item.date === key);
-			return entry ? entry.todos : [];
+
+			if (!entry) return [];
+
+			// Sortowanie listy: niewykonane najpierw, a w danej grupie - od najnowszego
+			return [...entry.todos].sort((a, b) => {
+				// Jeśli oba są wykonane lub oba niewykonane, sortujemy po dacie utworzenia
+				if (a.completed === b.completed) {
+					const timeA = a.createdAt || 0;
+					const timeB = b.createdAt || 0;
+					return timeB - timeA; // Najnowsze u góry
+				}
+				// Zadania niewykonane (false) idą na górę przed wykonanymi (true)
+				return a.completed ? 1 : -1;
+			});
 		},
 		set(newTodos) {
 			const key = toDateKey(refDate.value);
@@ -58,7 +73,7 @@ export const useTodosStore = defineStore("todos", () => {
 	});
 
 	// =========================
-	// LOAD TODOS (LIKE GOALS)
+	// LOAD TODOS
 	// =========================
 
 	async function loadTodos() {
@@ -80,14 +95,13 @@ export const useTodosStore = defineStore("todos", () => {
 	}
 
 	// =========================
-	// ADD TODO
+	// ADD TODO (Zaktualizowane o opis)
 	// =========================
 
-	async function addTodo(text: string) {
+	async function addTodo(text: string, description: string = "") {
 		await handleAsyncAction(
 			async () => {
 				const formattedDate = toDateKey(refDate.value);
-
 				const dayEntry = userTodosList.value.find(
 					(day) => day.date === formattedDate,
 				);
@@ -95,7 +109,9 @@ export const useTodosStore = defineStore("todos", () => {
 				const newTodo: TodoItem = {
 					id: nanoid(),
 					text,
-					completed: true,
+					description, // Zapis opisu
+					completed: false,
+					createdAt: Date.now(), // Zapisujemy dokładny moment utworzenia w milisekundach
 				};
 
 				if (dayEntry) {
@@ -108,10 +124,7 @@ export const useTodosStore = defineStore("todos", () => {
 				}
 
 				const userDocRef = doc(db, "users", userUid.value!!);
-
-				await updateDoc(userDocRef, {
-					todos: userTodosList.value,
-				});
+				await updateDoc(userDocRef, { todos: userTodosList.value });
 			},
 			"Task added!",
 			"Failed to add task.",
@@ -126,7 +139,6 @@ export const useTodosStore = defineStore("todos", () => {
 		await handleAsyncAction(
 			async () => {
 				const formattedDate = toDateKey(refDate.value);
-
 				const dayEntry = userTodosList.value.find(
 					(day) => day.date === formattedDate,
 				);
@@ -136,10 +148,7 @@ export const useTodosStore = defineStore("todos", () => {
 				dayEntry.todos = dayEntry.todos.filter((t) => t.id !== todoId);
 
 				const userDocRef = doc(db, "users", userUid.value!!);
-
-				await updateDoc(userDocRef, {
-					todos: userTodosList.value,
-				});
+				await updateDoc(userDocRef, { todos: userTodosList.value });
 			},
 			"Task deleted!",
 			"Failed to delete task.",
@@ -147,12 +156,15 @@ export const useTodosStore = defineStore("todos", () => {
 	}
 
 	// =========================
-	// UPDATE TODO
+	// UPDATE TODO TEXT & DESCRIPTION
 	// =========================
 
-	async function updateTodo(todoId: string, newText: string) {
+	async function updateTodo(
+		todoId: string,
+		newText: string,
+		newDescription: string = "",
+	) {
 		const formattedDate = toDateKey(refDate.value);
-
 		const dayEntry = userTodosList.value.find(
 			(day) => day.date === formattedDate,
 		);
@@ -160,19 +172,42 @@ export const useTodosStore = defineStore("todos", () => {
 		if (!dayEntry) return;
 
 		const todo = dayEntry.todos.find((t) => t.id === todoId);
-
 		if (!todo) return;
 
 		todo.text = newText;
+		todo.description = newDescription; // Aktualizacja opisu
 
 		try {
 			const userDocRef = doc(db, "users", userUid.value!!);
-
-			await updateDoc(userDocRef, {
-				todos: userTodosList.value,
-			});
+			await updateDoc(userDocRef, { todos: userTodosList.value });
 		} catch (error) {
 			console.error("Error updating todo:", error);
+		}
+	}
+
+	// =========================
+	// TOGGLE TODO COMPLETION
+	// =========================
+
+	async function toggleTodo(todoId: string) {
+		const formattedDate = toDateKey(refDate.value);
+		const dayEntry = userTodosList.value.find(
+			(day) => day.date === formattedDate,
+		);
+
+		if (!dayEntry) return;
+
+		const todo = dayEntry.todos.find((t) => t.id === todoId);
+		if (!todo) return;
+
+		todo.completed = !todo.completed;
+
+		try {
+			const userDocRef = doc(db, "users", userUid.value!!);
+			await updateDoc(userDocRef, { todos: userTodosList.value });
+		} catch (error) {
+			todo.completed = !todo.completed;
+			console.error("Error toggling todo status:", error);
 		}
 	}
 
@@ -183,5 +218,6 @@ export const useTodosStore = defineStore("todos", () => {
 		addTodo,
 		deleteTodo,
 		updateTodo,
+		toggleTodo,
 	};
 });
