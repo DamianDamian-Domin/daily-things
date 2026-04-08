@@ -1,5 +1,5 @@
 import { defineStore, storeToRefs } from "pinia";
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { auth } from "@/firebase";
 import {
   signInWithEmailAndPassword,
@@ -10,6 +10,10 @@ import {
   GoogleAuthProvider,
   sendEmailVerification,
   sendPasswordResetEmail,
+  updateProfile,
+  updatePassword as firebaseUpdatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
   User,
   setPersistence,
   browserLocalPersistence
@@ -178,6 +182,38 @@ export const useAuthStore = defineStore("auth", () => {
     router.push('/login');
   };
 
+  // Aktualizacja nazwy wyświetlanej
+  const updateDisplayName = async (newName: string) => {
+    if (!auth.currentUser) throw new Error("Brak zalogowanego użytkownika");
+    await updateProfile(auth.currentUser, { displayName: newName });
+    // Odśwież reaktywną referencję
+    user.value = { ...auth.currentUser } as User;
+  };
+
+  // Zmiana hasła (wymaga reautentykacji)
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    if (!auth.currentUser || !auth.currentUser.email) {
+      throw new Error("Brak zalogowanego użytkownika");
+    }
+    // Reautentykacja użytkownika
+    const credential = EmailAuthProvider.credential(
+      auth.currentUser.email,
+      currentPassword
+    );
+    await reauthenticateWithCredential(auth.currentUser, credential);
+    await firebaseUpdatePassword(auth.currentUser, newPassword);
+  };
+
+  // Sprawdź czy użytkownik ma dostawcę email/password (może zmieniać hasło)
+  const hasPasswordProvider = computed(() => {
+    return user.value?.providerData?.some(p => p.providerId === 'password') ?? false;
+  });
+
+  // Data utworzenia konta
+  const accountCreatedAt = computed(() => {
+    return user.value?.metadata?.creationTime ?? null;
+  });
+
   return {
     user,
     loading,
@@ -190,6 +226,11 @@ export const useAuthStore = defineStore("auth", () => {
     logout,
     initialized,
     initAuth,
-    userUid
+    userUid,
+    updateDisplayName,
+    changePassword,
+    hasPasswordProvider,
+    accountCreatedAt,
+    mapFirebaseError,
   };
 });

@@ -51,6 +51,9 @@
                     </button>
                 </div>
             </Popover>
+
+            <!-- Dialog profilu -->
+            <ProfileDialog v-model="showProfile" />
         </div>
     </div>
 </template>
@@ -58,6 +61,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import Popover from 'primevue/popover';
+import ProfileDialog from '@/components/navbar/ProfileDialog.vue';
 import { useCommonStore } from '@/stores/common'
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/auth';
@@ -73,6 +77,7 @@ const authStore = useAuthStore()
 const { user } = storeToRefs(authStore)
 
 const op = ref();
+const showProfile = ref(false);
 
 // Dane użytkownika z Firebase Auth
 const userEmail = computed(() => user.value?.email ?? '');
@@ -120,6 +125,7 @@ const toggle = (event: MouseEvent) => {
 
 const onProfile = () => {
     op.value.hide();
+    showProfile.value = true;
 };
 
 const onSettings = () => {
