@@ -8,26 +8,12 @@
 			<div class="td-top">
 				<h3 class="td-title">To-do list 📝</h3>
 				<div
-					class="td-ring-wrap"
+					class="td-ring"
+					:style="ringStyle"
 					v-tooltip.bottom="completedCount + '/' + totalCount + ' done'">
-					<svg class="td-ring" viewBox="0 0 36 36">
-						<circle
-							class="td-ring-bg"
-							cx="18" cy="18" r="15.5"
-							fill="none"
-							stroke-width="2.5" />
-						<circle
-							class="td-ring-progress"
-							cx="18" cy="18" r="15.5"
-							fill="none"
-							stroke-width="2.5"
-							stroke-linecap="round"
-							:stroke-dasharray="ringCircumference"
-							:stroke-dashoffset="ringOffset"
-							:style="{ stroke: progressStrokeColor }"
-							transform="rotate(-90 18 18)" />
-					</svg>
-					<span class="td-ring-text">{{ completedCount }}/{{ totalCount }}</span>
+					<div class="td-ring-inner">
+						<span class="td-ring-text">{{ completedCount }}/{{ totalCount }}</span>
+					</div>
 				</div>
 			</div>
 
@@ -172,19 +158,18 @@ const completedCount = computed(() => completedTodos.value.length);
 
 const showCompleted = ref(true);
 
-// Progress ring
-const ringCircumference = Math.round(2 * Math.PI * 15.5); // ~97
-const ringOffset = computed(() => {
-	if (totalCount.value === 0) return ringCircumference;
-	const pct = completedCount.value / totalCount.value;
-	return Math.round(ringCircumference * (1 - pct));
-});
-const progressStrokeColor = computed(() => {
-	if (totalCount.value === 0) return 'var(--p-gray-300, #d1d5db)';
-	const pct = completedCount.value / totalCount.value;
-	if (pct >= 1) return 'var(--p-green-500, #22c55e)';
-	if (pct >= 0.5) return 'var(--p-orange-500, #f97316)';
-	return 'var(--p-orange-400, #fb923c)';
+// Progress ring — CSS conic-gradient
+const ringStyle = computed(() => {
+	const pct = totalCount.value === 0 ? 0 : (completedCount.value / totalCount.value) * 100;
+	let color: string;
+	if (totalCount.value === 0) color = 'var(--p-gray-300, #d1d5db)';
+	else if (pct >= 100) color = 'var(--p-green-500, #22c55e)';
+	else if (pct >= 50) color = 'var(--p-orange-500, #f97316)';
+	else color = 'var(--p-orange-400, #fb923c)';
+	const track = 'var(--p-orange-200, #fed7aa)';
+	return {
+		background: `conic-gradient(${color} ${pct}%, ${track} ${pct}%)`
+	};
 });
 
 // ========================
@@ -303,38 +288,34 @@ onMounted(() => {
 	color: var(--p-gray-200);
 }
 
-/* Progress ring */
-.td-ring-wrap {
-	position: relative;
+/* Progress ring — conic-gradient */
+.td-ring {
 	width: 2.6rem;
 	height: 2.6rem;
+	border-radius: 50%;
+	flex-shrink: 0;
 	cursor: default;
+	position: relative;
+	transition: background 0.4s ease;
 }
-.td-ring {
-	width: 100%;
-	height: 100%;
-	display: block;
-}
-.td-ring-bg {
-	stroke: var(--p-orange-200);
-}
-:where(.my-app-dark, .my-app-dark *) .td-ring-bg {
-	stroke: var(--p-gray-600);
-}
-.td-ring-progress {
-	transition: stroke-dashoffset 0.5s ease, stroke 0.3s ease;
-}
-
-.td-ring-text {
+.td-ring-inner {
 	position: absolute;
-	inset: 0;
+	inset: 3.5px;
+	border-radius: 50%;
+	background: var(--p-surface-0, white);
 	display: flex;
 	align-items: center;
 	justify-content: center;
+}
+:where(.my-app-dark, .my-app-dark *) .td-ring-inner {
+	background: var(--p-gray-800, #1f2937);
+}
+.td-ring-text {
 	font-family: 'Lora', serif;
-	font-size: 0.6rem;
+	font-size: 0.58rem;
 	font-weight: 700;
 	color: var(--p-gray-600);
+	line-height: 1;
 }
 :where(.my-app-dark, .my-app-dark *) .td-ring-text {
 	color: var(--p-gray-300);
