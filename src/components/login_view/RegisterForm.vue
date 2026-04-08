@@ -17,16 +17,23 @@
             </div>
 
             <h2 class="mt-4 text-success text-xl md:text-2xl">
-                Success!
+                Konto utworzone!
             </h2>
 
             <p class="text-b mt-2 text-sm md:text-base">
-                Your account has been created successfully.<br />
-                You can now log in.
+                Wysłaliśmy link weryfikacyjny na Twój adres email.
+            </p>
+            <p class="text-c mt-1 text-xs">
+                Sprawdź skrzynkę odbiorczą i kliknij link, aby aktywować konto.
             </p>
 
-            <Button label="Close" class="mt-6 w-full surface-success text-contrast rounded-md py-2"
-                @click="visible = false" />
+            <div class="mt-4 flex items-center gap-2 text-xs text-c">
+                <i class="pi pi-envelope"></i>
+                <span>{{ email }}</span>
+            </div>
+
+            <Button label="OK" class="mt-6 w-full surface-success text-contrast rounded-md py-2"
+                @click="onSuccessClose" />
         </div>
     </Dialog>
 
@@ -91,7 +98,7 @@
         <!-- Button -->
         <div class="flex flex-col text-sm">
             <Button label="Sign Up" type="submit" class="w-full" :disabled="!formValid" />
-            <AuthErrorBanner :error="error" @dismiss="error = null" />
+            <AuthErrorBanner v-if="error !== '__email_not_verified__'" :error="error" @dismiss="error = null" />
         </div>
     </form>
 
@@ -122,6 +129,10 @@ import { useRouter } from "vue-router";
 const router = useRouter();
 const authStore = useAuthStore();
 const { error } = storeToRefs(authStore);
+
+const emit = defineEmits<{
+    (e: "registered"): void;
+}>();
 
 
 /* --------------------------
@@ -226,6 +237,12 @@ const onRegister = async () => {
     } catch (e) {
         console.error("Failed to register", e);
     }
+};
+
+// Zamknij dialog sukcesu i przekieruj na formularz logowania
+const onSuccessClose = () => {
+    visible.value = false;
+    emit("registered");
 };
 
 

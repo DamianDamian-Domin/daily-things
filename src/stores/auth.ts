@@ -8,6 +8,7 @@ import {
   onAuthStateChanged,
   signInWithPopup,
   GoogleAuthProvider,
+  sendEmailVerification,
   User,
   setPersistence,
   browserLocalPersistence
@@ -77,11 +78,40 @@ export const useAuthStore = defineStore("auth", () => {
     error.value = null;
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+      // Sprawdź czy email został zweryfikowany
+      if (!userCredential.user.emailVerified) {
+        await signOut(auth);
+        user.value = null;
+        userUid.value = null;
+        error.value = "__email_not_verified__";
+        throw new Error("Email not verified");
+      }
+
       user.value = userCredential.user;
       userUid.value = userCredential.user.uid;
       return userCredential.user;
     } catch (err: any) {
-      error.value = mapFirebaseError(err.code || "");;
+      if (error.value !== "__email_not_verified__") {
+        error.value = mapFirebaseError(err.code || "");
+      }
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // Ponowne wysłanie emaila weryfikacyjnego
+  const resendVerificationEmail = async (emailAddr: string, password: string) => {
+    loading.value = true;
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, emailAddr, password);
+      await sendEmailVerification(userCredential.user);
+      await signOut(auth);
+      user.value = null;
+      userUid.value = null;
+    } catch (err: any) {
+      error.value = mapFirebaseError(err.code || "");
       throw err;
     } finally {
       loading.value = false;
@@ -93,8 +123,12 @@ export const useAuthStore = defineStore("auth", () => {
     error.value = null;
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      user.value = userCredential.user;
-      userCredential.user.uid;
+      // Wyślij email weryfikacyjny
+      await sendEmailVerification(userCredential.user);
+      // Wyloguj użytkownika — nie może korzystać z aplikacji bez weryfikacji
+      await signOut(auth);
+      user.value = null;
+      userUid.value = null;
       return userCredential.user;
     } catch (err: any) {
       error.value = mapFirebaseError(err.code || "");;
@@ -136,6 +170,7 @@ export const useAuthStore = defineStore("auth", () => {
     login,
     register,
     loginWithGoogle,
+    resendVerificationEmail,
     logout,
     initialized,
     initAuth,

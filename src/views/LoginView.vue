@@ -17,7 +17,7 @@
             <div class="card-a surface-content w-full max-w-md flex flex-col items-center relative z-10">
                 <img :src="logo" alt="Logo" class="h-24 mb-4" />
                 <LoginForm v-if="form == 'login'"></LoginForm>
-                <RegisterForm v-if="form == 'register'"></RegisterForm>
+                <RegisterForm v-if="form == 'register'" @registered="openLoginForm"></RegisterForm>
                 <!-- Register link -->
                 <div class="text-center text-sm mb-4" v-if="form === 'login'">
                     <span class="text-b">Nie masz konta? </span>
