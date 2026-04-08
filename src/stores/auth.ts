@@ -9,6 +9,7 @@ import {
   signInWithPopup,
   GoogleAuthProvider,
   sendEmailVerification,
+  sendPasswordResetEmail,
   User,
   setPersistence,
   browserLocalPersistence
@@ -157,6 +158,20 @@ export const useAuthStore = defineStore("auth", () => {
     }
   };
 
+  // Resetowanie hasła
+  const resetPassword = async (emailAddr: string) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      await sendPasswordResetEmail(auth, emailAddr);
+    } catch (err: any) {
+      error.value = mapFirebaseError(err.code || "");
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   const logout = async () => {
     await signOut(auth);
     user.value = null;
@@ -171,6 +186,7 @@ export const useAuthStore = defineStore("auth", () => {
     register,
     loginWithGoogle,
     resendVerificationEmail,
+    resetPassword,
     logout,
     initialized,
     initAuth,

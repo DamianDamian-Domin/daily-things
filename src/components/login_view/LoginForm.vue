@@ -1,5 +1,56 @@
 <template>
 
+    <!-- DIALOG: Przypomnij hasło -->
+    <Dialog
+        v-model:visible="showResetDialog"
+        modal
+        dismissableMask
+        :closable="false"
+        header="Resetuj hasło"
+        class="w-[clamp(20rem,50%,28rem)]">
+        <div class="flex flex-col gap-4">
+            <!-- Stan: formularz -->
+            <template v-if="!resetSent">
+                <p class="text-c text-sm">
+                    Podaj adres email powiązany z Twoim kontem. Wyślemy Ci link do zresetowania hasła.
+                </p>
+                <div>
+                    <label for="resetEmail" class="block mb-1 text-b text-sm">Email</label>
+                    <InputText
+                        v-model="resetEmail"
+                        id="resetEmail"
+                        type="email"
+                        class="w-full"
+                        placeholder="example@example.com"
+                        @keydown.enter.prevent="onResetPassword" />
+                </div>
+                <AuthErrorBanner :error="resetError" @dismiss="resetError = null" />
+                <div class="flex gap-2 justify-end">
+                    <Button label="Anuluj" text severity="secondary" @click="showResetDialog = false" />
+                    <Button
+                        label="Wyślij link"
+                        icon="pi pi-send"
+                        :disabled="!resetEmailValid"
+                        @click="onResetPassword" />
+                </div>
+            </template>
+
+            <!-- Stan: wysłano -->
+            <template v-else>
+                <div class="flex flex-col items-center text-center py-2">
+                    <div class="flex items-center justify-center w-14 h-14 rounded-full mb-4" style="background: var(--p-green-100); color: var(--p-green-600);">
+                        <i class="pi pi-check text-2xl"></i>
+                    </div>
+                    <p class="text-b text-sm font-medium">Link wysłany!</p>
+                    <p class="text-c text-xs mt-1">
+                        Sprawdź skrzynkę <span class="font-semibold">{{ resetEmail }}</span> i kliknij link, aby ustawić nowe hasło.
+                    </p>
+                </div>
+                <Button label="OK" class="w-full" @click="closeResetDialog" />
+            </template>
+        </div>
+    </Dialog>
+
     <h2 class="text-center mb-6 text-a font-bold text-2xl">Zaloguj się</h2>
 
     <!-- Form -->
@@ -63,10 +114,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import InputText from "primevue/inputtext";
 import Button from "primevue/button";
 import AuthErrorBanner from "@/components/login_view/AuthErrorBanner.vue";
+import Dialog from "primevue/dialog";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
@@ -91,7 +143,40 @@ const onLogin = async () => {
     }
 }
 
-const onForgotPassword = () => console.log("Forgot password clicked");
+// Resetowanie hasła
+const showResetDialog = ref(false);
+const resetEmail = ref("");
+const resetSent = ref(false);
+const resetError = ref<string | null>(null);
+
+const resetEmailValid = computed(() =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(resetEmail.value)
+);
+
+const onForgotPassword = () => {
+    resetEmail.value = email.value; // Podpowiedz email z formularza logowania
+    resetSent.value = false;
+    resetError.value = null;
+    showResetDialog.value = true;
+};
+
+const onResetPassword = async () => {
+    if (!resetEmailValid.value) return;
+    resetError.value = null;
+    try {
+        await authStore.resetPassword(resetEmail.value);
+        resetSent.value = true;
+    } catch (e: any) {
+        resetError.value = authStore.error;
+    }
+};
+
+const closeResetDialog = () => {
+    showResetDialog.value = false;
+    resetSent.value = false;
+    resetEmail.value = "";
+    resetError.value = null;
+};
 
 // Ponowne wysłanie emaila weryfikacyjnego
 const resendCooldown = ref(0);
