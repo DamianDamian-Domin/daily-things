@@ -94,7 +94,18 @@
 			<!-- Goals section -->
 			<div class="hc-goals-section">
 				<div class="hc-goals-header">
-					<h3 class="hc-goals-title">Daily goals 🎯</h3>
+					<div class="hc-goals-header-left">
+						<!-- Kółko postępu celów -->
+						<div
+							v-if="totalGoals > 0"
+							class="hc-goals-ring"
+							:style="goalsRingStyle">
+							<div class="hc-goals-ring-inner">
+								<span class="hc-goals-ring-text">{{ completedGoals }}/{{ totalGoals }}</span>
+							</div>
+						</div>
+						<h3 class="hc-goals-title">Daily goals 🎯</h3>
+					</div>
 					<button
 						class="hc-edit-pill"
 						:class="{ active: editMode }"
@@ -127,17 +138,19 @@
 							:key="goal.id"
 							:data="{
 								...getFullGoalData(goal),
-								severity: habbitsStore.getGoalSeverity(goal),
+								severity: habbitsStore.getGoalSeverity(goal) === 'empty' ? 'empty' : '',
 							}"
+							:showCheckBadge="habbitsStore.getGoalSeverity(goal) !== 'empty'"
 							:showTooltip="!editMode"
 							@click="onReachGoal(goal)" />
 					</template>
 					<HabbitItem
 						v-if="editMode"
 						@click="openaddDailyGoalDialog"
+						:showTooltip="!editMode"
 						:data="{ severity: 'empty', icon: 'add', name: 'add' }" />
 				</div>
-				<!-- Empty goals state -->
+				<!-- Pusty stan celów -->
 				<div v-if="dailyGoalsList.length === 0 && !editMode" class="hc-goals-empty">
 					<span class="hc-goals-empty-emoji">🎯</span>
 					<p class="hc-goals-empty-text">Set goals to track your progress</p>
@@ -218,6 +231,26 @@ const streak = computed(() => {
 		}
 	}
 	return count;
+});
+
+// Licznik ukończonych celów i procent postępu
+const totalGoals = computed(() => dailyGoalsList.value.length);
+const completedGoals = computed(() => {
+	return dailyGoalsColored.value.filter((g) => g.severity !== "empty").length;
+});
+const goalsPercent = computed(() => {
+	if (totalGoals.value === 0) return 0;
+	return (completedGoals.value / totalGoals.value) * 100;
+});
+const goalsRingStyle = computed(() => {
+	const pct = goalsPercent.value;
+	const color = pct >= 100
+		? "var(--p-green-500, #22c55e)"
+		: "var(--p-orange-400, #fb923c)";
+	const track = "color-mix(in srgb, var(--p-gray-200) 60%, transparent)";
+	return {
+		background: `conic-gradient(${color} ${pct}%, ${track} ${pct}%)`,
+	};
 });
 
 const showHabbitDialog = ref(false);
@@ -716,6 +749,46 @@ function getFullHabbitData(habbit: Habbit) {
 	align-items: center;
 	justify-content: space-between;
 }
+.hc-goals-header-left {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+/* ====== Goals Progress Ring ====== */
+.hc-goals-ring {
+	width: 2rem;
+	height: 2rem;
+	border-radius: 9999px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 0.4s ease;
+}
+.hc-goals-ring-inner {
+	width: 1.45rem;
+	height: 1.45rem;
+	border-radius: 9999px;
+	background: color-mix(in srgb, var(--p-orange-50) 40%, white);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+:where(.my-app-dark, .my-app-dark *) .hc-goals-ring-inner {
+	background: color-mix(in srgb, var(--p-gray-700) 80%, var(--p-gray-800));
+}
+.hc-goals-ring-text {
+	font-family: 'Lora', serif;
+	font-size: 0.48rem;
+	font-weight: 700;
+	color: var(--p-gray-600);
+	line-height: 1;
+	letter-spacing: -0.02em;
+}
+:where(.my-app-dark, .my-app-dark *) .hc-goals-ring-text {
+	color: var(--p-gray-300);
+}
+
 .hc-goals-title {
 	font-family: 'Lora', serif;
 	font-size: 0.85rem;

@@ -8,6 +8,12 @@
 			<span class="material-icons material-symbols-outlined hi-icon">
 				{{ data.icon }}
 			</span>
+			<!-- Zielone kółko z ✓ — widoczne dla ukończonych celów -->
+			<Transition name="hi-badge">
+				<span v-if="showCheckBadge" class="hi-check-badge">
+					<i class="pi pi-check"></i>
+				</span>
+			</Transition>
 		</div>
 		<span v-if="props.showLabel" class="hi-label">
 			{{ data.display_name || data.name }}
@@ -23,6 +29,7 @@ const props = defineProps<{
 	data: Habbit;
 	showLabel?: boolean;
 	showTooltip?: boolean;
+	showCheckBadge?: boolean;
 }>();
 
 const emit = defineEmits(["select", "click"]);
@@ -211,6 +218,48 @@ function handleClick() {
 }
 :where(.my-app-dark, .my-app-dark *) .hi-label {
 	color: var(--p-gray-400);
+}
+
+/* ===== Check badge (ukończony cel) ===== */
+.hi-check-badge {
+	position: absolute;
+	top: -0.3rem;
+	right: -0.3rem;
+	width: 1.05rem;
+	height: 1.05rem;
+	border-radius: 9999px;
+	background: var(--p-green-500);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 1px 4px color-mix(in srgb, var(--p-green-500) 35%, transparent);
+	z-index: 2;
+}
+.hi-check-badge .pi-check {
+	font-size: 0.5rem;
+	color: white;
+	line-height: 1;
+	display: flex;
+}
+:where(.my-app-dark, .my-app-dark *) .hi-check-badge {
+	background: var(--p-green-600);
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+/* Badge animation */
+.hi-badge-enter-active {
+	transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.hi-badge-leave-active {
+	transition: all 0.15s ease;
+}
+.hi-badge-enter-from {
+	opacity: 0;
+	transform: scale(0.3);
+}
+.hi-badge-leave-to {
+	opacity: 0;
+	transform: scale(0.5);
 }
 </style>
 
