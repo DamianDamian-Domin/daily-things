@@ -39,7 +39,7 @@
 
 
     <!-- TITLE -->
-    <h2 class="text-center mb-6 text-a font-bold text-2xl">Zarejestruj się</h2>
+    <h2 class="text-center mb-6 text-a font-lora text-2xl">Dołącz do nas 🌿</h2>
 
 
     <!-- FORM -->

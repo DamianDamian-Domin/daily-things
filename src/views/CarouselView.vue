@@ -180,7 +180,7 @@ function onPointerUp(e: PointerEvent) {
 	cursor: pointer;
 }
 
-/* DOTS — bez zmian, zostają przy prostych przejściach */
+/* DOTS — ciepły, zaokrąglony styl */
 .carousel-dots {
 	display: flex;
 	justify-content: center;
@@ -193,16 +193,27 @@ function onPointerUp(e: PointerEvent) {
 	width: 8px;
 	height: 8px;
 	border-radius: 50%;
-	background-color: #cbd5e1;
+	background-color: var(--p-orange-200);
 	border: none;
 	cursor: pointer;
 	transition:
-		transform 200ms ease,
-		background-color 200ms ease;
+		transform 250ms ease,
+		background-color 250ms ease,
+		box-shadow 250ms ease;
+}
+
+:where(.my-app-dark, .my-app-dark *) .dot {
+	background-color: var(--p-gray-600);
 }
 
 .dot.active {
-	background-color: var(--color-green-500);
-	transform: scale(1.5);
+	background-color: var(--p-orange-400);
+	transform: scale(1.6);
+	box-shadow: 0 0 8px color-mix(in srgb, var(--p-orange-400) 40%, transparent);
+}
+
+:where(.my-app-dark, .my-app-dark *) .dot.active {
+	background-color: var(--p-orange-500);
+	box-shadow: 0 0 8px color-mix(in srgb, var(--p-orange-500) 30%, transparent);
 }
 </style>

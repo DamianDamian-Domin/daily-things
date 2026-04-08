@@ -7,7 +7,7 @@
 		:header="headerText"
 		class="w-[clamp(20rem,50%,60rem)]">
 		<div class="flex flex-col gap-4">
-			<span class="p-text-secondary block mb-5">Update your information.</span>
+			<span class="p-text-secondary block mb-5">Wybierz nawyk, który chcesz dodać 🌱</span>
 			<div class="flex flex-row flex-wrap gap-2">
 				<HabbitSearch @select="handleHabbitSelect" />
 			</div>
@@ -20,7 +20,7 @@
 			class="flex flex-col card-a sm:w-[480px] surface-content w-full h-4/5 min-h-[30rem] max-h-[50rem] overflow-auto"
 			@click.capture="handleGlobalClick">
 			<div class="text-center">
-				<h3 class="text-c">You are doing well !</h3>
+				<h3 class="text-c font-lora italic">Świetnie Ci idzie! ✨</h3>
 			</div>
 			<div class="tasks-area mt-8 h-2/3">
 				<div class="flex flex-row flex-wrap h-min gap-2">
@@ -48,14 +48,14 @@
 			<Divider></Divider>
 			<div class="flex flex-col gap-6 flex-grow">
 				<div class="text-center">
-					<h3>Daily goals</h3>
+					<h3 class="font-lora">Dzienne cele 🎯</h3>
 				</div>
 				<div
 					class="text-right cursor-pointer"
 					@click="toggleEditMode">
 					<h4
 						class="inline-block border-b text-border-success-hover-danger transition-colors">
-						{{ editMode ? "Close edit goals" : "Edit goals" }}
+						{{ editMode ? "Zamknij edycję" : "Edytuj cele" }}
 					</h4>
 				</div>
 				<div
@@ -129,8 +129,8 @@ const selectedGoalToDelete = ref<Habbit | null>(null);
 
 const headerText = computed(() =>
 	addDialogMode.value === "habbit"
-		? "Add a daily habbit"
-		: "Add a goal to complete",
+		? "Dodaj codzienny nawyk"
+		: "Dodaj cel do realizacji",
 );
 const editMode = ref(false);
 

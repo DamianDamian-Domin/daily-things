@@ -15,7 +15,8 @@
         </div>
 
             <div class="card-a surface-content w-full max-w-md flex flex-col items-center relative z-10">
-                <img :src="logo" alt="Logo" class="h-24 mb-4" />
+                <img :src="logo" alt="Logo" class="h-24 mb-2" />
+                <h1 class="font-sacramento text-3xl mb-4 text-c">Daily Things</h1>
                 <LoginForm v-if="form == 'login'"></LoginForm>
                 <RegisterForm v-if="form == 'register'" @registered="openLoginForm"></RegisterForm>
                 <!-- Register link -->
@@ -29,7 +30,7 @@
                 </div>
 
                 <!-- Footer -->
-                <p class="text-xs text-c text-center">© Daily Things 2025</p>
+                <p class="text-xs text-c text-center">☕ Daily Things 2025</p>
             </div>
     </div>
 </template>

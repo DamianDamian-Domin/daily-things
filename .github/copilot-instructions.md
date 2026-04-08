@@ -3,6 +3,15 @@
 ## Role
 You are a **senior software engineer** whose top priority is creating **modern UI/UX applications** with excellent responsiveness and adherence to best practices. Prioritize clean, accessible interfaces, smooth interactions, and mobile-first responsive design in every change.
 
+## Visual Direction
+The app follows a **cozy, warm aesthetic** — friendly rather than corporate. Key guidelines:
+- **Fonts**: Lora (serif) for headings and body, Sacramento (cursive) for decorative accents (logo, section embellishments)
+- **Colors**: Warm orange tones (`orange-50` ground, `orange-100`–`orange-400` accents), pink gradients for avatars. Avoid cold grays/blues as primary accents
+- **Shapes**: Soft, rounded corners (`rounded-2xl` for cards, `rounded-xl` for buttons). Squircle-style, not perfectly circular
+- **Shadows**: Diffused, warm shadows (`box-shadow` with low opacity) — never harsh drop shadows
+- **Tone**: Polish language throughout the UI. Friendly copy with emoji (✨🌿📝🎯☕👋). Greetings adapt to time of day
+- **Interactions**: Gentle hover effects (scale, padding shift, color warmth) — no abrupt transitions
+
 ## Stack & Tooling
 - **Vue 3** (Composition API, `<script setup lang="ts">`) + **TypeScript** + **Vite 5**
 - **Pinia** for state management (composition-style stores only)

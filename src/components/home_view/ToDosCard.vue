@@ -5,7 +5,7 @@
 			class="flex flex-col h-full"
 			:class="!isActive && 'pointer-events-none'">
 			<div class="flex-none text-center mb-3 pt-4">
-				<h3 class="text-c">To do list</h3>
+				<h3 class="text-c font-lora italic">Lista zadań 📝</h3>
 			</div>
 
 			<div class="flex-1 min-h-0 overflow-y-auto mx-4 pb-4">
@@ -56,13 +56,13 @@
 					<div class="w-6 flex justify-center">
 						<i class="pi pi-plus text-sm"></i>
 					</div>
-					<span>Add a task...</span>
+					<span>Dodaj zadanie...</span>
 				</div>
 			</div>
 
 			<div
 				class="flex-none pb-4 flex flex-col items-center gap-2 border-t border-gray-100 dark:border-gray-800 pt-4">
-				<span class="text-c text-gray-500"> Total Count </span>
+				<span class="text-c text-gray-500">Wszystkie zadania</span>
 				<div
 					class="w-12 h-12 flex items-center justify-center rounded-full border-2 border-green-500 text-lg font-medium text-gray-800 dark:text-gray-200">
 					{{ totalCount }}
@@ -75,7 +75,7 @@
 			modal
 			dismissableMask
 			:closable="false"
-			:header="dialogMode === 'add' ? 'New Task' : 'Edit Task'"
+			:header="dialogMode === 'add' ? 'Nowe zadanie' : 'Edytuj zadanie'"
 			class="w-[clamp(20rem,50%,60rem)]"
 			@show="focusInput">
 			<div class="flex flex-col gap-4">
@@ -93,14 +93,14 @@
 						ref="dialogInput"
 						type="text"
 						class="p-inputtext p-component w-full font-semibold text-lg bg-transparent border-none !shadow-none !outline-none px-0 focus:ring-0"
-						placeholder="Task name..."
+						placeholder="Nazwa zadania..."
 						@keydown.enter.prevent="focusDescription" />
 
 					<textarea
 						v-model="dialogDescription"
 						ref="descriptionInput"
 						class="p-inputtext p-component w-full h-32 resize-none bg-transparent border-none !shadow-none !outline-none px-0 focus:ring-0"
-						placeholder="Add a description, notes, or subtasks..."
+						placeholder="Dodaj opis, notatki lub podpunkty..."
 						@keydown.ctrl.enter.prevent="saveTask"
 						@keydown.meta.enter.prevent="saveTask"></textarea>
 				</div>
@@ -113,7 +113,7 @@
 							@click="deleteCurrentTask"
 							class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2">
 							<i class="pi pi-trash"></i>
-							<span>Delete</span>
+							<span>Usuń</span>
 						</button>
 					</div>
 
@@ -132,7 +132,7 @@
 									? 'bg-green-500 hover:bg-green-600'
 									: 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
 							">
-							Save
+							Zapisz
 						</button>
 					</div>
 				</div>

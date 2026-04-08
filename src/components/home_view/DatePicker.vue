@@ -5,21 +5,25 @@
 			<Button
 				icon="pi pi-arrow-left"
 				severity="secondary"
-				aria-label="Bookmark"
+				rounded
+				text
+				aria-label="Poprzedni dzień"
 				@click="habbitsStore.changeDate(-1)" />
 		</div>
 
 		<div
-			class="flex flex-col items-center gap-1 hover:cursor-pointer"
+			class="flex flex-col items-center gap-0.5 hover:cursor-pointer group transition-transform hover:scale-105"
 			@click="visible = true">
-			<h1 class="text-a">{{ dateFormated[0] }}</h1>
-			<h1 class="text-a">{{ dateFormated[1] }}</h1>
+			<h1 class="text-a font-lora">{{ dateFormated[0] }}</h1>
+			<h4 class="text-c font-lora italic">{{ dateFormated[1] }}</h4>
 		</div>
 		<div>
 			<Button
 				icon="pi pi-arrow-right"
 				severity="secondary"
-				aria-label="Bookmark"
+				rounded
+				text
+				aria-label="Następny dzień"
 				:disabled="habbitsStore.isToday()"
 				@click="habbitsStore.changeDate(1)" />
 		</div>

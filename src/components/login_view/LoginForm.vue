@@ -51,7 +51,7 @@
         </div>
     </Dialog>
 
-    <h2 class="text-center mb-6 text-a font-bold text-2xl">Zaloguj się</h2>
+    <h2 class="text-center mb-6 text-a font-lora text-2xl">Witaj ponownie 👋</h2>
 
     <!-- Form -->
     <form @submit.prevent="onLogin" class="space-y-4 w-full">
