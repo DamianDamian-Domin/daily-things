@@ -30,8 +30,7 @@
 
     <!-- Social login -->
     <div class="my-6 flex items-center justify-center gap-4">
-        <Button icon="pi pi-google" rounded outlined aria-label="Login with Google" class="p-button-lg" />
-        <Button icon="pi pi-facebook" rounded outlined aria-label="Login with Facebook" class="p-button-lg" />
+        <Button icon="pi pi-google" rounded outlined aria-label="Login with Google" class="p-button-lg" @click="onGoogleLogin" />
     </div>
 </template>
 
@@ -39,7 +38,6 @@
 import { ref } from "vue";
 import InputText from "primevue/inputtext";
 import Button from "primevue/button";
-import logoFile from "@/assets/logo.png";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
@@ -65,6 +63,16 @@ const onLogin = async () => {
 }
 
 const onForgotPassword = () => console.log("Forgot password clicked");
+
+// Logowanie przez dostawców zewnętrznych
+const onGoogleLogin = async () => {
+    try {
+        await authStore.loginWithGoogle();
+        router.push("/");
+    } catch (e) {
+        console.error("Nie udało się zalogować przez Google", e);
+    }
+};
 
 </script>
 

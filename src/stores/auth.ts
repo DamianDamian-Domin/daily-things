@@ -6,6 +6,8 @@ import {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  signInWithPopup,
+  GoogleAuthProvider,
   User,
   setPersistence,
   browserLocalPersistence
@@ -46,6 +48,12 @@ export const useAuthStore = defineStore("auth", () => {
 
         case "auth/user-disabled":
             return "This user account has been disabled.";
+
+        case "auth/popup-closed-by-user":
+            return "Okno logowania zostało zamknięte.";
+
+        case "auth/cancelled-popup-request":
+            return "";
 
         default:
             return "An unexpected error occurred. Try again later.";
@@ -96,6 +104,25 @@ export const useAuthStore = defineStore("auth", () => {
     }
   };
 
+  // Logowanie przez Google
+  const loginWithGoogle = async () => {
+    loading.value = true;
+    error.value = null;
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      user.value = result.user;
+      userUid.value = result.user.uid;
+      return result.user;
+    } catch (err: any) {
+      const msg = mapFirebaseError(err.code || "");
+      if (msg) error.value = msg;
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  };
+
   const logout = async () => {
     await signOut(auth);
     user.value = null;
@@ -108,6 +135,7 @@ export const useAuthStore = defineStore("auth", () => {
     error,
     login,
     register,
+    loginWithGoogle,
     logout,
     initialized,
     initAuth,

@@ -94,8 +94,7 @@
 
     <!-- SOCIAL LOGIN -->
     <div class="my-6 flex items-center justify-center gap-4">
-        <Button icon="pi pi-google" rounded outlined aria-label="Login with Google" class="p-button-lg" />
-        <Button icon="pi pi-facebook" rounded outlined aria-label="Login with Facebook" class="p-button-lg" />
+        <Button icon="pi pi-google" rounded outlined aria-label="Login with Google" class="p-button-lg" @click="onGoogleLogin" />
     </div>
 
 </template>
@@ -109,11 +108,13 @@ import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import { useAuthStore } from "@/stores/auth";
 import { storeToRefs } from "pinia";
+import { useRouter } from "vue-router";
 
 
 /* --------------------------
    STORES
 --------------------------- */
+const router = useRouter();
 const authStore = useAuthStore();
 const { error } = storeToRefs(authStore);
 
@@ -229,6 +230,16 @@ const startConfetti = () => {
         void el.offsetWidth;
         el.classList.add("animate-confetti");
     });
+};
+
+// Logowanie przez dostawców zewnętrznych
+const onGoogleLogin = async () => {
+    try {
+        await authStore.loginWithGoogle();
+        router.push("/");
+    } catch (e) {
+        console.error("Nie udało się zalogować przez Google", e);
+    }
 };
 
 </script>
