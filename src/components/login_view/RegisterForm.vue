@@ -2,7 +2,7 @@
 
     <!-- SUCCESS DIALOG -->
     <Dialog v-model:visible="visible" modal :show-header="false" :style="{ width: '24rem', maxWidth: '90vw' }" :pt="{
-        root: 'bg-white dark:bg-gray-800 rounded-lg shadow-lg transition-all duration-500 relative overflow-hidden',
+        root: 'rounded-lg shadow-lg transition-all duration-500 relative overflow-hidden',
         mask: 'backdrop-blur-sm'
     }" @show="startConfetti">
         <!-- CONFETTI LAYER -->
@@ -17,14 +17,14 @@
             </div>
 
             <h2 class="mt-4 text-success text-xl md:text-2xl">
-                Konto utworzone!
+                Account created!
             </h2>
 
             <p class="text-b mt-2 text-sm md:text-base">
-                Wysłaliśmy link weryfikacyjny na Twój adres email.
+                We sent a verification link to your email address.
             </p>
             <p class="text-c mt-1 text-xs">
-                Sprawdź skrzynkę odbiorczą i kliknij link, aby aktywować konto.
+                Check your inbox and click the link to activate your account.
             </p>
 
             <div class="mt-4 flex items-center gap-2 text-xs text-c">
@@ -39,7 +39,7 @@
 
 
     <!-- TITLE -->
-    <h2 class="text-center mb-6 text-a font-lora text-2xl">Dołącz do nas 🌿</h2>
+    <h2 class="text-center mb-6 text-a font-lora text-2xl">Join us 🌿</h2>
 
 
     <!-- FORM -->
@@ -204,10 +204,10 @@ const emailValid = computed(() =>
 );
 
 const passwordRules = computed(() => [
-    { label: "Min. 8 znaków", valid: debouncedPassword.value.length >= 8 },
-    { label: "Wielka litera", valid: /[A-Z]/.test(debouncedPassword.value) },
-    { label: "Mała litera", valid: /[a-z]/.test(debouncedPassword.value) },
-    { label: "Cyfra", valid: /\d/.test(debouncedPassword.value) },
+    { label: "Min. 8 characters", valid: debouncedPassword.value.length >= 8 },
+    { label: "Uppercase letter", valid: /[A-Z]/.test(debouncedPassword.value) },
+    { label: "Lowercase letter", valid: /[a-z]/.test(debouncedPassword.value) },
+    { label: "Number", valid: /\d/.test(debouncedPassword.value) },
 ]);
 
 const passwordValid = computed(() =>
@@ -239,7 +239,7 @@ const onRegister = async () => {
     }
 };
 
-// Zamknij dialog sukcesu i przekieruj na formularz logowania
+// Close success dialog and switch to sign-in form
 const onSuccessClose = () => {
     visible.value = false;
     emit("registered");
@@ -258,13 +258,13 @@ const startConfetti = () => {
     });
 };
 
-// Logowanie przez dostawców zewnętrznych
+// External provider login
 const onGoogleLogin = async () => {
     try {
         await authStore.loginWithGoogle();
         router.push("/");
     } catch (e) {
-        console.error("Nie udało się zalogować przez Google", e);
+        console.error("Failed to sign in with Google", e);
     }
 };
 
@@ -274,7 +274,7 @@ const onGoogleLogin = async () => {
 
 <style scoped>
 /* fade + pop animations */
-/* Transition animacja dla wymagań hasła */
+/* Transition animation for password requirements */
 .pwd-rules-enter-active {
     transition: all 0.3s ease-out;
 }

@@ -1,18 +1,18 @@
 <template>
 
-    <!-- DIALOG: Przypomnij hasło -->
+    <!-- DIALOG: Forgot password -->
     <Dialog
         v-model:visible="showResetDialog"
         modal
         dismissableMask
         :closable="false"
-        header="Resetuj hasło"
+        header="Reset password"
         class="w-[clamp(20rem,50%,28rem)]">
         <div class="flex flex-col gap-4">
-            <!-- Stan: formularz -->
+            <!-- State: form -->
             <template v-if="!resetSent">
                 <p class="text-c text-sm">
-                    Podaj adres email powiązany z Twoim kontem. Wyślemy Ci link do zresetowania hasła.
+                    Enter the email address connected to your account. We will send you a password reset link.
                 </p>
                 <div>
                     <label for="resetEmail" class="block mb-1 text-b text-sm">Email</label>
@@ -26,24 +26,24 @@
                 </div>
                 <AuthErrorBanner :error="resetError" @dismiss="resetError = null" />
                 <div class="flex gap-2 justify-end">
-                    <Button label="Anuluj" text severity="secondary" @click="showResetDialog = false" />
+                    <Button label="Cancel" text severity="secondary" @click="showResetDialog = false" />
                     <Button
-                        label="Wyślij link"
+                        label="Send link"
                         icon="pi pi-send"
                         :disabled="!resetEmailValid"
                         @click="onResetPassword" />
                 </div>
             </template>
 
-            <!-- Stan: wysłano -->
+            <!-- State: sent -->
             <template v-else>
                 <div class="flex flex-col items-center text-center py-2">
-                    <div class="flex items-center justify-center w-14 h-14 rounded-full mb-4" style="background: var(--p-green-100); color: var(--p-green-600);">
+                    <div class="flex items-center justify-center w-14 h-14 rounded-full mb-4 bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400">
                         <i class="pi pi-check text-2xl"></i>
                     </div>
-                    <p class="text-b text-sm font-medium">Link wysłany!</p>
+                    <p class="text-b text-sm font-medium">Link sent!</p>
                     <p class="text-c text-xs mt-1">
-                        Sprawdź skrzynkę <span class="font-semibold">{{ resetEmail }}</span> i kliknij link, aby ustawić nowe hasło.
+                        Check your inbox at <span class="font-semibold">{{ resetEmail }}</span> and click the link to set a new password.
                     </p>
                 </div>
                 <Button label="OK" class="w-full" @click="closeResetDialog" />
@@ -51,7 +51,7 @@
         </div>
     </Dialog>
 
-    <h2 class="text-center mb-6 text-a font-lora text-2xl">Witaj ponownie 👋</h2>
+    <h2 class="text-center mb-6 text-a font-lora text-2xl">Welcome back 👋</h2>
 
     <!-- Form -->
     <form @submit.prevent="onLogin" class="space-y-4 w-full">
@@ -62,19 +62,19 @@
         </div>
 
         <div>
-            <label for="password" class="block mb-1 text-b">Hasło</label>
+            <label for="password" class="block mb-1 text-b">Password</label>
             <InputText type="password" v-model="password" id="password" class="w-full" placeholder="••••••"
                 required />
         </div>
 
         <div class="flex flex-col text-sm">
-            <Button label="Zaloguj się" type="submit" class="w-full" />
+            <Button label="Sign in" type="submit" class="w-full" />
             <div class="flex justify-end">
-                <Button label="Przypomnij hasło" link class="text-primary" @click="onForgotPassword" />
+                <Button label="Forgot password" link class="text-primary" @click="onForgotPassword" />
             </div>
         </div>
 
-        <!-- Banner dla niezweryfikowanego emaila -->
+        <!-- Banner for unverified email -->
         <Transition name="verify-banner">
             <div v-if="error === '__email_not_verified__'" class="verify-banner">
                 <div class="flex items-center gap-3">
@@ -82,17 +82,17 @@
                         <i class="pi pi-envelope text-base"></i>
                     </div>
                     <div class="flex-1">
-                        <p class="text-sm font-semibold leading-snug">Email niezweryfikowany</p>
-                        <p class="text-xs opacity-80 mt-0.5">Sprawdź skrzynkę odbiorczą i kliknij link aktywacyjny.</p>
+                        <p class="text-sm font-semibold leading-snug">Email not verified</p>
+                        <p class="text-xs opacity-80 mt-0.5">Check your inbox and click the verification link.</p>
                     </div>
-                    <button type="button" class="verify-close" @click="error = null" aria-label="Zamknij">
+                    <button type="button" class="verify-close" @click="error = null" aria-label="Close">
                         <i class="pi pi-times text-xs"></i>
                     </button>
                 </div>
                 <div class="flex justify-center mt-3">
                     <Button
                         type="button"
-                        :label="resendCooldown > 0 ? `Wyślij ponownie (${resendCooldown}s)` : 'Wyślij ponownie link'"
+                        :label="resendCooldown > 0 ? `Resend (${resendCooldown}s)` : 'Resend link'"
                         :disabled="resendCooldown > 0"
                         size="small"
                         outlined
@@ -103,7 +103,7 @@
             </div>
         </Transition>
 
-        <!-- Pozostałe błędy -->
+        <!-- Other errors -->
         <AuthErrorBanner v-if="error !== '__email_not_verified__'" :error="error" @dismiss="error = null" />
     </form>
 
@@ -143,7 +143,7 @@ const onLogin = async () => {
     }
 }
 
-// Resetowanie hasła
+// Password reset
 const showResetDialog = ref(false);
 const resetEmail = ref("");
 const resetSent = ref(false);
@@ -154,7 +154,7 @@ const resetEmailValid = computed(() =>
 );
 
 const onForgotPassword = () => {
-    resetEmail.value = email.value; // Podpowiedz email z formularza logowania
+    resetEmail.value = email.value; // Prefill email from the sign-in form
     resetSent.value = false;
     resetError.value = null;
     showResetDialog.value = true;
@@ -178,7 +178,7 @@ const closeResetDialog = () => {
     resetError.value = null;
 };
 
-// Ponowne wysłanie emaila weryfikacyjnego
+// Resend verification email
 const resendCooldown = ref(0);
 let cooldownInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -187,7 +187,7 @@ const onResendVerification = async () => {
     try {
         await authStore.resendVerificationEmail(email.value, password.value);
         error.value = '__email_not_verified__';
-        // Uruchom cooldown 60s
+        // Start 60s cooldown
         resendCooldown.value = 60;
         cooldownInterval = setInterval(() => {
             resendCooldown.value--;
@@ -197,17 +197,17 @@ const onResendVerification = async () => {
             }
         }, 1000);
     } catch (e) {
-        console.error("Nie udało się wysłać emaila weryfikacyjnego", e);
+        console.error("Failed to resend verification email", e);
     }
 };
 
-// Logowanie przez dostawców zewnętrznych
+// External provider login
 const onGoogleLogin = async () => {
     try {
         await authStore.loginWithGoogle();
         router.push("/");
     } catch (e) {
-        console.error("Nie udało się zalogować przez Google", e);
+        console.error("Failed to sign in with Google", e);
     }
 };
 

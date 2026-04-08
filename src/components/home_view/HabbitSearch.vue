@@ -18,13 +18,13 @@
 		</div>
 	</div>
 	<div class="flex flex-col gap-4 w-full">
-		<!-- Pole tekstowe -->
+		<!-- Search input -->
 		<InputText
 			v-model="searchQuery"
 			placeholder="Search by name..."
 			class="w-full" />
 
-		<!-- Kategorie tagów + Specjalne filtry -->
+		<!-- Tag categories + special filters -->
 		<div>
 			<p>Categories</p>
 		</div>
@@ -47,7 +47,7 @@
 				size="small" />
 		</div>
 
-		<!-- Tagi (jeśli wybrano kategorię) -->
+		<!-- Tags (when a category is selected) -->
 		<div
 			v-if="availableTags.length"
 			class="mt-2">
@@ -69,7 +69,7 @@
 			</div>
 		</div>
 
-		<!-- Wyniki wyszukiwania -->
+		<!-- Search results -->
 		<div
 			v-if="isSearching || selectedSpecialFilter === 'recently'"
 			class="flex flex-col w-full gap-4">
@@ -90,7 +90,7 @@
 			</p>
 		</div>
 
-		<!-- Lista habitów pogrupowana po kategoriach (ALL) -->
+		<!-- Habit list grouped by categories (ALL) -->
 		<div
 			v-else-if="selectedSpecialFilter === 'all'"
 			class="flex flex-col w-full gap-6">
@@ -136,35 +136,35 @@ const activeCategories = ref<string[]>([]);
 
 const emit = defineEmits(["select"]);
 
-// Inicjalizacja selectedSpecialFilter przy montowaniu komponentu
-// Jeśli są recentHabbits, to ustawiamy na "recently", w przeciwnym razie na "all"
+// Initialize selectedSpecialFilter on component mount
+// If there are recentHabbits, set it to "recently", otherwise "all"
 if (habbitsStore.recentHabbits && habbitsStore.recentHabbits.length > 0) {
 	selectedSpecialFilter.value = "recently";
 } else {
 	selectedSpecialFilter.value = "all";
 }
 
-// Inicjalizacja selectedSpecialFilter przy montowaniu komponentu
-// Jeśli są recentHabbits, to ustawiamy na "recently", w przeciwnym razie na "all"
+// Initialize selectedSpecialFilter on component mount
+// If there are recentHabbits, set it to "recently", otherwise "all"
 if (habbitsStore.recentHabbits && habbitsStore.recentHabbits.length > 0) {
 	selectedSpecialFilter.value = "recently";
 } else {
 	selectedSpecialFilter.value = "all";
 }
 
-// Specjalne filtry
+// Special filters
 
-// Funkcja obsługująca zmianę specjalnego filtra
-// Resetuje kategorię i tagi przy zmianie filtra
-// Jeśli kliknięto ponownie ten sam filtr, to go wyłącza
+// Handles special filter change
+// Resets category and tags when filter changes
+// If the same filter is clicked again, it disables it
 function onSpecialFilterChange(event: any) {
-	// Jeśli kliknięto ponownie ten sam filtr → wyłącz go
+	// If the same filter is clicked again -> disable it
 	if (event.originalEvent && selectedSpecialFilter.value === event.value) {
 		selectedSpecialFilter.value = null;
 		activeCategories.value = [];
 		return;
 	}
-	// event.value zawiera nowy wybrany filtr
+	// event.value contains the newly selected filter
 	selectedSpecialFilter.value = event.value;
 	if (event.value === "all") {
 		activeCategories.value = Object.keys(tag_categories);
@@ -172,25 +172,25 @@ function onSpecialFilterChange(event: any) {
 		activeCategories.value = [];
 	}
 
-	// Reset kategorii i tagów
+	// Reset category and tags
 	selectedCategory.value = null;
 	selectedTags.value = [];
 
 	// console.log(activeCategories.value);
 }
 
-//Kategorie
+// Categories
 
-// Sprawdzenie, czy kategoria jest aktywna (dla przycisków)
-// Zwraca true, jeśli kategoria jest w activeCategories
-// computed - automatycznie aktualizuje się przy zmianie activeCategories
-// Używane do ustawiania stylu przycisków kategorii
+// Check if a category is active (for buttons)
+// Returns true if category is in activeCategories
+// computed - automatically updates when activeCategories changes
+// Used to set category button styles
 const isCategoryActive = (category: string) =>
 	activeCategories.value.includes(category);
 
-// Funkcja do trzymania kategorii w activeCategories
-// Jeśli kategoria jest już w activeCategories, to ją usuwamy, jeśli nie ma, to ją dodajemy
-// Dzięki temu możemy łatwo dodawać i usuwać kategorie z listy
+// Toggle category in activeCategories
+// If category is already in activeCategories, remove it; otherwise add it
+// This makes adding/removing categories easy
 function toggleCategory(category: string) {
 	const index = activeCategories.value.indexOf(category);
 	if (index > -1) {
@@ -200,45 +200,45 @@ function toggleCategory(category: string) {
 	}
 }
 
-//Funkcja obsługująca kliknięcie kategorii
-// Resetuje specjalny filtr i ustawia wybraną kategorię oraz tagi
-// Jeśli kliknięto ponownie tę samą kategorię, to ją odznacza i resetuje tagi
-// Używa nextTick, aby poczekać na odświeżenie DOM przed ustawieniem nowej kategorii i tagów
+// Handles category click
+// Resets special filter and sets selected category and tags
+// If the same category is clicked again, deselect it and reset tags
+// Uses nextTick to wait for DOM refresh before setting values
 function onCategoryClick(category: TagCategory) {
-	// Obsługa filtra "all" - pozwala na wielokrotny wybór kategorii
-	// bez zmiany selectedCategory i selectedTags
+	// Handle "all" filter - allow selecting multiple categories
+	// without changing selectedCategory and selectedTags
 	if (selectedSpecialFilter.value === "all") {
 		toggleCategory(category);
 
 		console.log("OnCategoryClick", activeCategories.value);
-		return; // kończymy funkcję — nic więcej nie robimy
+		return; // end function — do nothing else
 	}
 
-	// Reset specjalnego filtra
+	// Reset special filter
 	selectedSpecialFilter.value = null;
 	activeCategories.value = [];
 
 	if (selectedCategory.value === category) {
-		// Odkliknięcie - reset wszystkiego
+		// Deselect - reset everything
 		selectedCategory.value = null;
 		selectedTags.value = [];
 	} else {
-		// Resetujemy kategorię na null, żeby wyczyścić listę przed zmianą
+		// Reset category to null to clear list before changing
 		selectedCategory.value = null;
 		selectedTags.value = [];
 
 		nextTick(() => {
-			// Po odświeżeniu DOM ustawiamy nową kategorię i tagi
+			// After DOM refresh, set new category and tags
 			selectedCategory.value = category;
 			selectedTags.value = [...tag_categories[category]];
 		});
 	}
 }
 
-// Funkcja do określenia kategorii habbitu na podstawie jego tagów
-// Przechodzi przez wszystkie kategorie i ich tagi
-// Jeśli habbit ma tag z danej kategorii, to zwraca tę kategorię
-// Jeśli nie pasuje do żadnej kategorii, to zwraca "other"
+// Determine habit category based on its tags
+// Iterate over all categories and their tags
+// If habit has a tag from a category, return that category
+// If no category matches, return "other"
 function getCategoryForHabit(habit: Habbit): string {
 	for (const [category, tags] of Object.entries(tag_categories)) {
 		if (habit.tags.some((tag) => tags.includes(tag))) {
@@ -248,20 +248,20 @@ function getCategoryForHabit(habit: Habbit): string {
 	return "other";
 }
 
-//Tagi
+// Tags
 
-// Wybrany tag
-// Lista dostępnych tagów na podstawie wybranej kategorii
-// Jeśli nie wybrano kategorii, to lista jest pusta
-// Jeśli wybrano kategorię, to lista zawiera tagi z tej kategorii
-// computed - automatycznie aktualizuje się przy zmianie selectedCategory
+// Selected tag
+// List of available tags based on selected category
+// If no category is selected, list is empty
+// If category is selected, list contains its tags
+// computed - automatically updates when selectedCategory changes
 const availableTags = computed(() => {
 	return selectedCategory.value ? tag_categories[selectedCategory.value] : [];
 });
 
-// Funkcja do trzymania tagu w selectedTags
-// Jeśli tag jest już w selectedTags, to go usuwamy, jeśli nie ma, to go dodajemy
-// Dzięki temu możemy łatwo dodawać i usuwać tagi z listy
+// Toggle tag in selectedTags
+// If tag is already in selectedTags, remove it; otherwise add it
+// This makes adding/removing tags easy
 function toggleTag(tag: string) {
 	const index = selectedTags.value.indexOf(tag);
 	if (index === -1) {
@@ -271,28 +271,28 @@ function toggleTag(tag: string) {
 	}
 }
 
-// Habbity
+// Habits
 
-// Funkcja do filtrowania habbitów
-// Filtrowanie odbywa się na podstawie wyszukiwania, tagów i specjalnych filtrów
-// Jeśli wybrano filtr "recently", to zwracamy tylko te habbity, które są w liście recentHabbits
-// W przeciwnym razie zwracamy habbity, które pasują do wyszukiwania i tagów
+// Habit filtering function
+// Filtering is based on search query, tags, and special filters
+// If "recently" is selected, return only habits from recentHabbits
+// Otherwise return habits matching search and tags
 const filteredHabbits = computed(() => {
 	let baseList = habbitsStore.allHabbitsList;
 
 	//  Specjalne filtry
 	if (selectedSpecialFilter.value === "recently") {
-		// Pokazujemy tylko ostatnio używane habbity
+		// Show only recently used habits
 		baseList = baseList.filter((habbit) =>
 			habbitsStore.recentHabbits.includes(habbit.name)
 		);
 	} else if (selectedSpecialFilter.value === "all") {
-		// Pokazujemy wszystkie habbity (bez ograniczania)
+		// Show all habits (no limitation)
 		baseList = habbitsStore.allHabbitsList;
 	}
-	// (tu można dodać inne filtry w przyszłości, np. "user")
+	// (other filters can be added here in the future, e.g. "user")
 
-	// Filtry wyszukiwania, tagów i kategorii
+	// Search, tag, and category filters
 	return baseList.filter((habbit) => {
 		const matchesSearch =
 			searchQuery.value === "" ||
@@ -314,10 +314,10 @@ const filteredHabbits = computed(() => {
 	});
 });
 
-// Funkcja do grupowania habbitów po kategoriach
-// Przechodzi przez wszystkie habbity i przypisuje je do odpowiednich kategorii
-// Następnie filtruje kategorie na podstawie activeCategories
-// Zwraca obiekt z kategoriami jako kluczami i tablicami habbitów jako wartościami
+// Group habits by category
+// Iterate through all habits and assign them to categories
+// Then filter categories based on activeCategories
+// Return object with categories as keys and habit arrays as values
 const groupedHabbitsByCategory = computed(() => {
 	const grouped: Record<string, Habbit[]> = {};
 
@@ -340,9 +340,9 @@ const groupedHabbitsByCategory = computed(() => {
 	return filtered;
 });
 
-// Funkcje pomocnicze
+// Helper functions
 
-// Sprawdzenie, czy jest aktywne wyszukiwanie
+// Check whether search is active
 const isSearching = computed(() => {
 	return (
 		(searchQuery.value?.trim().length ?? 0) > 0 || selectedTags.value.length > 0

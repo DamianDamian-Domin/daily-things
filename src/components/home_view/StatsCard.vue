@@ -2,13 +2,13 @@
 	<div
 		class="flex flex-col card-a sm:w-[480px] surface-content w-full h-4/5 min-h-[30rem] max-h-[50rem] overflow-auto">
 		<h2>STATS</h2>
-		<p v-if="isActive">AKTYWNA</p>
+		<p v-if="isActive">ACTIVE</p>
 		<div>
 			<button
 				:disabled="!isActive"
 				@click="testAction"
 				style="margin-top: 12px">
-				Test akcji
+				Test action
 			</button>
 		</div>
 	</div>
@@ -22,6 +22,6 @@ const props = defineProps<{
 function testAction() {
 	if (!props.isActive) return;
 
-	alert("Aktywna karta – logika działa 👍");
+	alert("Active card — logic works 👍");
 }
 </script>

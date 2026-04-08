@@ -5,7 +5,7 @@
 			class="flex flex-col h-full"
 			:class="!isActive && 'pointer-events-none'">
 			<div class="flex-none text-center mb-3 pt-4">
-				<h3 class="text-c font-lora italic">Lista zadań 📝</h3>
+				<h3 class="text-c font-lora italic">To-do list 📝</h3>
 			</div>
 
 			<div class="flex-1 min-h-0 overflow-y-auto mx-4 pb-4">
@@ -43,7 +43,7 @@
 						<div
 							v-if="item.description"
 							class="shrink-0 mt-1 cursor-help"
-							title="To zadanie posiada opis">
+							title="This task has a description">
 							<i
 								class="pi pi-align-left text-gray-300 dark:text-gray-500 text-sm group-hover:text-green-400 transition-colors"></i>
 						</div>
@@ -56,13 +56,13 @@
 					<div class="w-6 flex justify-center">
 						<i class="pi pi-plus text-sm"></i>
 					</div>
-					<span>Dodaj zadanie...</span>
+					<span>Add a task...</span>
 				</div>
 			</div>
 
 			<div
-				class="flex-none pb-4 flex flex-col items-center gap-2 border-t border-gray-100 dark:border-gray-800 pt-4">
-				<span class="text-c text-gray-500">Wszystkie zadania</span>
+				class="flex-none pb-4 flex flex-col items-center gap-2 border-t border-gray-100 dark:border-gray-600 pt-4">
+				<span class="text-c text-gray-500">All tasks</span>
 				<div
 					class="w-12 h-12 flex items-center justify-center rounded-full border-2 border-green-500 text-lg font-medium text-gray-800 dark:text-gray-200">
 					{{ totalCount }}
@@ -75,15 +75,15 @@
 			modal
 			dismissableMask
 			:closable="false"
-			:header="dialogMode === 'add' ? 'Nowe zadanie' : 'Edytuj zadanie'"
+			:header="dialogMode === 'add' ? 'New task' : 'Edit task'"
 			class="w-[clamp(20rem,50%,60rem)]"
 			@show="focusInput">
 			<div class="flex flex-col gap-4">
 				<span class="p-text-secondary block mb-2">
 					{{
 						dialogMode === "add"
-							? "Enter the details of your new task."
-							: "Update task information."
+							? "What do you want to do today? ✍️"
+							: "Update the task details."
 					}}
 				</span>
 
@@ -92,28 +92,28 @@
 						v-model="dialogText"
 						ref="dialogInput"
 						type="text"
-						class="p-inputtext p-component w-full font-semibold text-lg bg-transparent border-none !shadow-none !outline-none px-0 focus:ring-0"
-						placeholder="Nazwa zadania..."
+						class="p-inputtext p-component w-full font-semibold text-lg bg-transparent border-none !shadow-none !outline-none px-0 focus:ring-0 text-gray-800 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+						placeholder="Task name..."
 						@keydown.enter.prevent="focusDescription" />
 
 					<textarea
 						v-model="dialogDescription"
 						ref="descriptionInput"
-						class="p-inputtext p-component w-full h-32 resize-none bg-transparent border-none !shadow-none !outline-none px-0 focus:ring-0"
-						placeholder="Dodaj opis, notatki lub podpunkty..."
+						class="p-inputtext p-component w-full h-32 resize-none bg-transparent border-none !shadow-none !outline-none px-0 focus:ring-0 text-gray-800 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+						placeholder="Add a description, notes, or subtasks..."
 						@keydown.ctrl.enter.prevent="saveTask"
 						@keydown.meta.enter.prevent="saveTask"></textarea>
 				</div>
 
 				<div
-					class="flex justify-between items-center mt-2 border-t border-gray-100 dark:border-gray-800 pt-4">
+					class="flex justify-between items-center mt-2 border-t border-gray-100 dark:border-gray-600 pt-4">
 					<div>
 						<button
 							v-if="dialogMode === 'edit'"
 							@click="deleteCurrentTask"
 							class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors flex items-center gap-2">
 							<i class="pi pi-trash"></i>
-							<span>Usuń</span>
+							<span>Delete</span>
 						</button>
 					</div>
 
@@ -121,7 +121,7 @@
 						<button
 							@click="closeDialog"
 							class="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition-colors">
-							Anuluj
+							Cancel
 						</button>
 						<button
 							@click="saveTask"
@@ -132,7 +132,7 @@
 									? 'bg-green-500 hover:bg-green-600'
 									: 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
 							">
-							Zapisz
+							Save
 						</button>
 					</div>
 				</div>
@@ -154,9 +154,9 @@ const { selectedDayTodos } = storeToRefs(todosStore);
 
 const totalCount = computed(() => selectedDayTodos.value.length);
 
-/* =========================
-   STAN OKNA DIALOGOWEGO
-========================= */
+	/* =========================
+	   DIALOG STATE
+	========================= */
 const isDialogOpen = ref(false);
 const dialogMode = ref<"add" | "edit">("add");
 const dialogText = ref("");
@@ -173,18 +173,18 @@ onMounted(() => {
 	todosStore.loadTodos();
 });
 
-/* =========================
-   ZARZĄDZANIE ZADANIAMI
-========================= */
+	/* =========================
+	   TASK MANAGEMENT
+	========================= */
 function toggleCompletion(item: any) {
 	if (todosStore.toggleTodo) {
 		todosStore.toggleTodo(item.id);
 	}
 }
 
-/* =========================
-   OBSŁUGA OKNA DIALOGOWEGO
-========================= */
+	/* =========================
+	   DIALOG HANDLERS
+	========================= */
 function openAddDialog() {
 	dialogMode.value = "add";
 	dialogText.value = "";

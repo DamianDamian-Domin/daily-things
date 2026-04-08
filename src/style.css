@@ -4,6 +4,16 @@
 @import "tailwindcss-primeui";
 @custom-variant dark (&:where(.my-app-dark, .my-app-dark *));
 
+/* === PrimeVue dark mode — warm, consistent colors === */
+.my-app-dark {
+	/* Dialog / overlay mask */
+	--p-dialog-mask-background: rgba(0, 0, 0, 0.55);
+	--p-mask-background: rgba(0, 0, 0, 0.55);
+
+	/* Warm shadow instead of a cold one */
+	--p-dialog-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
 @layer base {
 	h1 {
 		@apply font-lora text-2xl;
@@ -19,7 +29,13 @@
 	}
 }
 @layer components {
-	/* shapes — zaokrąglone, ciepłe cienie */
+	/* Logo — white mask under transparent flowers */
+	.logo-mask {
+		@apply relative flex items-center justify-center rounded-full;
+		background: radial-gradient(circle, white 35%, transparent 70%);
+	}
+
+	/* shapes — rounded, warm shadows */
 	.card-a {
 		@apply shadow-lg rounded-2xl py-6 px-5;
 		box-shadow: 0 4px 24px -4px rgb(0 0 0 / 0.06), 0 1px 6px -1px rgb(0 0 0 / 0.04);

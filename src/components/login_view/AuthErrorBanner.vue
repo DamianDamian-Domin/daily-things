@@ -10,11 +10,11 @@
                     type="button"
                     class="error-close-btn"
                     @click="dismiss"
-                    aria-label="Zamknij">
+                    aria-label="Close">
                     <i class="pi pi-times text-xs"></i>
                 </button>
             </div>
-            <!-- Pasek postępu auto-dismiss -->
+            <!-- Auto-dismiss progress bar -->
             <div class="error-progress-track">
                 <div
                     class="error-progress-bar"
@@ -43,20 +43,20 @@ const shouldShake = ref(false);
 const animationKey = ref(0);
 let dismissTimer: ReturnType<typeof setTimeout> | null = null;
 
-// Reaguj na nowe błędy — uruchom shake i auto-dismiss timer
+// React to new errors — run shake and auto-dismiss timer
 watch(
     () => props.error,
     (newError) => {
         clearTimer();
 
         if (newError) {
-            // Uruchom animację shake
+            // Trigger shake animation
             shouldShake.value = false;
             void document.body.offsetWidth; // force reflow
             shouldShake.value = true;
             animationKey.value++;
 
-            // Auto-dismiss po upływie czasu
+            // Auto-dismiss after timeout
             dismissTimer = setTimeout(() => {
                 emit("dismiss");
             }, props.autoDismissMs);
@@ -135,7 +135,7 @@ function clearTimer() {
     color: var(--p-red-200);
 }
 
-/* Pasek postępu - odlicza czas do auto-dismiss */
+/* Progress bar - counts down to auto-dismiss */
 .error-progress-track {
     position: absolute;
     bottom: 0;
@@ -159,7 +159,7 @@ function clearTimer() {
     to   { width: 0%; }
 }
 
-/* Shake na pojawienie się nowego błędu */
+/* Shake when a new error appears */
 .shake {
     animation: shake 0.45s cubic-bezier(.36,.07,.19,.97) both;
 }

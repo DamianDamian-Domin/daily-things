@@ -453,11 +453,11 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		const index = recentHabbits.value.indexOf(habbitName);
 
 		if (index !== -1) {
-			recentHabbits.value.splice(index, 1); // przenieś na początek
+			recentHabbits.value.splice(index, 1); // move to front
 		}
-		recentHabbits.value.unshift(habbitName); // dodaj na początek
+		recentHabbits.value.unshift(habbitName); // add to front
 
-		// Twarde przycięcie do 10
+		// Hard limit to 10
 		recentHabbits.value = recentHabbits.value.slice(0, 10);
 
 		saveRecentHabbits(recentHabbits.value);

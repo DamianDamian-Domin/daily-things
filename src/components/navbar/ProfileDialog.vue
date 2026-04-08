@@ -8,7 +8,7 @@
         class="profile-dialog w-[clamp(22rem,90vw,30rem)]"
         @hide="resetState">
 
-        <!-- Nagłówek profilu — avatar + dane -->
+        <!-- Profile header — avatar + details -->
         <div class="profile-header">
             <div class="profile-avatar-lg">
                 <img v-if="userPhotoUrl" :src="userPhotoUrl" alt="Avatar" class="profile-avatar-img" referrerpolicy="no-referrer" />
@@ -23,19 +23,19 @@
 
         <div class="profile-divider"></div>
 
-        <!-- Sekcja: Nazwa wyświetlana -->
+        <!-- Section: Display name -->
         <div class="profile-section">
             <h4 class="profile-section-title">
-                <i class="pi pi-pencil"></i> Nazwa wyświetlana
+                <i class="pi pi-pencil"></i> Display name
             </h4>
             <div class="profile-field-row">
                 <InputText
                     v-model="displayNameInput"
                     class="flex-1"
-                    placeholder="Twoja nazwa..."
+                    placeholder="Your name..."
                     :disabled="savingName" />
                 <Button
-                    :label="savingName ? '' : 'Zapisz'"
+                    :label="savingName ? '' : 'Save'"
                     :icon="savingName ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
                     :disabled="!nameChanged || savingName"
                     size="small"
@@ -43,7 +43,7 @@
             </div>
             <Transition name="profile-msg">
                 <p v-if="nameSuccess" class="profile-success-msg">
-                    <i class="pi pi-check-circle"></i> Nazwa zaktualizowana ✨
+                    <i class="pi pi-check-circle"></i> Name updated ✨
                 </p>
             </Transition>
             <Transition name="profile-msg">
@@ -55,16 +55,16 @@
 
         <div class="profile-divider"></div>
 
-        <!-- Sekcja: Zmiana hasła -->
+        <!-- Section: Change password -->
         <div class="profile-section">
             <h4 class="profile-section-title">
-                <i class="pi pi-lock"></i> Zmiana hasła
+                <i class="pi pi-lock"></i> Change password
             </h4>
 
             <template v-if="hasPasswordProvider">
                 <div class="flex flex-col gap-3">
                     <div>
-                        <label class="profile-label">Obecne hasło</label>
+                        <label class="profile-label">Current password</label>
                         <InputText
                             v-model="currentPassword"
                             type="password"
@@ -73,39 +73,39 @@
                             :disabled="savingPassword" />
                     </div>
                     <div>
-                        <label class="profile-label">Nowe hasło</label>
+                        <label class="profile-label">New password</label>
                         <InputText
                             v-model="newPassword"
                             type="password"
                             class="w-full"
-                            placeholder="Min. 6 znaków"
+                            placeholder="Min. 6 characters"
                             :disabled="savingPassword" />
                     </div>
                     <div>
-                        <label class="profile-label">Powtórz nowe hasło</label>
+                        <label class="profile-label">Repeat new password</label>
                         <InputText
                             v-model="confirmPassword"
                             type="password"
                             class="w-full"
-                            placeholder="Powtórz hasło"
+                            placeholder="Repeat password"
                             :disabled="savingPassword"
                             @keydown.enter.prevent="onChangePassword" />
                     </div>
 
-                    <!-- Reguły hasła -->
+                    <!-- Password rules -->
                     <div class="profile-password-rules">
                         <div class="profile-rule" :class="{ fulfilled: newPassword.length >= 6 }">
                             <i :class="newPassword.length >= 6 ? 'pi pi-check-circle' : 'pi pi-circle'"></i>
-                            Min. 6 znaków
+                            Min. 6 characters
                         </div>
                         <div class="profile-rule" :class="{ fulfilled: passwordsMatch }">
                             <i :class="passwordsMatch ? 'pi pi-check-circle' : 'pi pi-circle'"></i>
-                            Hasła się zgadzają
+                            Passwords match
                         </div>
                     </div>
 
                     <Button
-                        :label="savingPassword ? '' : 'Zmień hasło'"
+                        :label="savingPassword ? '' : 'Change password'"
                         :icon="savingPassword ? 'pi pi-spin pi-spinner' : 'pi pi-refresh'"
                         :disabled="!canChangePassword || savingPassword"
                         size="small"
@@ -114,7 +114,7 @@
 
                     <Transition name="profile-msg">
                         <p v-if="passwordSuccess" class="profile-success-msg">
-                            <i class="pi pi-check-circle"></i> Hasło zmienione pomyślnie 🔒
+                            <i class="pi pi-check-circle"></i> Password changed successfully 🔒
                         </p>
                     </Transition>
                     <Transition name="profile-msg">
@@ -127,17 +127,17 @@
             <template v-else>
                 <div class="profile-info-box">
                     <i class="pi pi-google" style="font-size: 1.1rem; color: var(--p-orange-500);"></i>
-                    <p>Logujesz się przez Google — hasło jest zarządzane przez Twoje konto Google.</p>
+                    <p>You signed in with Google — your password is managed by your Google account.</p>
                 </div>
             </template>
         </div>
 
         <div class="profile-divider"></div>
 
-        <!-- Sekcja: Informacje o koncie -->
+        <!-- Section: Account information -->
         <div class="profile-section">
             <h4 class="profile-section-title">
-                <i class="pi pi-info-circle"></i> Informacje o koncie
+                <i class="pi pi-info-circle"></i> Account information
             </h4>
             <div class="profile-info-grid">
                 <div class="profile-info-item">
@@ -145,11 +145,11 @@
                     <span class="profile-info-value">{{ userEmail }}</span>
                 </div>
                 <div class="profile-info-item">
-                    <span class="profile-info-label">Konto utworzono</span>
+                    <span class="profile-info-label">Account created</span>
                     <span class="profile-info-value">{{ formattedCreatedAt }}</span>
                 </div>
                 <div class="profile-info-item">
-                    <span class="profile-info-label">Logowanie przez</span>
+                    <span class="profile-info-label">Signed in with</span>
                     <span class="profile-info-value">{{ providerLabel }}</span>
                 </div>
             </div>
@@ -165,13 +165,13 @@ import Button from 'primevue/button';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '@/stores/auth';
 
-// Dialog visibility — zarządzane przez v-model z rodzica
+// Dialog visibility — controlled by parent via v-model
 const visible = defineModel<boolean>({ default: false });
 
 const authStore = useAuthStore();
 const { user, hasPasswordProvider } = storeToRefs(authStore);
 
-// === Dane użytkownika ===
+// === User data ===
 const userEmail = computed(() => user.value?.email ?? '');
 const userDisplayName = computed(() => user.value?.displayName ?? userEmail.value.split('@')[0] ?? '');
 const userPhotoUrl = computed(() => user.value?.photoURL ?? '');
@@ -190,32 +190,32 @@ const userInitials = computed(() => {
     return local.substring(0, 2).toUpperCase() || '?';
 });
 
-// Powitanie zależne od pory dnia
+// Time-based greeting
 const greeting = computed(() => {
     const hour = new Date().getHours();
-    if (hour < 6) return 'Dobrej nocy';
-    if (hour < 12) return 'Dzień dobry';
-    if (hour < 18) return 'Cześć';
-    return 'Dobry wieczór';
+    if (hour < 6) return 'Good night';
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Hi';
+    return 'Good evening';
 });
 
-// Data utworzenia konta — sformatowana po polsku
+// Account creation date — formatted in English
 const formattedCreatedAt = computed(() => {
     const raw = authStore.accountCreatedAt;
     if (!raw) return '—';
     const d = new Date(raw);
-    return d.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 });
 
-// Dostawca logowania
+// Authentication provider
 const providerLabel = computed(() => {
     const providers = user.value?.providerData?.map(p => p.providerId) ?? [];
     if (providers.includes('google.com') && providers.includes('password')) return 'Google + email';
     if (providers.includes('google.com')) return 'Google';
-    return 'Email i hasło';
+    return 'Email and password';
 });
 
-// === Edycja nazwy wyświetlanej ===
+// === Display name edit ===
 const displayNameInput = ref('');
 const savingName = ref(false);
 const nameSuccess = ref(false);
@@ -226,7 +226,7 @@ const nameChanged = computed(() =>
     displayNameInput.value.trim() !== (user.value?.displayName ?? '')
 );
 
-// Inicjalizacja pola przy otwarciu dialogu
+// Initialize field when dialog opens
 watch(visible, (val) => {
     if (val) {
         displayNameInput.value = user.value?.displayName ?? '';
@@ -243,13 +243,13 @@ const onSaveDisplayName = async () => {
         nameSuccess.value = true;
         setTimeout(() => nameSuccess.value = false, 3000);
     } catch (e: any) {
-        nameError.value = 'Nie udało się zaktualizować nazwy.';
+        nameError.value = 'Failed to update display name.';
     } finally {
         savingName.value = false;
     }
 };
 
-// === Zmiana hasła ===
+// === Password change ===
 const currentPassword = ref('');
 const newPassword = ref('');
 const confirmPassword = ref('');
@@ -282,9 +282,9 @@ const onChangePassword = async () => {
     } catch (e: any) {
         const code = e?.code ?? '';
         if (code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
-            passwordError.value = 'Obecne hasło jest nieprawidłowe.';
+            passwordError.value = 'Current password is incorrect.';
         } else if (code === 'auth/weak-password') {
-            passwordError.value = 'Nowe hasło jest za słabe.';
+            passwordError.value = 'New password is too weak.';
         } else {
             passwordError.value = authStore.mapFirebaseError(code);
         }
@@ -293,7 +293,7 @@ const onChangePassword = async () => {
     }
 };
 
-// === Reset stanu przy zamknięciu ===
+// === Reset state on close ===
 const resetState = () => {
     nameError.value = null;
     nameSuccess.value = false;
@@ -306,7 +306,7 @@ const resetState = () => {
 </script>
 
 <style scoped>
-/* === Nagłówek profilu === */
+/* === Profile header === */
 .profile-header {
     display: flex;
     align-items: center;
@@ -386,7 +386,7 @@ const resetState = () => {
     background: var(--p-gray-700);
 }
 
-/* === Sekcje === */
+/* === Sections === */
 .profile-section {
     padding: 0.25rem 0;
 }
@@ -408,7 +408,7 @@ const resetState = () => {
     color: var(--p-gray-300);
 }
 
-/* Wiersz pola + przycisk */
+/* Input row + button */
 .profile-field-row {
     display: flex;
     gap: 0.5rem;
@@ -427,7 +427,7 @@ const resetState = () => {
     color: var(--p-gray-400);
 }
 
-/* Reguły hasła */
+/* Password rules */
 .profile-password-rules {
     display: flex;
     flex-wrap: wrap;
@@ -451,7 +451,7 @@ const resetState = () => {
     color: var(--p-green-400);
 }
 
-/* Info box (dla Google) */
+/* Info box (for Google) */
 .profile-info-box {
     display: flex;
     align-items: flex-start;
@@ -468,7 +468,7 @@ const resetState = () => {
     color: var(--p-gray-300);
 }
 
-/* Grid informacji o koncie */
+/* Account info grid */
 .profile-info-grid {
     display: flex;
     flex-direction: column;
@@ -499,7 +499,7 @@ const resetState = () => {
     color: var(--p-gray-200);
 }
 
-/* Komunikaty sukces / błąd */
+/* Success / error messages */
 .profile-success-msg {
     font-size: 0.78rem;
     color: var(--p-green-600);
@@ -523,7 +523,7 @@ const resetState = () => {
     color: var(--p-red-400);
 }
 
-/* Transition — komunikaty */
+/* Transition — messages */
 .profile-msg-enter-active,
 .profile-msg-leave-active {
     transition: opacity 0.25s ease, transform 0.25s ease;

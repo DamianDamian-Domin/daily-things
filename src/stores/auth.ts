@@ -56,7 +56,7 @@ export const useAuthStore = defineStore("auth", () => {
             return "This user account has been disabled.";
 
         case "auth/popup-closed-by-user":
-            return "Okno logowania zostało zamknięte.";
+          return "Sign-in window was closed.";
 
         case "auth/cancelled-popup-request":
             return "";
@@ -84,7 +84,7 @@ export const useAuthStore = defineStore("auth", () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
 
-      // Sprawdź czy email został zweryfikowany
+      // Check whether email is verified
       if (!userCredential.user.emailVerified) {
         await signOut(auth);
         user.value = null;
@@ -106,7 +106,7 @@ export const useAuthStore = defineStore("auth", () => {
     }
   };
 
-  // Ponowne wysłanie emaila weryfikacyjnego
+  // Resend verification email
   const resendVerificationEmail = async (emailAddr: string, password: string) => {
     loading.value = true;
     try {
@@ -128,9 +128,9 @@ export const useAuthStore = defineStore("auth", () => {
     error.value = null;
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      // Wyślij email weryfikacyjny
+      // Send verification email
       await sendEmailVerification(userCredential.user);
-      // Wyloguj użytkownika — nie może korzystać z aplikacji bez weryfikacji
+      // Sign out user — app access is blocked until verification
       await signOut(auth);
       user.value = null;
       userUid.value = null;
@@ -143,7 +143,7 @@ export const useAuthStore = defineStore("auth", () => {
     }
   };
 
-  // Logowanie przez Google
+  // Google sign-in
   const loginWithGoogle = async () => {
     loading.value = true;
     error.value = null;
@@ -162,7 +162,7 @@ export const useAuthStore = defineStore("auth", () => {
     }
   };
 
-  // Resetowanie hasła
+  // Password reset
   const resetPassword = async (emailAddr: string) => {
     loading.value = true;
     error.value = null;
@@ -182,20 +182,20 @@ export const useAuthStore = defineStore("auth", () => {
     router.push('/login');
   };
 
-  // Aktualizacja nazwy wyświetlanej
+  // Update display name
   const updateDisplayName = async (newName: string) => {
-    if (!auth.currentUser) throw new Error("Brak zalogowanego użytkownika");
+    if (!auth.currentUser) throw new Error("No authenticated user");
     await updateProfile(auth.currentUser, { displayName: newName });
-    // Odśwież reaktywną referencję
+    // Refresh reactive reference
     user.value = { ...auth.currentUser } as User;
   };
 
-  // Zmiana hasła (wymaga reautentykacji)
+  // Change password (requires reauthentication)
   const changePassword = async (currentPassword: string, newPassword: string) => {
     if (!auth.currentUser || !auth.currentUser.email) {
-      throw new Error("Brak zalogowanego użytkownika");
+      throw new Error("No authenticated user");
     }
-    // Reautentykacja użytkownika
+    // Reauthenticate user
     const credential = EmailAuthProvider.credential(
       auth.currentUser.email,
       currentPassword
@@ -204,12 +204,12 @@ export const useAuthStore = defineStore("auth", () => {
     await firebaseUpdatePassword(auth.currentUser, newPassword);
   };
 
-  // Sprawdź czy użytkownik ma dostawcę email/password (może zmieniać hasło)
+  // Check if user has email/password provider (can change password)
   const hasPasswordProvider = computed(() => {
     return user.value?.providerData?.some(p => p.providerId === 'password') ?? false;
   });
 
-  // Data utworzenia konta
+  // Account creation time
   const accountCreatedAt = computed(() => {
     return user.value?.metadata?.creationTime ?? null;
   });

@@ -1,6 +1,6 @@
 <template>
 	<div class="flex flex-col items-center w-13">
-		<!-- Ikona w przycisku -->
+		<!-- Icon button -->
 		<Button
 			@click="handleClick()"
 			:severity="
@@ -20,7 +20,7 @@
 			</span>
 		</Button>
 
-		<!-- Nazwa pod ikoną -->
+		<!-- Label below icon -->
 		<span
 			v-if="props.showLabel"
 			class="text-c text-xs text-gray-600 text-center mt-1 leading-tight break-words italic">
@@ -61,7 +61,7 @@ function handleClick() {
 	font-style: italic;
 	border-radius: 5px;
 	padding: 2px 6px;
-	background: rgba(0, 0, 0, 0.7); /* czarne półprzezroczyste tło */
-	color: #fff; /* biały tekst */
+	background: rgba(0, 0, 0, 0.7); /* black semi-transparent background */
+	color: #fff; /* white text */
 }
 </style>

@@ -7,7 +7,7 @@
 				severity="secondary"
 				rounded
 				text
-				aria-label="Poprzedni dzień"
+				aria-label="Previous day"
 				@click="habbitsStore.changeDate(-1)" />
 		</div>
 
@@ -23,7 +23,7 @@
 				severity="secondary"
 				rounded
 				text
-				aria-label="Następny dzień"
+				aria-label="Next day"
 				:disabled="habbitsStore.isToday()"
 				@click="habbitsStore.changeDate(1)" />
 		</div>

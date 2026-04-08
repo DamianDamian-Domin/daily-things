@@ -1,11 +1,13 @@
 <template>
     <div class="w-full flex flex-row justify-between items-center">
         <div class="flex flex-row items-center gap-2">
-            <img class="w-20" src="@/assets/logo.png" alt="">
+            <div class="logo-mask w-20 h-20">
+                <img class="w-full h-full object-contain" src="@/assets/logo.png" alt="">
+            </div>
             <h1 class="font-sacramento text-3xl">Daily Things</h1>
         </div>
         <div class="flex flex-row items-center gap-2">
-            <!-- Dark mode toggle — ciepły styl -->
+            <!-- Dark mode toggle — warm style -->
             <button class="theme-toggle" @click="toggleDarkMode()">
                 <i :class="isDarkMode ? 'pi pi-sun' : 'pi pi-moon'"></i>
             </button>
@@ -18,7 +20,7 @@
 
             <Popover ref="op">
                 <div class="popover-menu">
-                    <!-- Powitanie -->
+                    <!-- Greeting -->
                     <div class="popover-header">
                         <div class="popover-avatar">
                             <img v-if="userPhotoUrl" :src="userPhotoUrl" alt="Avatar" class="popover-avatar-img" referrerpolicy="no-referrer" />
@@ -33,26 +35,26 @@
 
                     <div class="popover-divider"></div>
 
-                    <!-- Opcje menu -->
+                    <!-- Menu options -->
                     <button class="popover-item" @click="onProfile">
                         <i class="pi pi-user popover-item-icon"></i>
-                        <span>Mój profil</span>
+                        <span>My profile</span>
                     </button>
                     <button class="popover-item" @click="onSettings">
                         <i class="pi pi-cog popover-item-icon"></i>
-                        <span>Ustawienia</span>
+                        <span>Settings</span>
                     </button>
 
                     <div class="popover-divider"></div>
 
                     <button class="popover-item popover-item-logout" @click="logOut()">
                         <i class="pi pi-sign-out popover-item-icon"></i>
-                        <span>Wyloguj się</span>
+                        <span>Sign out</span>
                     </button>
                 </div>
             </Popover>
 
-            <!-- Dialog profilu -->
+            <!-- Profile dialog -->
             <ProfileDialog v-model="showProfile" />
         </div>
     </div>
@@ -79,12 +81,12 @@ const { user } = storeToRefs(authStore)
 const op = ref();
 const showProfile = ref(false);
 
-// Dane użytkownika z Firebase Auth
+// User data from Firebase Auth
 const userEmail = computed(() => user.value?.email ?? '');
 const userDisplayName = computed(() => user.value?.displayName ?? userEmail.value.split('@')[0] ?? '');
 const userPhotoUrl = computed(() => user.value?.photoURL ?? '');
 
-// Inicjały — z displayName lub z emaila
+// Initials — from displayName or email
 const userInitials = computed(() => {
     const name = user.value?.displayName;
     if (name) {
@@ -99,13 +101,13 @@ const userInitials = computed(() => {
     return local.substring(0, 2).toUpperCase() || '?';
 });
 
-// Powitanie zależne od pory dnia
+// Time-based greeting
 const greeting = computed(() => {
     const hour = new Date().getHours();
-    if (hour < 6) return 'Dobrej nocy';
-    if (hour < 12) return 'Dzień dobry';
-    if (hour < 18) return 'Cześć';
-    return 'Dobry wieczór';
+    if (hour < 6) return 'Good night';
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Hi';
+    return 'Good evening';
 });
 
 const toggleDarkMode = () => {
@@ -154,7 +156,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Toggle dark mode — ciepły, zaokrąglony przycisk */
+/* Dark mode toggle — warm rounded button */
 .theme-toggle {
     width: 2.5rem;
     height: 2.5rem;
@@ -181,7 +183,7 @@ onMounted(() => {
     background: color-mix(in srgb, var(--p-yellow-800) 40%, transparent);
 }
 
-/* Avatar przycisk w navbar */
+/* Avatar button in navbar */
 .avatar-btn {
     width: 2.75rem;
     height: 2.75rem;
@@ -223,7 +225,7 @@ onMounted(() => {
     padding: 0.35rem 0;
 }
 
-/* Nagłówek z powitaniem */
+/* Header with greeting */
 .popover-header {
     display: flex;
     align-items: center;
@@ -301,7 +303,7 @@ onMounted(() => {
     background: var(--p-gray-700);
 }
 
-/* Elementy menu */
+/* Menu items */
 .popover-item {
     display: flex;
     align-items: center;
@@ -337,7 +339,7 @@ onMounted(() => {
     opacity: 0.65;
 }
 
-/* Logout — delikatne wyróżnienie, nie agresywny czerwony */
+/* Sign out — subtle highlight, not aggressive red */
 .popover-item-logout {
     color: var(--p-gray-400);
 }
