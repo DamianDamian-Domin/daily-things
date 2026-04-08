@@ -4,8 +4,8 @@
         modal
         dismissableMask
         :closable="true"
-        header=" "
-        class="profile-dialog w-[clamp(22rem,90vw,30rem)]"
+        :showHeader="false"
+        class="profile-dialog w-[clamp(22rem,90vw,30rem)] pt-4"
         @hide="resetState">
 
         <!-- Profile header — avatar + details -->

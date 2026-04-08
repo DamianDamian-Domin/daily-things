@@ -39,7 +39,7 @@
 		class="card-root"
 		:data-active="isActive">
 		<div
-			class="flex flex-col justify-between card-a sm:w-[480px] surface-content w-full h-4/5 min-h-[30rem] max-h-[50rem] overflow-auto"
+			class="flex flex-col justify-between card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] max-h-[50rem] overflow-auto"
 			@click.capture="handleGlobalClick">
 			<!-- Top area: greeting + habits -->
 			<div>

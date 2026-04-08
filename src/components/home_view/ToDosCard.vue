@@ -1,5 +1,5 @@
 <template>
-	<div class="td-card card-a sm:w-[480px] surface-content w-full h-4/5 min-h-[30rem] max-h-[50rem]">
+	<div class="td-card card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] max-h-[50rem]">
 		<div
 			class="td-inner"
 			:class="!isActive && 'pointer-events-none'">

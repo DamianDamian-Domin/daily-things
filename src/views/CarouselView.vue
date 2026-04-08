@@ -105,6 +105,8 @@ function onPointerUp(e: PointerEvent) {
 	position: absolute;
 	top: 45%;
 	left: 50%;
+	height: 80%;
+	max-height: 80vh;
 	display: flex;
 	align-items: stretch;
 	justify-content: center;
