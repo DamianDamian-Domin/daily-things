@@ -41,9 +41,21 @@
 		<div
 			class="flex flex-col justify-between card-a sm:w-[480px] surface-content w-full h-4/5 min-h-[30rem] max-h-[50rem] overflow-auto"
 			@click.capture="handleGlobalClick">
-			<!-- Top area: header + tracked habits -->
+			<!-- Top area: greeting + habits -->
 			<div>
-				<!-- Dynamic progress header -->
+				<!-- Greeting + streak -->
+				<div class="hc-greeting-area">
+					<div>
+						<span class="hc-greeting-hello">{{ greetingEmoji }}</span>
+						<h2 class="hc-greeting-text">{{ greetingText }}</h2>
+					</div>
+					<div v-if="streak > 0" class="hc-streak" v-tooltip.bottom="streak + ' day streak'">
+						<span class="hc-streak-fire">🔥</span>
+						<span class="hc-streak-num">{{ streak }}</span>
+					</div>
+				</div>
+
+				<!-- Habits counter -->
 				<div class="hc-header">
 					<template v-if="selectedDayHabbits.length > 0">
 						<span class="hc-count">{{ selectedDayHabbits.length }}</span>
@@ -55,7 +67,7 @@
 				</div>
 
 				<!-- Tracked habits -->
-				<div class="tasks-area mt-5">
+				<div class="tasks-area mt-4">
 					<div class="flex flex-row flex-wrap h-min gap-3">
 						<draggable
 							v-model="selectedDayHabbits"
@@ -147,6 +159,7 @@ import { ref, computed, onBeforeUnmount, nextTick } from "vue";
 import { useHabbitsStore } from "@/stores/habbits";
 import { storeToRefs } from "pinia";
 import draggable from "vuedraggable";
+import { toDateKey } from "@/utils/timeUtils";
 
 import { Habbit, Goal } from "@/libs/types";
 
@@ -156,11 +169,56 @@ const {
 	selectedDayHabbits,
 	dailyGoalsColored,
 	dailyGoalsList,
+	userHabbitsList,
 } = storeToRefs(habbitsStore);
 
 const props = defineProps<{
 	isActive: boolean;
 }>();
+
+// Greeting based on time of day
+const greetingText = computed(() => {
+	const hour = new Date().getHours();
+	if (hour < 6) return "Good night";
+	if (hour < 12) return "Good morning";
+	if (hour < 18) return "Good afternoon";
+	return "Good evening";
+});
+
+const greetingEmoji = computed(() => {
+	const hour = new Date().getHours();
+	if (hour < 6) return "🌙";
+	if (hour < 12) return "☀️";
+	if (hour < 18) return "🌤️";
+	return "🌙";
+});
+
+// Streak — count consecutive days (from yesterday backwards) that have at least 1 habit
+const streak = computed(() => {
+	let count = 0;
+	const today = new Date();
+
+	// If today has habits, count today too
+	const todayKey = toDateKey(today);
+	const todayEntry = userHabbitsList.value.find((e) => e.date === todayKey);
+	if (todayEntry && todayEntry.habbits.length > 0) {
+		count++;
+	}
+
+	// Go backwards from yesterday
+	for (let i = 1; i <= 30; i++) {
+		const d = new Date(today);
+		d.setDate(d.getDate() - i);
+		const key = toDateKey(d);
+		const entry = userHabbitsList.value.find((e) => e.date === key);
+		if (entry && entry.habbits.length > 0) {
+			count++;
+		} else {
+			break;
+		}
+	}
+	return count;
+});
 
 const showHabbitDialog = ref(false);
 const addDialogMode = ref("");
@@ -528,7 +586,66 @@ function getFullHabbitData(habbit: Habbit) {
 	transform: scale(0.8);
 }
 
-/* ====== Dynamic Header ====== */
+/* ====== Greeting Area ====== */
+.hc-greeting-area {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 0.5rem;
+}
+.hc-greeting-hello {
+	font-size: 1.25rem;
+	line-height: 1;
+	margin-right: 0.3rem;
+	vertical-align: middle;
+}
+.hc-greeting-text {
+	font-family: 'Lora', serif;
+	font-size: 1.05rem;
+	font-weight: 600;
+	color: var(--p-gray-700);
+	margin: 0;
+	display: inline;
+	vertical-align: middle;
+}
+:where(.my-app-dark, .my-app-dark *) .hc-greeting-text {
+	color: var(--p-gray-200);
+}
+
+/* Streak badge */
+.hc-streak {
+	display: flex;
+	align-items: center;
+	gap: 0.2rem;
+	padding: 0.25rem 0.6rem;
+	border-radius: 9999px;
+	background: color-mix(in srgb, var(--p-orange-100) 60%, transparent);
+	cursor: default;
+	user-select: none;
+	transition: transform 0.2s ease;
+}
+.hc-streak:hover {
+	transform: scale(1.06);
+}
+:where(.my-app-dark, .my-app-dark *) .hc-streak {
+	background: color-mix(in srgb, var(--p-orange-900) 30%, transparent);
+}
+.hc-streak-fire {
+	font-size: 0.9rem;
+	line-height: 1;
+}
+.hc-streak-num {
+	font-family: 'Lora', serif;
+	font-size: 0.85rem;
+	font-weight: 700;
+	color: var(--p-orange-600);
+	line-height: 1;
+}
+:where(.my-app-dark, .my-app-dark *) .hc-streak-num {
+	color: var(--p-orange-400);
+}
+
+/* ====== Habits Counter ====== */
 .hc-header {
 	text-align: center;
 	padding: 0.25rem 0;
