@@ -3,27 +3,27 @@ import { defineStore } from "pinia";
 import type { CarouselCardConfig } from "../libs/types";
 
 export const useCarouselStore = defineStore("carouselStore", () => {
-	// ZMIANA 1: Zrobiliśmy z tablicy ref(), aby móc dynamicznie modyfikować pole 'order'
+	// CHANGE 1: Use ref() for array to allow dynamic updates of 'order'
 	const carouselCards = ref<CarouselCardConfig[]>([
 		{ id: "manage", order: 2 },
 		{ id: "textAdd", order: 1 },
 		{ id: "stats", order: 3 },
 	]);
 
-	// Aktywne ID karty
+	// Active card ID
 	const activeCardId = ref<CarouselCardConfig["id"]>("manage");
 
-	// 1. Sortowanie kart według 'order'
+	// 1. Sort cards by 'order'
 	const orderedCards = computed(() =>
 		[...carouselCards.value].sort((a, b) => a.order - b.order),
 	);
 
-	// 2. Pobieranie indeksu aktywnej karty
+	// 2. Get active card index
 	const activeIndex = computed(() =>
 		orderedCards.value.findIndex((c) => c.id === activeCardId.value),
 	);
 
-	// 3. Widoki kart
+	// 3. Card views
 	const activeCard = computed(() => orderedCards.value[activeIndex.value]);
 
 	const leftCard = computed(() => {
@@ -40,31 +40,31 @@ export const useCarouselStore = defineStore("carouselStore", () => {
 		return orderedCards.value[nextIdx];
 	});
 
-	// --- Akcje (Actions) ---
+	// --- Actions ---
 
-	// ZMIANA 2: Główna logika Swap (zamiany miejsc)
+	// CHANGE 2: Main swap logic
 	function setActiveCard(targetId: CarouselCardConfig["id"]) {
-		// Jeśli kliknięto kartę, która już jest aktywna, nic nie rób
+		// If clicked card is already active, do nothing
 		if (activeCardId.value === targetId) return;
 
-		// Znajdujemy obie karty (klikniętą oraz obecnie aktywną)
+		// Find both cards (clicked and currently active)
 		const targetCard = carouselCards.value.find((c) => c.id === targetId);
 		const currentActiveCard = carouselCards.value.find(
 			(c) => c.id === activeCardId.value,
 		);
 
 		if (targetCard && currentActiveCard) {
-			// Zamieniamy je miejscami wymieniając ich 'order'
+			// Swap them by exchanging their 'order'
 			const tempOrder = currentActiveCard.order;
 			currentActiveCard.order = targetCard.order;
 			targetCard.order = tempOrder;
 		}
 
-		// Aktualizujemy ID
+		// Update active ID
 		activeCardId.value = targetId;
 	}
 
-	// ZMIANA 3: Używamy nowej funkcji setActiveCard w goNext i goPrev, aby wymusić Swap przy przesuwaniu palcem
+	// CHANGE 3: Use setActiveCard in goNext/goPrev to force swap on swipe
 	function goNext() {
 		if (rightCard.value) {
 			setActiveCard(rightCard.value.id);
@@ -78,7 +78,7 @@ export const useCarouselStore = defineStore("carouselStore", () => {
 	}
 
 	function reset() {
-		// Przywracamy domyślne ułożenie kart
+		// Restore default card order
 		const defaultOrders: Record<string, number> = {
 			manage: 2,
 			textAdd: 1,
@@ -91,7 +91,7 @@ export const useCarouselStore = defineStore("carouselStore", () => {
 	}
 
 	return {
-		cards: orderedCards, // Używamy posortowanych kart do kropek pod karuzelą
+		cards: orderedCards, // Use sorted cards for carousel dots
 		activeCardId,
 		activeCard,
 		leftCard,

@@ -15,8 +15,8 @@ export interface TodoItem {
 	id: string;
 	text: string;
 	completed: boolean;
-	description?: string; // NOWE: Opcjonalny opis zadania
-	createdAt?: number; // NOWE: Znacznik czasu do sortowania (od najnowszych)
+	description?: string; // NEW: Optional task description
+	createdAt?: number; // NEW: Timestamp used for sorting (newest first)
 }
 
 export interface UserTodos {
@@ -35,7 +35,7 @@ export const useTodosStore = defineStore("todos", () => {
 	const userTodosList = ref<UserTodos[]>([]);
 
 	// =========================
-	// SELECTED DAY TODOS (Z SORTOWANIEM)
+	// SELECTED DAY TODOS (WITH SORTING)
 	// =========================
 
 	const selectedDayTodos = computed({
@@ -45,15 +45,15 @@ export const useTodosStore = defineStore("todos", () => {
 
 			if (!entry) return [];
 
-			// Sortowanie listy: niewykonane najpierw, a w danej grupie - od najnowszego
+			// Sort list: unfinished first, then newest in each group
 			return [...entry.todos].sort((a, b) => {
-				// Jeśli oba są wykonane lub oba niewykonane, sortujemy po dacie utworzenia
+				// If both are completed or both are not completed, sort by creation date
 				if (a.completed === b.completed) {
 					const timeA = a.createdAt || 0;
 					const timeB = b.createdAt || 0;
-					return timeB - timeA; // Najnowsze u góry
+					return timeB - timeA; // Newest first
 				}
-				// Zadania niewykonane (false) idą na górę przed wykonanymi (true)
+				// Unfinished tasks (false) go before completed (true)
 				return a.completed ? 1 : -1;
 			});
 		},
@@ -95,7 +95,7 @@ export const useTodosStore = defineStore("todos", () => {
 	}
 
 	// =========================
-	// ADD TODO (Zaktualizowane o opis)
+	// ADD TODO (UPDATED WITH DESCRIPTION)
 	// =========================
 
 	async function addTodo(text: string, description: string = "") {
@@ -109,9 +109,9 @@ export const useTodosStore = defineStore("todos", () => {
 				const newTodo: TodoItem = {
 					id: nanoid(),
 					text,
-					description, // Zapis opisu
+					description, // Save description
 					completed: false,
-					createdAt: Date.now(), // Zapisujemy dokładny moment utworzenia w milisekundach
+					createdAt: Date.now(), // Store exact creation time in milliseconds
 				};
 
 				if (dayEntry) {

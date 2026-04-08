@@ -15,21 +15,24 @@
         </div>
 
             <div class="card-a surface-content w-full max-w-md flex flex-col items-center relative z-10">
-                <img :src="logo" alt="Logo" class="h-24 mb-4" />
+                <div class="logo-mask h-24 w-24">
+                    <img :src="logo" alt="Logo" class="w-full h-full object-contain" />
+                </div>
+                <h1 class="font-sacramento text-3xl mb-4 text-c">Daily Things</h1>
                 <LoginForm v-if="form == 'login'"></LoginForm>
-                <RegisterForm v-if="form == 'register'"></RegisterForm>
+                <RegisterForm v-if="form == 'register'" @registered="openLoginForm"></RegisterForm>
                 <!-- Register link -->
                 <div class="text-center text-sm mb-4" v-if="form === 'login'">
-                    <span class="text-b">Nie masz konta? </span>
-                    <Button label="Załóż konto" link class="text-primary" @click="openRegisterForm" />
+                    <span class="text-b">Don't have an account? </span>
+                    <Button label="Create account" link class="text-primary" @click="openRegisterForm" />
                 </div>
                 <div class="text-center text-sm mb-4" v-if="form === 'register'">
-                    <span class="text-b">Masz już konto? </span>
-                    <Button label="Zaloguj się" link class="text-primary" @click="openLoginForm" />
+                    <span class="text-b">Already have an account? </span>
+                    <Button label="Sign in" link class="text-primary" @click="openLoginForm" />
                 </div>
 
                 <!-- Footer -->
-                <p class="text-xs text-c text-center">© Daily Things 2025</p>
+                <p class="text-xs text-c text-center">☕ Daily Things 2025</p>
             </div>
     </div>
 </template>
@@ -60,11 +63,11 @@ function getRandomHabbits(count: number) {
 
 const fallingHabits = getRandomHabbits(8).map((h) => ({
     icon: h.icon,
-    left: Math.random() * 100, // pozycja startowa w %
-    duration: 5 + Math.random() * 6, // czas spadania
-    delay: Math.random() * 5, // opóźnienie
-    size: 20 + Math.random() * 30, // rozmiar px
-    angle: -30 + Math.random() * 60, // kąt
+    left: Math.random() * 100, // starting position in %
+    duration: 5 + Math.random() * 6, // fall duration
+    delay: Math.random() * 5, // animation delay
+    size: 20 + Math.random() * 30, // icon size in px
+    angle: -30 + Math.random() * 60, // rotation angle
 }));
 </script>
 

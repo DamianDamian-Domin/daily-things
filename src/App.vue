@@ -1,7 +1,7 @@
 <template>
 	<div
 		class="flex flex-col w-screen h-screen surface-ground px-4 py-2 overflow-hidden">
-		<!-- NavBar tylko na wybranych trasach -->
+		<!-- NavBar only on selected routes -->
 		<NavBar v-if="showNavbar" />
 
 		<Divider
@@ -31,7 +31,7 @@ import Divider from "primevue/divider";
 const route = useRoute();
 const feedbackCheckStore = useFeedbackCheckStore();
 
-// ukryj navbar np. na login i register
+// hide navbar on login/register routes
 const showNavbar = computed(() => {
 	return !["/login", "/register"].includes(route.path);
 });

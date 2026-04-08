@@ -14,7 +14,7 @@ export async function handleAsyncAction<T>(
 			await callback();
 		});
 
-		// ✨ Poczekaj 300–600 ms po loaderze, zanim pokażesz
+		// ✨ Wait 300–600 ms after loader before showing feedback
 		await new Promise((resolve) => setTimeout(resolve, 600));
 		showSuccessCheck();
 		return null;

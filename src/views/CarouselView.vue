@@ -5,7 +5,7 @@
 			:key="card.id"
 			class="dot"
 			:class="{ active: card.id === carouselStore.activeCardId }"
-			:aria-label="`Przejdź do karty ${index + 1}`"
+			:aria-label="`Go to card ${index + 1}`"
 			@click="carouselStore.setActiveCard(card.id)" />
 	</div>
 	<div
@@ -35,7 +35,7 @@ type VisibleCarouselCard = {
 import { computed } from "vue";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 
-// Karty
+// Cards
 import ToDosCard from "../components/home_view/ToDosCard.vue";
 import StatsCard from "../components/home_view/StatsCard.vue";
 import HabbitsCard from "@/components/home_view/HabbitsCard.vue";
@@ -63,7 +63,7 @@ const visibleCards = computed<VisibleCarouselCard[]>(() => {
 function onCardClick(role: "left" | "active" | "right") {
 	if (role === "left") carouselStore.goPrev();
 	if (role === "right") carouselStore.goNext();
-	// klik w active → nic nie robimy
+	// click on active card -> do nothing
 }
 
 let startX = 0;
@@ -79,10 +79,10 @@ function onPointerUp(e: PointerEvent) {
 	if (Math.abs(deltaX) < SWIPE_THRESHOLD) return;
 
 	if (deltaX < 0) {
-		// swipe w lewo
+		// swipe left
 		carouselStore.goNext();
 	} else {
-		// swipe w prawo
+		// swipe right
 		carouselStore.goPrev();
 	}
 }
@@ -100,20 +100,22 @@ function onPointerUp(e: PointerEvent) {
 	overflow: hidden;
 }
 
-/* Baza karty */
+/* Base card */
 .carousel-card {
 	position: absolute;
 	top: 45%;
 	left: 50%;
+	height: 80%;
+	max-height: 80vh;
 	display: flex;
 	align-items: stretch;
 	justify-content: center;
 	will-change: transform, opacity, z-index;
 }
 
-/* === ANIMACJE (KEYFRAMES) === */
+/* === ANIMATIONS (KEYFRAMES) === */
 
-/* Karta wchodzi na środek (staje się aktywna) */
+/* Card enters center (becomes active) */
 @keyframes slide-to-active {
 	0% {
 		transform: translate(-50%, -50%) scale(0.85);
@@ -122,7 +124,7 @@ function onPointerUp(e: PointerEvent) {
 	}
 	50% {
 		transform: translate(calc(-50% + 100px), -50%) scale(0.9);
-	} /* Lekki zamach w bok */
+	} /* Slight sideways swing */
 	100% {
 		transform: translate(-50%, -50%) scale(1);
 		z-index: 3;
@@ -130,7 +132,7 @@ function onPointerUp(e: PointerEvent) {
 	}
 }
 
-/* Karta ucieka na lewo */
+/* Card moves to the left */
 @keyframes slide-to-left {
 	0% {
 		transform: translate(-50%, -50%) scale(1);
@@ -139,7 +141,7 @@ function onPointerUp(e: PointerEvent) {
 	}
 	50% {
 		transform: translate(calc(-50% - 350px), -50%) scale(0.9);
-	} /* Wychylenie mocniej w lewo */
+	} /* Stronger move to the left */
 	100% {
 		transform: translate(calc(-50% - 280px), -50%) scale(0.85);
 		z-index: 2;
@@ -147,7 +149,7 @@ function onPointerUp(e: PointerEvent) {
 	}
 }
 
-/* Karta ucieka na prawo */
+/* Card moves to the right */
 @keyframes slide-to-right {
 	0% {
 		transform: translate(-50%, -50%) scale(1);
@@ -156,7 +158,7 @@ function onPointerUp(e: PointerEvent) {
 	}
 	50% {
 		transform: translate(calc(-50% + 350px), -50%) scale(0.9);
-	} /* Wychylenie mocniej w prawo */
+	} /* Stronger move to the right */
 	100% {
 		transform: translate(calc(-50% + 280px), -50%) scale(0.85);
 		z-index: 2;
@@ -164,7 +166,7 @@ function onPointerUp(e: PointerEvent) {
 	}
 }
 
-/* === PRZYPISANIE ANIMACJI DO RÓL === */
+/* === ANIMATION ASSIGNMENT BY ROLE === */
 
 .role-active {
 	animation: slide-to-active 0.8s ease-out forwards;
@@ -180,7 +182,7 @@ function onPointerUp(e: PointerEvent) {
 	cursor: pointer;
 }
 
-/* DOTS — bez zmian, zostają przy prostych przejściach */
+/* DOTS — warm, rounded style */
 .carousel-dots {
 	display: flex;
 	justify-content: center;
@@ -193,16 +195,27 @@ function onPointerUp(e: PointerEvent) {
 	width: 8px;
 	height: 8px;
 	border-radius: 50%;
-	background-color: #cbd5e1;
+	background-color: var(--p-orange-200);
 	border: none;
 	cursor: pointer;
 	transition:
-		transform 200ms ease,
-		background-color 200ms ease;
+		transform 250ms ease,
+		background-color 250ms ease,
+		box-shadow 250ms ease;
+}
+
+:where(.my-app-dark, .my-app-dark *) .dot {
+	background-color: var(--p-gray-600);
 }
 
 .dot.active {
-	background-color: var(--color-green-500);
-	transform: scale(1.5);
+	background-color: var(--p-orange-400);
+	transform: scale(1.6);
+	box-shadow: 0 0 8px color-mix(in srgb, var(--p-orange-400) 40%, transparent);
+}
+
+:where(.my-app-dark, .my-app-dark *) .dot.active {
+	background-color: var(--p-orange-500);
+	box-shadow: 0 0 8px color-mix(in srgb, var(--p-orange-500) 30%, transparent);
 }
 </style>
