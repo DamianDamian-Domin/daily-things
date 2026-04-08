@@ -1,15 +1,20 @@
 <template>
 	<div class="hs-root">
-		<!-- Filter tabs — Recently / All / User -->
+		<!-- View toggle — Recently / All -->
 		<div class="hs-filter-tabs">
 			<button
-				v-for="filter in habbitsStore.specialFilters"
-				:key="filter.name"
 				class="hs-tab"
-				:class="{ active: selectedSpecialFilter === filter.name }"
-				@click="onTabClick(filter.name)">
-				<i :class="filter.icon" class="hs-tab-icon"></i>
-				<span>{{ filter.display_name }}</span>
+				:class="{ active: currentView === 'recently' }"
+				@click="switchView('recently')">
+				<i class="pi pi-clock hs-tab-icon"></i>
+				<span>Recently</span>
+			</button>
+			<button
+				class="hs-tab"
+				:class="{ active: currentView === 'all' }"
+				@click="switchView('all')">
+				<i class="pi pi-th-large hs-tab-icon"></i>
+				<span>All</span>
 			</button>
 		</div>
 
@@ -20,87 +25,113 @@
 				v-model="searchQuery"
 				placeholder="Search habits..."
 				class="hs-search-input w-full" />
-		</div>
-
-		<!-- Category pills -->
-		<div class="hs-categories">
 			<button
-				v-for="(tags, category) in tag_categories"
-				:key="category"
-				class="hs-cat-pill"
-				:class="{
-					active: isCategoryActive(category) || selectedCategory === category,
-					negative: category === 'negative' && (isCategoryActive(category) || selectedCategory === category),
-				}"
-				@click="onCategoryClick(category)">
-				<span class="hs-cat-dot" :class="'cat-' + category"></span>
-				{{ category }}
+				v-if="searchQuery"
+				class="hs-search-clear"
+				@click="searchQuery = ''">
+				<i class="pi pi-times"></i>
 			</button>
 		</div>
 
-		<!-- Tags (when a category is selected) -->
+		<!-- Category pills — only visible in "all" view -->
 		<Transition name="hs-slide">
-			<div v-if="availableTags.length" class="hs-tags-area">
-				<div class="hs-tags-list">
-					<button
-						v-for="tag in availableTags"
-						:key="tag"
-						class="hs-tag"
-						:class="{ active: selectedTags.includes(tag) }"
-						@click="toggleTag(tag)">
-						#{{ tag }}
-					</button>
-				</div>
+			<div v-if="currentView === 'all'" class="hs-categories">
+				<button
+					class="hs-cat-pill"
+					:class="{ active: activeCategories.length === allCategoryKeys.length }"
+					@click="toggleAllCategories">
+					<i class="pi pi-list" style="font-size: 0.6rem"></i>
+					All
+				</button>
+				<button
+					v-for="category in allCategoryKeys"
+					:key="category"
+					class="hs-cat-pill"
+					:class="{
+						active: activeCategories.includes(category),
+						negative: category === 'negative' && activeCategories.includes(category),
+					}"
+					@click="toggleCategory(category)">
+					<span class="hs-cat-dot" :class="'cat-' + category"></span>
+					{{ category }}
+				</button>
 			</div>
 		</Transition>
 
-		<!-- Results — search / recently filtered -->
-		<div
-			v-if="isSearching || selectedSpecialFilter === 'recently'"
-			class="hs-results">
-			<div v-if="filteredHabbits.length > 0" class="hs-grid">
-				<HabbitItem
-					v-for="habit in filteredHabbits"
+		<!-- Results — Recently view -->
+		<div v-if="currentView === 'recently'" class="hs-results">
+			<div v-if="recentlyFiltered.length > 0" class="hs-grid">
+				<div
+					v-for="habit in recentlyFiltered"
 					:key="habit.name"
-					:data="habit"
-					:showLabel="true"
-					@click="emit('select', habit)" />
+					class="hs-item-wrap"
+					:class="{ added: isAdded(habit.name) }"
+					@click="onHabitClick(habit)">
+					<HabbitItem
+						:data="habit"
+						:showLabel="true" />
+					<!-- Check overlay for added items -->
+					<Transition name="hs-check">
+						<div v-if="isAdded(habit.name)" class="hs-check-overlay">
+							<i class="pi pi-check"></i>
+						</div>
+					</Transition>
+				</div>
 			</div>
+			<!-- Empty state: recently -->
 			<div v-else class="hs-empty">
-				<span class="hs-empty-icon">🔍</span>
-				<p class="hs-empty-title">No habits found</p>
-				<p class="hs-empty-text">Try a different search or category</p>
+				<span class="hs-empty-icon">✨</span>
+				<p class="hs-empty-title">No recent habits yet</p>
+				<p class="hs-empty-text">
+					Switch to <button class="hs-empty-link" @click="switchView('all')">All</button>
+					to browse the full catalog
+				</p>
 			</div>
 		</div>
 
-		<!-- Results — grouped by category (ALL view) -->
-		<div
-			v-else-if="selectedSpecialFilter === 'all'"
-			class="hs-grouped">
-			<div
-				v-for="(habits, category) in groupedHabbitsByCategory"
-				:key="category"
-				class="hs-group">
-				<div class="hs-group-head">
-					<span class="hs-group-dot" :class="'cat-' + category"></span>
-					<h4 class="hs-group-title">{{ category }}</h4>
-					<span class="hs-group-count">{{ habits.length }}</span>
+		<!-- Results — All view (grouped by category) -->
+		<div v-else-if="currentView === 'all'" class="hs-grouped">
+			<template v-if="hasVisibleGroups">
+				<div
+					v-for="(habits, category) in groupedFiltered"
+					:key="category"
+					class="hs-group">
+					<div class="hs-group-head">
+						<span class="hs-group-dot" :class="'cat-' + category"></span>
+						<h4 class="hs-group-title">{{ category }}</h4>
+						<span class="hs-group-count">{{ habits.length }}</span>
+					</div>
+					<div class="hs-grid">
+						<div
+							v-for="habit in habits"
+							:key="habit.name"
+							class="hs-item-wrap"
+							:class="{ added: isAdded(habit.name) }"
+							@click="onHabitClick(habit)">
+							<HabbitItem
+								:data="habit"
+								:showLabel="true" />
+							<Transition name="hs-check">
+								<div v-if="isAdded(habit.name)" class="hs-check-overlay">
+									<i class="pi pi-check"></i>
+								</div>
+							</Transition>
+						</div>
+					</div>
 				</div>
-				<div class="hs-grid">
-					<HabbitItem
-						v-for="habit in habits"
-						:key="habit.name"
-						:data="habit"
-						:showLabel="true"
-						@click="emit('select', habit)" />
-				</div>
+			</template>
+			<!-- Empty state: search with no results -->
+			<div v-else class="hs-empty">
+				<span class="hs-empty-icon">🔍</span>
+				<p class="hs-empty-title">No habits found</p>
+				<p class="hs-empty-text">Try a different search term or category</p>
 			</div>
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from "vue";
+import { ref, computed } from "vue";
 import { useHabbitsStore } from "@/stores/habbits";
 import HabbitItem from "./HabbitItem.vue";
 import InputText from "primevue/inputtext";
@@ -108,210 +139,114 @@ import { Habbit } from "@/libs/types";
 
 const habbitsStore = useHabbitsStore();
 const tag_categories = habbitsStore.tag_categories;
-type TagCategory = keyof typeof tag_categories;
 
-const selectedCategory = ref<TagCategory | null>(null);
-const selectedTags = ref<string[]>([]);
-const searchQuery = ref("");
-const selectedSpecialFilter = ref<string | null>(null);
-const activeCategories = ref<string[]>([]);
+const props = defineProps<{
+	// Names of habits already added in this session (for checkmark overlay)
+	addedNames?: string[];
+}>();
 
 const emit = defineEmits(["select"]);
 
-// Initialize: show "recently" if available, otherwise "all"
-if (habbitsStore.recentHabbits && habbitsStore.recentHabbits.length > 0) {
-	selectedSpecialFilter.value = "recently";
-} else {
-	selectedSpecialFilter.value = "all";
+// === View state ===
+const searchQuery = ref("");
+
+// Two views: "recently" or "all". No deselect — always one active.
+const currentView = ref<"recently" | "all">(
+	habbitsStore.recentHabbits?.length > 0 ? "recently" : "all"
+);
+
+// Active categories for "all" view filtering
+const allCategoryKeys = computed(() => Object.keys(tag_categories));
+const activeCategories = ref<string[]>([...Object.keys(tag_categories)]);
+
+function switchView(view: "recently" | "all") {
+	currentView.value = view;
+	searchQuery.value = "";
 }
 
-// Tab click handler — toggle or switch special filter
-function onTabClick(filterName: string) {
-	if (selectedSpecialFilter.value === filterName) {
-		// Clicking the active tab deselects it
-		selectedSpecialFilter.value = null;
-		activeCategories.value = [];
-		return;
-	}
-	selectedSpecialFilter.value = filterName;
-	if (filterName === "all") {
-		activeCategories.value = Object.keys(tag_categories);
-	} else {
-		activeCategories.value = [];
-	}
-	// Reset category and tags
-	selectedCategory.value = null;
-	selectedTags.value = [];
-}
-
-// Categories
-
-// Check if a category is active (for buttons)
-// Returns true if category is in activeCategories
-// computed - automatically updates when activeCategories changes
-// Used to set category button styles
-const isCategoryActive = (category: string) =>
-	activeCategories.value.includes(category);
-
-// Toggle category in activeCategories
-// If category is already in activeCategories, remove it; otherwise add it
-// This makes adding/removing categories easy
+// Toggle a single category on/off
 function toggleCategory(category: string) {
-	const index = activeCategories.value.indexOf(category);
-	if (index > -1) {
-		activeCategories.value.splice(index, 1);
+	const idx = activeCategories.value.indexOf(category);
+	if (idx > -1) {
+		// Don't allow deselecting all — keep at least one
+		if (activeCategories.value.length > 1) {
+			activeCategories.value.splice(idx, 1);
+		}
 	} else {
 		activeCategories.value.push(category);
 	}
 }
 
-// Handles category click
-// Resets special filter and sets selected category and tags
-// If the same category is clicked again, deselect it and reset tags
-// Uses nextTick to wait for DOM refresh before setting values
-function onCategoryClick(category: TagCategory) {
-	// Handle "all" filter - allow selecting multiple categories
-	// without changing selectedCategory and selectedTags
-	if (selectedSpecialFilter.value === "all") {
-		toggleCategory(category);
-
-		console.log("OnCategoryClick", activeCategories.value);
-		return; // end function — do nothing else
-	}
-
-	// Reset special filter
-	selectedSpecialFilter.value = null;
-	activeCategories.value = [];
-
-	if (selectedCategory.value === category) {
-		// Deselect - reset everything
-		selectedCategory.value = null;
-		selectedTags.value = [];
+// Toggle all categories on/off
+function toggleAllCategories() {
+	if (activeCategories.value.length === allCategoryKeys.value.length) {
+		// All selected -> select only first
+		activeCategories.value = [allCategoryKeys.value[0]];
 	} else {
-		// Reset category to null to clear list before changing
-		selectedCategory.value = null;
-		selectedTags.value = [];
-
-		nextTick(() => {
-			// After DOM refresh, set new category and tags
-			selectedCategory.value = category;
-			selectedTags.value = [...tag_categories[category]];
-		});
+		activeCategories.value = [...allCategoryKeys.value];
 	}
 }
 
+// === Check if habit was already added ===
+function isAdded(name: string): boolean {
+	return props.addedNames?.includes(name) ?? false;
+}
+
+// Click handler — emit select if not already added
+function onHabitClick(habit: Habbit) {
+	if (!isAdded(habit.name)) {
+		emit("select", habit);
+	}
+}
+
+// === Filtering ===
+
+// Text search filter
+function matchesSearch(habit: Habbit): boolean {
+	if (!searchQuery.value.trim()) return true;
+	const q = searchQuery.value.toLowerCase();
+	return (
+		habit.name.toLowerCase().includes(q) ||
+		(habit.display_name?.toLowerCase().includes(q) ?? false)
+	);
+}
+
+// Recently used — filtered by search
+const recentlyFiltered = computed(() => {
+	return habbitsStore.allHabbitsList
+		.filter((h) => habbitsStore.recentHabbits.includes(h.name))
+		.filter(matchesSearch);
+});
+
 // Determine habit category based on its tags
-// Iterate over all categories and their tags
-// If habit has a tag from a category, return that category
-// If no category matches, return "other"
 function getCategoryForHabit(habit: Habbit): string {
 	for (const [category, tags] of Object.entries(tag_categories)) {
-		if (habit.tags.some((tag) => tags.includes(tag))) {
+		if (habit.tags?.some((tag) => tags.includes(tag))) {
 			return category;
 		}
 	}
 	return "other";
 }
 
-// Tags
-
-// Selected tag
-// List of available tags based on selected category
-// If no category is selected, list is empty
-// If category is selected, list contains its tags
-// computed - automatically updates when selectedCategory changes
-const availableTags = computed(() => {
-	return selectedCategory.value ? tag_categories[selectedCategory.value] : [];
-});
-
-// Toggle tag in selectedTags
-// If tag is already in selectedTags, remove it; otherwise add it
-// This makes adding/removing tags easy
-function toggleTag(tag: string) {
-	const index = selectedTags.value.indexOf(tag);
-	if (index === -1) {
-		selectedTags.value.push(tag);
-	} else {
-		selectedTags.value.splice(index, 1);
-	}
-}
-
-// Habits
-
-// Habit filtering function
-// Filtering is based on search query, tags, and special filters
-// If "recently" is selected, return only habits from recentHabbits
-// Otherwise return habits matching search and tags
-const filteredHabbits = computed(() => {
-	let baseList = habbitsStore.allHabbitsList;
-
-	//  Specjalne filtry
-	if (selectedSpecialFilter.value === "recently") {
-		// Show only recently used habits
-		baseList = baseList.filter((habbit) =>
-			habbitsStore.recentHabbits.includes(habbit.name)
-		);
-	} else if (selectedSpecialFilter.value === "all") {
-		// Show all habits (no limitation)
-		baseList = habbitsStore.allHabbitsList;
-	}
-	// (other filters can be added here in the future, e.g. "user")
-
-	// Search, tag, and category filters
-	return baseList.filter((habbit) => {
-		const matchesSearch =
-			searchQuery.value === "" ||
-			habbit.name.toLowerCase().includes(searchQuery.value.toLowerCase());
-
-		const matchesTags =
-			selectedTags.value.length === 0
-				? true
-				: habbit.tags.some((tag) => selectedTags.value.includes(tag));
-
-		const matchesCategory =
-			selectedCategory.value === null
-				? true
-				: habbit.tags.some((tag) =>
-						tag_categories[selectedCategory.value!].includes(tag)
-				  );
-
-		return matchesSearch && matchesTags && matchesCategory;
-	});
-});
-
-// Group habits by category
-// Iterate through all habits and assign them to categories
-// Then filter categories based on activeCategories
-// Return object with categories as keys and habit arrays as values
-const groupedHabbitsByCategory = computed(() => {
+// Grouped by category — filtered by search + active categories
+const groupedFiltered = computed(() => {
 	const grouped: Record<string, Habbit[]> = {};
 
-	habbitsStore.allHabbitsList.forEach((habit) => {
-		const category = getCategoryForHabit(habit);
-		if (!grouped[category]) {
-			grouped[category] = [];
-		}
-		grouped[category].push(habit);
-	});
+	habbitsStore.allHabbitsList
+		.filter(matchesSearch)
+		.forEach((habit) => {
+			const cat = getCategoryForHabit(habit);
+			if (activeCategories.value.includes(cat)) {
+				if (!grouped[cat]) grouped[cat] = [];
+				grouped[cat].push(habit);
+			}
+		});
 
-	const filtered: Record<string, Habbit[]> = {};
-
-	for (const [category, habits] of Object.entries(grouped)) {
-		if (activeCategories.value.includes(category)) {
-			filtered[category] = habits;
-		}
-	}
-
-	return filtered;
+	return grouped;
 });
 
-// Helper functions
-
-// Check whether search is active
-const isSearching = computed(() => {
-	return (
-		(searchQuery.value?.trim().length ?? 0) > 0 || selectedTags.value.length > 0
-	);
+const hasVisibleGroups = computed(() => {
+	return Object.keys(groupedFiltered.value).length > 0;
 });
 </script>
 
@@ -388,7 +323,7 @@ const isSearching = computed(() => {
 }
 
 /* =====================================================
-   SEARCH BAR — with inline icon
+   SEARCH BAR — with inline icon + clear button
    ===================================================== */
 .hs-search-wrap {
 	position: relative;
@@ -408,10 +343,39 @@ const isSearching = computed(() => {
 }
 .hs-search-input {
 	padding-left: 2.25rem !important;
+	padding-right: 2.25rem !important;
+}
+.hs-search-clear {
+	position: absolute;
+	right: 0.6rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.4rem;
+	height: 1.4rem;
+	border-radius: 50%;
+	border: none;
+	background: var(--p-gray-100);
+	color: var(--p-gray-500);
+	font-size: 0.6rem;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+.hs-search-clear:hover {
+	background: var(--p-gray-200);
+	color: var(--p-gray-700);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-search-clear {
+	background: var(--p-gray-600);
+	color: var(--p-gray-400);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-search-clear:hover {
+	background: var(--p-gray-500);
+	color: var(--p-gray-200);
 }
 
 /* =====================================================
-   CATEGORY PILLS — horizontal scrollable chips
+   CATEGORY PILLS
    ===================================================== */
 .hs-categories {
 	display: flex;
@@ -474,7 +438,7 @@ const isSearching = computed(() => {
 	color: var(--p-red-400);
 }
 
-/* Category dot — color indicator */
+/* Category color dots */
 .hs-cat-dot {
 	width: 0.42rem;
 	height: 0.42rem;
@@ -494,58 +458,7 @@ const isSearching = computed(() => {
 .cat-negative { background: var(--p-red-500); }
 
 /* =====================================================
-   TAG CLOUD — hashtag pills
-   ===================================================== */
-.hs-tags-area {
-	padding: 0.55rem 0.75rem;
-	border-radius: 0.65rem;
-	background: var(--p-orange-50);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-tags-area {
-	background: color-mix(in srgb, var(--p-gray-700) 40%, transparent);
-}
-.hs-tags-list {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.3rem;
-}
-.hs-tag {
-	padding: 0.2rem 0.55rem;
-	border-radius: 9999px;
-	border: none;
-	background: white;
-	color: var(--p-gray-500);
-	font-size: 0.68rem;
-	font-style: italic;
-	font-weight: 500;
-	cursor: pointer;
-	transition: all 0.2s ease;
-	user-select: none;
-}
-.hs-tag:hover {
-	color: var(--p-orange-600);
-	background: var(--p-orange-100);
-}
-.hs-tag.active {
-	background: var(--p-orange-200);
-	color: var(--p-orange-700);
-	font-weight: 600;
-}
-:where(.my-app-dark, .my-app-dark *) .hs-tag {
-	background: var(--p-gray-700);
-	color: var(--p-gray-400);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-tag:hover {
-	background: var(--p-gray-600);
-	color: var(--p-gray-200);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-tag.active {
-	background: color-mix(in srgb, var(--p-orange-800) 45%, transparent);
-	color: var(--p-orange-300);
-}
-
-/* =====================================================
-   RESULTS GRID — habit items
+   RESULTS GRID
    ===================================================== */
 .hs-results,
 .hs-grouped {
@@ -556,6 +469,63 @@ const isSearching = computed(() => {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.5rem;
+}
+
+/* =====================================================
+   ITEM WRAPPER — holds HabbitItem + check overlay
+   ===================================================== */
+.hs-item-wrap {
+	position: relative;
+	cursor: pointer;
+	transition: all 0.25s ease;
+}
+.hs-item-wrap.added {
+	opacity: 0.45;
+	pointer-events: none;
+	transform: scale(0.95);
+}
+
+/* Checkmark overlay on added items */
+.hs-check-overlay {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 5;
+	pointer-events: none;
+}
+.hs-check-overlay i {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.5rem;
+	height: 1.5rem;
+	border-radius: 50%;
+	background: var(--p-green-500);
+	color: white;
+	font-size: 0.65rem;
+	font-weight: 700;
+	box-shadow: 0 2px 8px color-mix(in srgb, var(--p-green-500) 35%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-check-overlay i {
+	background: var(--p-green-600);
+}
+
+/* Check animation */
+.hs-check-enter-active {
+	transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.hs-check-leave-active {
+	transition: all 0.2s ease;
+}
+.hs-check-enter-from {
+	opacity: 0;
+	transform: scale(0.3);
+}
+.hs-check-leave-to {
+	opacity: 0;
+	transform: scale(0.5);
 }
 
 /* =====================================================
@@ -608,7 +578,7 @@ const isSearching = computed(() => {
 }
 
 /* =====================================================
-   EMPTY STATE — friendly no-results
+   EMPTY STATE
    ===================================================== */
 .hs-empty {
 	display: flex;
@@ -638,6 +608,23 @@ const isSearching = computed(() => {
 :where(.my-app-dark, .my-app-dark *) .hs-empty-text {
 	color: var(--p-gray-500);
 }
+.hs-empty-link {
+	border: none;
+	background: none;
+	color: var(--p-orange-500);
+	font-weight: 600;
+	cursor: pointer;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+	font-size: inherit;
+	padding: 0;
+}
+.hs-empty-link:hover {
+	color: var(--p-orange-600);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-empty-link {
+	color: var(--p-orange-400);
+}
 
 /* =====================================================
    TRANSITIONS
@@ -645,11 +632,11 @@ const isSearching = computed(() => {
 .hs-slide-enter-active,
 .hs-slide-leave-active {
 	transition: all 0.25s ease;
+	overflow: hidden;
 }
 .hs-slide-enter-from,
 .hs-slide-leave-to {
 	opacity: 0;
-	transform: translateY(-6px);
 	max-height: 0;
 }
 .hs-slide-enter-to,

@@ -5,7 +5,7 @@
 		dismissableMask
 		:closable="true"
 		:show-header="false"
-		class="hs-dialog w-[clamp(22rem,85vw,42rem)] pt-">
+		class="hs-dialog w-[clamp(22rem,85vw,42rem)]">
 		<!-- Dialog hero header -->
 		<div class="hs-dialog-hero">
 			<div class="hs-dialog-hero-bg" aria-hidden="true"></div>
@@ -19,62 +19,86 @@
 		</div>
 		<!-- Search content -->
 		<div class="hs-dialog-body">
-			<HabbitSearch @select="handleHabbitSelect" />
+			<HabbitSearch
+				:addedNames="addedInSession"
+				@select="handleHabbitSelect" />
+		</div>
+		<!-- Done footer with counter -->
+		<div class="hs-dialog-footer">
+			<Transition name="hs-badge">
+				<span v-if="addedInSession.length > 0" class="hs-added-badge">
+					{{ addedInSession.length }} added ✓
+				</span>
+			</Transition>
+			<button class="hs-done-btn" @click="showHabbitDialog = false">
+				Done
+			</button>
 		</div>
 	</Dialog>
 	<div
 		class="card-root"
 		:data-active="isActive">
 		<div
-			class="flex flex-col card-a sm:w-[480px] surface-content w-full h-4/5 min-h-[30rem] max-h-[50rem] overflow-auto"
+			class="flex flex-col justify-between card-a sm:w-[480px] surface-content w-full h-4/5 min-h-[30rem] max-h-[50rem] overflow-auto"
 			@click.capture="handleGlobalClick">
-			<div class="text-center">
-				<h3 class="text-c font-lora italic">You're doing great! ✨</h3>
-			</div>
-			<div class="tasks-area mt-8 h-2/3">
-				<div class="flex flex-row flex-wrap h-min gap-2">
-					<draggable
-						v-model="selectedDayHabbits"
-						item-key="id"
-						class="flex flex-row flex-wrap h-min gap-2"
-						ghost-class="opacity-40"
-						:animation="150"
-						@end="habbitsStore.updateHabbitsOrderInFirestore">
-						<template #item="{ element }">
-							<HabbitItem
-								:data="getHabbitDisplayData(element)"
-								:showTooltip="!editMode"
-								@click="() => toggleMarkHabbit(element)" />
-						</template>
-					</draggable>
-					<HabbitItem
-						@click="openAddHabbitDialog"
-						:showTooltip="!editMode"
-						:data="{ severity: 'empty', icon: 'add', name: 'add' }" />
+			<!-- Top area: header + tracked habits -->
+			<div>
+				<!-- Dynamic progress header -->
+				<div class="hc-header">
+					<template v-if="selectedDayHabbits.length > 0">
+						<span class="hc-count">{{ selectedDayHabbits.length }}</span>
+						<span class="hc-count-label">{{ selectedDayHabbits.length === 1 ? 'habit' : 'habits' }} tracked ✨</span>
+					</template>
+					<p v-else class="hc-encourage">
+						Tap <span class="hc-plus-badge">+</span> to start tracking 🌱
+					</p>
+				</div>
+
+				<!-- Tracked habits -->
+				<div class="tasks-area mt-5">
+					<div class="flex flex-row flex-wrap h-min gap-3">
+						<draggable
+							v-model="selectedDayHabbits"
+							item-key="id"
+							class="flex flex-row flex-wrap h-min gap-3"
+							ghost-class="opacity-40"
+							:animation="150"
+							@end="habbitsStore.updateHabbitsOrderInFirestore">
+							<template #item="{ element }">
+								<HabbitItem
+									:data="getHabbitDisplayData(element)"
+									:showTooltip="!editMode"
+									@click="() => toggleMarkHabbit(element)" />
+							</template>
+						</draggable>
+						<HabbitItem
+							@click="openAddHabbitDialog"
+							:showTooltip="!editMode"
+							:data="{ severity: 'empty', icon: 'add', name: 'add' }" />
+					</div>
 				</div>
 			</div>
 
-			<Divider></Divider>
-			<div class="flex flex-col gap-6 flex-grow">
-				<div class="text-center">
-					<h3 class="font-lora">Daily goals 🎯</h3>
-				</div>
-				<div
-					class="text-right cursor-pointer"
-					@click="toggleEditMode">
-					<h4
-						class="inline-block border-b text-border-success-hover-danger transition-colors">
-						{{ editMode ? "Close edit mode" : "Edit goals" }}
-					</h4>
+			<!-- Goals section -->
+			<div class="hc-goals-section">
+				<div class="hc-goals-header">
+					<h3 class="hc-goals-title">Daily goals 🎯</h3>
+					<button
+						class="hc-edit-pill"
+						:class="{ active: editMode }"
+						@click="toggleEditMode">
+						<i class="pi" :class="editMode ? 'pi-check' : 'pi-pencil'" style="font-size: 0.6rem"></i>
+						{{ editMode ? 'Done' : 'Edit' }}
+					</button>
 				</div>
 				<div
 					ref="goalsContainerRef"
-					class="flex flex-row flex-wrap h-min gap-2">
+					class="flex flex-row flex-wrap h-min gap-3">
 					<draggable
 						v-if="editMode"
 						v-model="dailyGoalsList"
 						item-key="id"
-						class="flex flex-row flex-wrap gap-2"
+						class="flex flex-row flex-wrap gap-3"
 						ghost-class="opacity-40"
 						:animation="150"
 						@end="habbitsStore.updateGoalsOrderInFirestore">
@@ -101,6 +125,15 @@
 						@click="openaddDailyGoalDialog"
 						:data="{ severity: 'empty', icon: 'add', name: 'add' }" />
 				</div>
+				<!-- Empty goals state -->
+				<div v-if="dailyGoalsList.length === 0 && !editMode" class="hc-goals-empty">
+					<span class="hc-goals-empty-emoji">🎯</span>
+					<p class="hc-goals-empty-text">Set goals to track your progress</p>
+					<button class="hc-goals-empty-btn" @click="toggleEditMode">
+						<i class="pi pi-plus" style="font-size: 0.55rem"></i>
+						Add goals
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -109,8 +142,6 @@
 <script setup lang="ts">
 import HabbitItem from "@/components/home_view/HabbitItem.vue";
 import HabbitSearch from "@/components/home_view/HabbitSearch.vue";
-import Divider from "primevue/divider";
-
 import Dialog from "primevue/dialog";
 import { ref, computed, onBeforeUnmount, nextTick } from "vue";
 import { useHabbitsStore } from "@/stores/habbits";
@@ -136,6 +167,9 @@ const addDialogMode = ref("");
 const selectedTaskToDelete = ref<Habbit | null>(null);
 const selectedGoalToDelete = ref<Habbit | null>(null);
 
+// Multi-select session tracking — tracks names of habits added while dialog is open
+const addedInSession = ref<string[]>([]);
+
 const headerText = computed(() =>
 	addDialogMode.value === "habbit"
 		? "Add daily habit"
@@ -145,11 +179,13 @@ const editMode = ref(false);
 
 function openAddHabbitDialog() {
 	addDialogMode.value = "habbit";
+	addedInSession.value = [];
 	showHabbitDialog.value = true;
 }
 
 function openaddDailyGoalDialog() {
 	addDialogMode.value = "goal";
+	addedInSession.value = [];
 	showHabbitDialog.value = true;
 }
 
@@ -160,7 +196,10 @@ function handleHabbitSelect(habbit: Habbit) {
 		habbitsStore.addDailyGoal(habbit);
 	}
 
-	showHabbitDialog.value = false;
+	// Track the added habit — dialog stays open for multi-select
+	if (!addedInSession.value.includes(habbit.name)) {
+		addedInSession.value.push(habbit.name);
+	}
 }
 
 function deleteSelectedTask() {
@@ -418,5 +457,248 @@ function getFullHabbitData(habbit: Habbit) {
 }
 :where(.my-app-dark, .my-app-dark *) .hs-dialog-body {
 	scrollbar-color: var(--p-gray-600) transparent;
+}
+
+/* Dialog footer — sticky done button */
+.hs-dialog-footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	padding: 0.85rem 1.25rem;
+	border-top: 1px solid var(--p-orange-100);
+	background: color-mix(in srgb, var(--p-orange-50) 50%, white);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-dialog-footer {
+	border-top-color: var(--p-gray-700);
+	background: color-mix(in srgb, var(--p-gray-800) 80%, transparent);
+}
+
+.hs-added-badge {
+	font-size: 0.72rem;
+	font-weight: 600;
+	color: var(--p-green-600);
+	background: color-mix(in srgb, var(--p-green-100) 60%, transparent);
+	padding: 0.25rem 0.65rem;
+	border-radius: 9999px;
+	user-select: none;
+}
+:where(.my-app-dark, .my-app-dark *) .hs-added-badge {
+	color: var(--p-green-400);
+	background: color-mix(in srgb, var(--p-green-900) 30%, transparent);
+}
+
+.hs-done-btn {
+	padding: 0.45rem 1.5rem;
+	border-radius: 0.65rem;
+	border: none;
+	background: var(--p-orange-500);
+	color: white;
+	font-family: 'Lora', serif;
+	font-size: 0.82rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+.hs-done-btn:hover {
+	background: var(--p-orange-600);
+	transform: translateY(-1px);
+	box-shadow: 0 3px 10px color-mix(in srgb, var(--p-orange-500) 30%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-done-btn {
+	background: var(--p-orange-600);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-done-btn:hover {
+	background: var(--p-orange-500);
+}
+
+/* Badge transition */
+.hs-badge-enter-active {
+	transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.hs-badge-leave-active {
+	transition: all 0.2s ease;
+}
+.hs-badge-enter-from {
+	opacity: 0;
+	transform: scale(0.7);
+}
+.hs-badge-leave-to {
+	opacity: 0;
+	transform: scale(0.8);
+}
+
+/* ====== Dynamic Header ====== */
+.hc-header {
+	text-align: center;
+	padding: 0.25rem 0;
+}
+.hc-count {
+	font-family: 'Lora', serif;
+	font-size: 1.6rem;
+	font-weight: 700;
+	color: var(--p-orange-500);
+	line-height: 1;
+}
+:where(.my-app-dark, .my-app-dark *) .hc-count {
+	color: var(--p-orange-400);
+}
+.hc-count-label {
+	font-family: 'Lora', serif;
+	font-size: 0.82rem;
+	font-weight: 500;
+	color: var(--p-gray-500);
+	margin-left: 0.35rem;
+}
+:where(.my-app-dark, .my-app-dark *) .hc-count-label {
+	color: var(--p-gray-400);
+}
+.hc-encourage {
+	font-family: 'Lora', serif;
+	font-size: 0.85rem;
+	color: var(--p-gray-400);
+	font-style: italic;
+	margin: 0;
+}
+:where(.my-app-dark, .my-app-dark *) .hc-encourage {
+	color: var(--p-gray-500);
+}
+.hc-plus-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.2rem;
+	height: 1.2rem;
+	border-radius: 0.35rem;
+	border: 1.5px dashed var(--p-orange-300);
+	color: var(--p-orange-400);
+	font-size: 0.75rem;
+	font-weight: 600;
+	font-style: normal;
+	vertical-align: middle;
+	margin: 0 0.15rem;
+}
+
+/* ====== Goals Section ====== */
+.hc-goals-section {
+	margin-top: 1.25rem;
+	padding: 0.75rem 0.85rem;
+	border-radius: 0.85rem;
+	background: color-mix(in srgb, var(--p-orange-50) 40%, transparent);
+	border: 1px solid color-mix(in srgb, var(--p-orange-100) 50%, transparent);
+	display: flex;
+	flex-direction: column;
+	gap: 0.55rem;
+}
+:where(.my-app-dark, .my-app-dark *) .hc-goals-section {
+	background: color-mix(in srgb, var(--p-gray-700) 30%, transparent);
+	border-color: color-mix(in srgb, var(--p-gray-600) 30%, transparent);
+}
+.hc-goals-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+.hc-goals-title {
+	font-family: 'Lora', serif;
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: var(--p-gray-700);
+	margin: 0;
+}
+:where(.my-app-dark, .my-app-dark *) .hc-goals-title {
+	color: var(--p-gray-200);
+}
+.hc-edit-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	padding: 0.25rem 0.65rem;
+	border-radius: 9999px;
+	border: 1px solid var(--p-orange-200);
+	background: white;
+	color: var(--p-gray-500);
+	font-family: 'Lora', serif;
+	font-size: 0.7rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	user-select: none;
+}
+.hc-edit-pill:hover {
+	border-color: var(--p-orange-300);
+	color: var(--p-orange-600);
+	background: var(--p-orange-50);
+}
+.hc-edit-pill.active {
+	background: var(--p-green-50);
+	border-color: var(--p-green-300);
+	color: var(--p-green-600);
+}
+.hc-edit-pill.active:hover {
+	background: var(--p-green-100);
+}
+:where(.my-app-dark, .my-app-dark *) .hc-edit-pill {
+	border-color: var(--p-gray-600);
+	background: transparent;
+	color: var(--p-gray-400);
+}
+:where(.my-app-dark, .my-app-dark *) .hc-edit-pill:hover {
+	border-color: var(--p-gray-500);
+	color: var(--p-gray-200);
+}
+:where(.my-app-dark, .my-app-dark *) .hc-edit-pill.active {
+	background: color-mix(in srgb, var(--p-green-900) 30%, transparent);
+	border-color: var(--p-green-700);
+	color: var(--p-green-400);
+}
+
+/* ====== Goals Empty State ====== */
+.hc-goals-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	padding: 0.6rem 0.5rem;
+	text-align: center;
+}
+.hc-goals-empty-emoji {
+	font-size: 1.15rem;
+	margin-bottom: 0.2rem;
+	opacity: 0.5;
+}
+.hc-goals-empty-text {
+	font-family: 'Lora', serif;
+	font-size: 0.72rem;
+	color: var(--p-gray-400);
+	margin: 0 0 0.35rem 0;
+}
+:where(.my-app-dark, .my-app-dark *) .hc-goals-empty-text {
+	color: var(--p-gray-500);
+}
+.hc-goals-empty-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.3rem 0.75rem;
+	border-radius: 0.5rem;
+	border: 1px dashed var(--p-orange-300);
+	background: transparent;
+	color: var(--p-orange-500);
+	font-family: 'Lora', serif;
+	font-size: 0.72rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+.hc-goals-empty-btn:hover {
+	background: var(--p-orange-50);
+	border-style: solid;
+}
+:where(.my-app-dark, .my-app-dark *) .hc-goals-empty-btn {
+	border-color: var(--p-gray-500);
+	color: var(--p-orange-400);
+}
+:where(.my-app-dark, .my-app-dark *) .hc-goals-empty-btn:hover {
+	background: color-mix(in srgb, var(--p-gray-700) 50%, transparent);
 }
 </style>
