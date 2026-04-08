@@ -23,9 +23,7 @@
             </div>
         </div>
 
-        <p v-if="error" class="text-danger text-sm mt-2">
-            {{ error }}
-        </p>
+        <AuthErrorBanner :error="error" @dismiss="error = null" />
     </form>
 
     <!-- Social login -->
@@ -38,6 +36,7 @@
 import { ref } from "vue";
 import InputText from "primevue/inputtext";
 import Button from "primevue/button";
+import AuthErrorBanner from "@/components/login_view/AuthErrorBanner.vue";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";

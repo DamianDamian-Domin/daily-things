@@ -58,14 +58,20 @@
             <InputText type="password" v-model="password" id="password" class="w-full"
                 :class="(!passwordValid && touchedPassword) ? 'border-red-500' : ''" placeholder="••••••" required />
 
-            <p v-if="touchedPassword && debouncedPassword && !passwordValid"
-                class="text-danger text-sm mt-1 leading-tight">
-                Password must contain:
-                <br>• at least 8 characters
-                <br>• one uppercase letter
-                <br>• one lowercase letter
-                <br>• one number
-            </p>
+            <Transition name="pwd-rules">
+                <div v-if="touchedPassword && debouncedPassword && !passwordValid" class="mt-2 space-y-1">
+                    <div v-for="rule in passwordRules" :key="rule.label"
+                        class="flex items-center gap-2 text-sm transition-all duration-300">
+                        <i class="pi text-xs"
+                            :class="rule.valid
+                                ? 'pi-check-circle text-green-500 dark:text-green-400'
+                                : 'pi-circle text-gray-300 dark:text-gray-600'" />
+                        <span :class="rule.valid
+                            ? 'text-green-600 dark:text-green-400 line-through opacity-60'
+                            : 'text-c'">{{ rule.label }}</span>
+                    </div>
+                </div>
+            </Transition>
         </div>
 
         <!-- Repeat Password -->
@@ -85,9 +91,7 @@
         <!-- Button -->
         <div class="flex flex-col text-sm">
             <Button label="Sign Up" type="submit" class="w-full" :disabled="!formValid" />
-            <p v-if="error" class="text-danger text-sm mt-2">
-                {{ error }}
-            </p>
+            <AuthErrorBanner :error="error" @dismiss="error = null" />
         </div>
     </form>
 
@@ -106,6 +110,7 @@ import { ref, computed, watch } from "vue";
 import InputText from "primevue/inputtext";
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
+import AuthErrorBanner from "@/components/login_view/AuthErrorBanner.vue";
 import { useAuthStore } from "@/stores/auth";
 import { storeToRefs } from "pinia";
 import { useRouter } from "vue-router";
@@ -187,11 +192,15 @@ const emailValid = computed(() =>
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(debouncedEmail.value)
 );
 
+const passwordRules = computed(() => [
+    { label: "Min. 8 znaków", valid: debouncedPassword.value.length >= 8 },
+    { label: "Wielka litera", valid: /[A-Z]/.test(debouncedPassword.value) },
+    { label: "Mała litera", valid: /[a-z]/.test(debouncedPassword.value) },
+    { label: "Cyfra", valid: /\d/.test(debouncedPassword.value) },
+]);
+
 const passwordValid = computed(() =>
-    /[A-Z]/.test(debouncedPassword.value) &&
-    /[a-z]/.test(debouncedPassword.value) &&
-    /\d/.test(debouncedPassword.value) &&
-    debouncedPassword.value.length >= 8
+    passwordRules.value.every(r => r.valid)
 );
 
 const passwordsMatch = computed(() =>
@@ -248,6 +257,26 @@ const onGoogleLogin = async () => {
 
 <style scoped>
 /* fade + pop animations */
+/* Transition animacja dla wymagań hasła */
+.pwd-rules-enter-active {
+    transition: all 0.3s ease-out;
+}
+.pwd-rules-leave-active {
+    transition: all 0.2s ease-in;
+}
+.pwd-rules-enter-from,
+.pwd-rules-leave-to {
+    opacity: 0;
+    transform: translateY(-4px);
+    max-height: 0;
+}
+.pwd-rules-enter-to,
+.pwd-rules-leave-from {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 120px;
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
