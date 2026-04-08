@@ -1,28 +1,22 @@
 import { ref, computed } from "vue";
 import { defineStore, storeToRefs } from "pinia";
-import {
-	collection,
-	query,
-	where,
-	getDocs,
-	doc,
-	updateDoc,
-	setDoc,
-} from "firebase/firestore";
+import { doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import { nanoid } from "nanoid";
 
 import { useAuthStore } from "./auth";
 import { useHabbitsStore } from "./habbits";
 import { useLoaderStore } from "./loader";
+import { handleAsyncAction } from "@/stores/asyncActionHandler";
 
 import { toDateKey } from "@/utils/timeUtils";
-import { handleAsyncAction } from "@/stores/asyncActionHandler";
 
 export interface TodoItem {
 	id: string;
 	text: string;
 	completed: boolean;
+	description?: string; // NOWE: Opcjonalny opis zadania
+	createdAt?: number; // NOWE: Znacznik czasu do sortowania (od najnowszych)
 }
 
 export interface UserTodos {
@@ -40,12 +34,28 @@ export const useTodosStore = defineStore("todos", () => {
 
 	const userTodosList = ref<UserTodos[]>([]);
 
-	// TODOS FOR SELECTED DAY
+	// =========================
+	// SELECTED DAY TODOS (Z SORTOWANIEM)
+	// =========================
+
 	const selectedDayTodos = computed({
 		get() {
 			const key = toDateKey(refDate.value);
 			const entry = userTodosList.value.find((item) => item.date === key);
-			return entry ? entry.todos : [];
+
+			if (!entry) return [];
+
+			// Sortowanie listy: niewykonane najpierw, a w danej grupie - od najnowszego
+			return [...entry.todos].sort((a, b) => {
+				// Jeśli oba są wykonane lub oba niewykonane, sortujemy po dacie utworzenia
+				if (a.completed === b.completed) {
+					const timeA = a.createdAt || 0;
+					const timeB = b.createdAt || 0;
+					return timeB - timeA; // Najnowsze u góry
+				}
+				// Zadania niewykonane (false) idą na górę przed wykonanymi (true)
+				return a.completed ? 1 : -1;
+			});
 		},
 		set(newTodos) {
 			const key = toDateKey(refDate.value);
@@ -62,39 +72,36 @@ export const useTodosStore = defineStore("todos", () => {
 		},
 	});
 
+	// =========================
 	// LOAD TODOS
-	async function loadTodosForDate(selectedDate: Date) {
+	// =========================
+
+	async function loadTodos() {
 		await loader.run(async () => {
 			try {
-				const todosRef = collection(db, "users", userUid.value!!, "todos");
+				const userDocRef = doc(db, "users", userUid.value!!);
+				const userDoc = await getDoc(userDocRef);
 
-				const q = query(todosRef, where("date", "==", toDateKey(selectedDate)));
-
-				const querySnapshot = await getDocs(q);
-
-				querySnapshot.forEach((docSnap) => {
-					const { date, todos } = docSnap.data();
-
-					const alreadyExists = userTodosList.value.some(
-						(entry) => entry.date === date,
-					);
-
-					if (!alreadyExists) {
-						userTodosList.value.push({ date, todos });
-					}
-				});
+				if (userDoc.exists() && userDoc.data().todos) {
+					userTodosList.value = userDoc.data().todos;
+				} else {
+					await setDoc(userDocRef, { todos: [] }, { merge: true });
+					userTodosList.value = [];
+				}
 			} catch (error) {
 				console.error("Error loading todos:", error);
 			}
 		});
 	}
 
-	// ADD TODO
-	async function addTodo(text: string) {
+	// =========================
+	// ADD TODO (Zaktualizowane o opis)
+	// =========================
+
+	async function addTodo(text: string, description: string = "") {
 		await handleAsyncAction(
 			async () => {
 				const formattedDate = toDateKey(refDate.value);
-
 				const dayEntry = userTodosList.value.find(
 					(day) => day.date === formattedDate,
 				);
@@ -102,76 +109,62 @@ export const useTodosStore = defineStore("todos", () => {
 				const newTodo: TodoItem = {
 					id: nanoid(),
 					text,
-					completed: true,
+					description, // Zapis opisu
+					completed: false,
+					createdAt: Date.now(), // Zapisujemy dokładny moment utworzenia w milisekundach
 				};
 
-				const todosRef = doc(
-					db,
-					"users",
-					userUid.value!!,
-					"todos",
-					formattedDate,
-				);
-
 				if (dayEntry) {
-					await updateDoc(todosRef, {
-						todos: [...dayEntry.todos, newTodo],
-					});
-
 					dayEntry.todos.push(newTodo);
 				} else {
-					await setDoc(todosRef, {
-						date: formattedDate,
-						todos: [newTodo],
-					});
-
 					userTodosList.value.push({
 						date: formattedDate,
 						todos: [newTodo],
 					});
 				}
+
+				const userDocRef = doc(db, "users", userUid.value!!);
+				await updateDoc(userDocRef, { todos: userTodosList.value });
 			},
 			"Task added!",
 			"Failed to add task.",
 		);
 	}
+
+	// =========================
 	// DELETE TODO
+	// =========================
+
 	async function deleteTodo(todoId: string) {
 		await handleAsyncAction(
 			async () => {
 				const formattedDate = toDateKey(refDate.value);
-
 				const dayEntry = userTodosList.value.find(
 					(day) => day.date === formattedDate,
 				);
 
 				if (!dayEntry) return;
 
-				const updatedTodos = dayEntry.todos.filter((t) => t.id !== todoId);
+				dayEntry.todos = dayEntry.todos.filter((t) => t.id !== todoId);
 
-				const todosRef = doc(
-					db,
-					"users",
-					userUid.value!!,
-					"todos",
-					formattedDate,
-				);
-
-				await updateDoc(todosRef, {
-					todos: updatedTodos,
-				});
-
-				dayEntry.todos = updatedTodos;
+				const userDocRef = doc(db, "users", userUid.value!!);
+				await updateDoc(userDocRef, { todos: userTodosList.value });
 			},
-			"Task completed!",
-			"Failed to completed task.",
+			"Task deleted!",
+			"Failed to delete task.",
 		);
 	}
 
-	// UPDATE TODO TEXT
-	async function updateTodo(todoId: string, newText: string) {
-		const formattedDate = toDateKey(refDate.value);
+	// =========================
+	// UPDATE TODO TEXT & DESCRIPTION
+	// =========================
 
+	async function updateTodo(
+		todoId: string,
+		newText: string,
+		newDescription: string = "",
+	) {
+		const formattedDate = toDateKey(refDate.value);
 		const dayEntry = userTodosList.value.find(
 			(day) => day.date === formattedDate,
 		);
@@ -179,34 +172,52 @@ export const useTodosStore = defineStore("todos", () => {
 		if (!dayEntry) return;
 
 		const todo = dayEntry.todos.find((t) => t.id === todoId);
-
 		if (!todo) return;
 
 		todo.text = newText;
+		todo.description = newDescription; // Aktualizacja opisu
 
 		try {
-			const todosRef = doc(
-				db,
-				"users",
-				userUid.value!!,
-				"todos",
-				formattedDate,
-			);
-
-			await updateDoc(todosRef, {
-				todos: dayEntry.todos,
-			});
+			const userDocRef = doc(db, "users", userUid.value!!);
+			await updateDoc(userDocRef, { todos: userTodosList.value });
 		} catch (error) {
 			console.error("Error updating todo:", error);
+		}
+	}
+
+	// =========================
+	// TOGGLE TODO COMPLETION
+	// =========================
+
+	async function toggleTodo(todoId: string) {
+		const formattedDate = toDateKey(refDate.value);
+		const dayEntry = userTodosList.value.find(
+			(day) => day.date === formattedDate,
+		);
+
+		if (!dayEntry) return;
+
+		const todo = dayEntry.todos.find((t) => t.id === todoId);
+		if (!todo) return;
+
+		todo.completed = !todo.completed;
+
+		try {
+			const userDocRef = doc(db, "users", userUid.value!!);
+			await updateDoc(userDocRef, { todos: userTodosList.value });
+		} catch (error) {
+			todo.completed = !todo.completed;
+			console.error("Error toggling todo status:", error);
 		}
 	}
 
 	return {
 		userTodosList,
 		selectedDayTodos,
-		loadTodosForDate,
+		loadTodos,
 		addTodo,
 		deleteTodo,
 		updateTodo,
+		toggleTodo,
 	};
 });

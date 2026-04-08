@@ -36,7 +36,7 @@ import { computed } from "vue";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 
 // Karty
-import TextAddCard from "../components/home_view/TextAddCard.vue";
+import ToDosCard from "../components/home_view/ToDosCard.vue";
 import StatsCard from "../components/home_view/StatsCard.vue";
 import HabbitsCard from "@/components/home_view/HabbitsCard.vue";
 
@@ -44,7 +44,7 @@ const carouselStore = useCarouselStore();
 
 const cardComponentMap = {
 	manage: HabbitsCard,
-	textAdd: TextAddCard,
+	textAdd: ToDosCard,
 	stats: StatsCard,
 } as const;
 
@@ -90,104 +90,119 @@ function onPointerUp(e: PointerEvent) {
 
 <style scoped>
 .carousel-view {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	gap: 4px;
-
-	/* make the carousel have a stable height so children with percentage
-	   heights (h-4/5 etc) don’t grow indefinitely */
+	position: relative;
+	width: 100%;
 	height: 80vh;
 	max-height: 80vh;
-
-	/* KLUCZOWE DLA rotateY */
-	perspective: 1200px;
-	touch-action: pan-y;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
 }
 
-/* force cards to occupy full height of carousel container */
+/* Baza karty */
 .carousel-card {
-	/* height: 100%; */
+	position: absolute;
+	top: 45%;
+	left: 50%;
 	display: flex;
-	/* let contents stretch to fill the card height */
 	align-items: stretch;
 	justify-content: center;
+	will-change: transform, opacity, z-index;
 }
 
-/* BAZA KARTY */
-.carousel-card {
-	will-change: transform, opacity;
-	transform-style: preserve-3d;
-	transition:
-		transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
-		opacity 320ms ease;
-	box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+/* === ANIMACJE (KEYFRAMES) === */
+
+/* Karta wchodzi na środek (staje się aktywna) */
+@keyframes slide-to-active {
+	0% {
+		transform: translate(-50%, -50%) scale(0.85);
+		z-index: 2;
+		opacity: 0.4;
+	}
+	50% {
+		transform: translate(calc(-50% + 100px), -50%) scale(0.9);
+	} /* Lekki zamach w bok */
+	100% {
+		transform: translate(-50%, -50%) scale(1);
+		z-index: 3;
+		opacity: 1;
+	}
 }
 
-/* ===== ROLA: ACTIVE (ŚRODEK) ===== */
+/* Karta ucieka na lewo */
+@keyframes slide-to-left {
+	0% {
+		transform: translate(-50%, -50%) scale(1);
+		z-index: 3;
+		opacity: 1;
+	}
+	50% {
+		transform: translate(calc(-50% - 350px), -50%) scale(0.9);
+	} /* Wychylenie mocniej w lewo */
+	100% {
+		transform: translate(calc(-50% - 280px), -50%) scale(0.85);
+		z-index: 2;
+		opacity: 0.4;
+	}
+}
+
+/* Karta ucieka na prawo */
+@keyframes slide-to-right {
+	0% {
+		transform: translate(-50%, -50%) scale(1);
+		z-index: 3;
+		opacity: 1;
+	}
+	50% {
+		transform: translate(calc(-50% + 350px), -50%) scale(0.9);
+	} /* Wychylenie mocniej w prawo */
+	100% {
+		transform: translate(calc(-50% + 280px), -50%) scale(0.85);
+		z-index: 2;
+		opacity: 0.4;
+	}
+}
+
+/* === PRZYPISANIE ANIMACJI DO RÓL === */
+
 .role-active {
-	transform: translateX(0) scale(1) rotateY(0deg);
-	opacity: 1;
-	z-index: 3;
-	cursor: default;
-	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+	animation: slide-to-active 0.8s ease-out forwards;
 }
 
-/* ===== ROLA: LEFT ===== */
 .role-left {
-	transform: translateX(-20%) scale(0.9) rotateY(-25deg);
-}
-
-/* ===== ROLA: RIGHT ===== */
-.role-right {
-	transform: translateX(20%) scale(0.9) rotateY(25deg);
-}
-.role-left,
-.role-right {
+	animation: slide-to-left 0.8s ease-out forwards;
 	cursor: pointer;
-	opacity: 0.6;
-	z-index: 2;
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
 }
 
+.role-right {
+	animation: slide-to-right 0.8s ease-out forwards;
+	cursor: pointer;
+}
+
+/* DOTS — bez zmian, zostają przy prostych przejściach */
 .carousel-dots {
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	gap: 10px;
-	margin-top: 14px;
+	margin-top: 10px;
 }
 
-/* baza kropki */
 .dot {
 	width: 8px;
 	height: 8px;
 	border-radius: 50%;
 	background-color: #cbd5e1;
 	border: none;
-	padding: 0;
 	cursor: pointer;
-
 	transition:
 		transform 200ms ease,
-		background-color 200ms ease,
-		opacity 200ms ease;
+		background-color 200ms ease;
 }
 
-/* hover – tylko wizualny hint */
-.dot:hover {
-	opacity: 0.8;
-}
-
-/* aktywna karta */
 .dot.active {
-	background-color: var(--color-green-500); /* zielony akcent */
+	background-color: var(--color-green-500);
 	transform: scale(1.5);
-}
-
-/* focus (klawiatura) */
-.dot:focus-visible {
-	outline: none;
-	box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.35);
 }
 </style>

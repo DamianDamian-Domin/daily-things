@@ -36,7 +36,7 @@ const iconClass = computed(() => {
 	font-size: 1.5rem;
 	box-shadow: 0 0 20px rgba(72, 239, 128, 0.6);
 	pointer-events: none;
-	z-index: 1;
+	z-index: 100;
 	will-change: transform, opacity;
 }
 

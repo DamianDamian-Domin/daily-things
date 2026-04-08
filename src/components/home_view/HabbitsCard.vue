@@ -3,6 +3,7 @@
 		v-model:visible="showHabbitDialog"
 		modal
 		dismissableMask
+		:closable="false"
 		:header="headerText"
 		class="w-[clamp(20rem,50%,60rem)]">
 		<div class="flex flex-col gap-4">
