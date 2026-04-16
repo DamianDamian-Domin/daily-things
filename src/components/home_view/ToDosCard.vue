@@ -1,9 +1,9 @@
 <template>
-	<div class="td-card card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] max-h-[50rem]">
+	<div
+		class="td-card card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] max-h-[50rem]">
 		<div
 			class="td-inner"
 			:class="!isActive && 'pointer-events-none'">
-
 			<!-- Header with progress ring -->
 			<div class="td-top">
 				<h3 class="td-title">To-do list 📝</h3>
@@ -12,7 +12,9 @@
 					:style="ringStyle"
 					v-tooltip.bottom="completedCount + '/' + totalCount + ' done'">
 					<div class="td-ring-inner">
-						<span class="td-ring-text">{{ completedCount }}/{{ totalCount }}</span>
+						<span class="td-ring-text"
+							>{{ completedCount }}/{{ totalCount }}</span
+						>
 					</div>
 				</div>
 			</div>
@@ -29,7 +31,9 @@
 						@click="toggleCompletion(item)">
 						<span class="td-check-inner"></span>
 					</button>
-					<span class="td-item-text" @click="openEditDialog(item)">
+					<span
+						class="td-item-text"
+						@click="openEditDialog(item)">
 						{{ item.text }}
 					</span>
 					<i
@@ -55,7 +59,9 @@
 
 				<!-- Completed tasks (collapsed section) -->
 				<template v-if="completedTodos.length > 0">
-					<button class="td-done-toggle" @click="showCompleted = !showCompleted">
+					<button
+						class="td-done-toggle"
+						@click="showCompleted = !showCompleted">
 						<i
 							class="pi td-done-chevron"
 							:class="showCompleted ? 'pi-chevron-down' : 'pi-chevron-right'"
@@ -63,7 +69,9 @@
 						<span>{{ completedTodos.length }} completed</span>
 					</button>
 					<Transition name="td-slide">
-						<div v-if="showCompleted" class="td-completed-list">
+						<div
+							v-if="showCompleted"
+							class="td-completed-list">
 							<div
 								v-for="item in completedTodos"
 								:key="item.id"
@@ -71,9 +79,13 @@
 								<button
 									class="td-check td-check-done"
 									@click="toggleCompletion(item)">
-									<i class="pi pi-check" style="font-size: 0.55rem"></i>
+									<i
+										class="pi pi-check"
+										style="font-size: 0.55rem"></i>
 								</button>
-								<span class="td-item-text td-text-done" @click="openEditDialog(item)">
+								<span
+									class="td-item-text td-text-done"
+									@click="openEditDialog(item)">
 									{{ item.text }}
 								</span>
 							</div>
@@ -82,7 +94,9 @@
 				</template>
 
 				<!-- Empty state -->
-				<div v-if="totalCount === 0" class="td-empty">
+				<div
+					v-if="totalCount === 0"
+					class="td-empty">
 					<span class="td-empty-emoji">📋</span>
 					<p class="td-empty-text">No tasks yet — type above to add one</p>
 				</div>
@@ -116,11 +130,17 @@
 					<button
 						class="td-dialog-delete"
 						@click="deleteCurrentTask">
-						<i class="pi pi-trash" style="font-size: 0.7rem"></i>
+						<i
+							class="pi pi-trash"
+							style="font-size: 0.7rem"></i>
 						Delete
 					</button>
 					<div class="td-dialog-right">
-						<button class="td-dialog-cancel" @click="closeDialog">Cancel</button>
+						<button
+							class="td-dialog-cancel"
+							@click="closeDialog">
+							Cancel
+						</button>
 						<button
 							class="td-dialog-save"
 							:disabled="!dialogText.trim()"
@@ -143,32 +163,38 @@ import Dialog from "primevue/dialog";
 defineProps<{ isActive: boolean }>();
 
 const todosStore = useTodosStore();
-const { selectedDayTodos } = storeToRefs(todosStore);
 
-// Split into active / completed
+// ZMIANA: Pobieramy teraz sortedTodos zamiast selectedDayTodos
+const { sortedTodos } = storeToRefs(todosStore);
+
+// ZMIANA: Filtrujemy na podstawie sortedTodos
 const activeTodos = computed(() =>
-	selectedDayTodos.value.filter((t) => !t.completed)
+	sortedTodos.value.filter((t) => !t.completed),
 );
 const completedTodos = computed(() =>
-	selectedDayTodos.value.filter((t) => t.completed)
+	sortedTodos.value.filter((t) => t.completed),
 );
 
-const totalCount = computed(() => selectedDayTodos.value.length);
+// ZMIANA: Zliczamy na podstawie sortedTodos
+const totalCount = computed(() => sortedTodos.value.length);
 const completedCount = computed(() => completedTodos.value.length);
 
 const showCompleted = ref(true);
 
 // Progress ring — CSS conic-gradient
 const ringStyle = computed(() => {
-	const pct = totalCount.value === 0 ? 0 : (completedCount.value / totalCount.value) * 100;
+	const pct =
+		totalCount.value === 0
+			? 0
+			: (completedCount.value / totalCount.value) * 100;
 	let color: string;
-	if (totalCount.value === 0) color = 'var(--p-gray-300, #d1d5db)';
-	else if (pct >= 100) color = 'var(--p-green-500, #22c55e)';
-	else if (pct >= 50) color = 'var(--p-orange-500, #f97316)';
-	else color = 'var(--p-orange-400, #fb923c)';
-	const track = 'var(--p-orange-200, #fed7aa)';
+	if (totalCount.value === 0) color = "var(--p-gray-300, #d1d5db)";
+	else if (pct >= 100) color = "var(--p-green-500, #22c55e)";
+	else if (pct >= 50) color = "var(--p-orange-500, #f97316)";
+	else color = "var(--p-orange-400, #fb923c)";
+	const track = "var(--p-orange-200, #fed7aa)";
 	return {
-		background: `conic-gradient(${color} ${pct}%, ${track} ${pct}%)`
+		background: `conic-gradient(${color} ${pct}%, ${track} ${pct}%)`,
 	};
 });
 
@@ -232,7 +258,11 @@ function saveTask() {
 		return;
 	}
 	if (currentEditId.value) {
-		todosStore.updateTodo(currentEditId.value, text, dialogDescription.value.trim());
+		todosStore.updateTodo(
+			currentEditId.value,
+			text,
+			dialogDescription.value.trim(),
+		);
 	}
 	closeDialog();
 }
@@ -278,7 +308,7 @@ onMounted(() => {
 	flex-shrink: 0;
 }
 .td-title {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 1rem;
 	font-weight: 600;
 	color: var(--p-gray-700);
@@ -311,7 +341,7 @@ onMounted(() => {
 	background: var(--p-gray-800, #1f2937);
 }
 .td-ring-text {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.58rem;
 	font-weight: 700;
 	color: var(--p-gray-600);
@@ -419,7 +449,7 @@ onMounted(() => {
 /* Task text */
 .td-item-text {
 	flex: 1;
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.85rem;
 	color: var(--p-gray-700);
 	cursor: pointer;
@@ -489,7 +519,7 @@ onMounted(() => {
 	background: transparent;
 	border: none;
 	outline: none;
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.85rem;
 	color: var(--p-gray-700);
 	padding: 0;
@@ -515,7 +545,7 @@ onMounted(() => {
 	border: none;
 	background: none;
 	cursor: pointer;
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.72rem;
 	font-weight: 500;
 	color: var(--p-gray-400);
@@ -578,7 +608,7 @@ onMounted(() => {
 	opacity: 0.5;
 }
 .td-empty-text {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.78rem;
 	color: var(--p-gray-400);
 	margin: 0;
@@ -603,7 +633,7 @@ onMounted(() => {
 	gap: 0.75rem;
 }
 .td-dialog-title {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 1rem;
 	font-weight: 600;
 	color: var(--p-gray-700);
@@ -616,7 +646,7 @@ onMounted(() => {
 	border: none;
 	outline: none;
 	background: transparent;
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 1rem;
 	font-weight: 600;
 	color: var(--p-gray-800);
@@ -636,7 +666,7 @@ onMounted(() => {
 	outline: none;
 	background: color-mix(in srgb, var(--p-orange-50) 30%, transparent);
 	border-radius: 0.6rem;
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.82rem;
 	color: var(--p-gray-700);
 	padding: 0.6rem 0.75rem;
@@ -668,7 +698,7 @@ onMounted(() => {
 	border: none;
 	background: none;
 	color: var(--p-red-400);
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.75rem;
 	font-weight: 500;
 	cursor: pointer;
@@ -690,7 +720,7 @@ onMounted(() => {
 .td-dialog-cancel {
 	border: none;
 	background: none;
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.78rem;
 	color: var(--p-gray-500);
 	cursor: pointer;
@@ -710,7 +740,7 @@ onMounted(() => {
 	border: none;
 	background: var(--p-orange-500);
 	color: white;
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.78rem;
 	font-weight: 600;
 	padding: 0.4rem 1.1rem;
