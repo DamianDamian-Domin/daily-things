@@ -6,7 +6,6 @@ import { nanoid } from "nanoid";
 
 import { useAuthStore } from "./auth";
 import { useHabbitsStore } from "./habbits";
-import { useLoaderStore } from "./loader";
 import { handleAsyncAction } from "@/stores/asyncActionHandler";
 
 import { toDateKey } from "@/utils/timeUtils";
@@ -27,7 +26,6 @@ export interface UserTodos {
 export const useTodosStore = defineStore("todos", () => {
 	const authStore = useAuthStore();
 	const habbitsStore = useHabbitsStore();
-	const loader = useLoaderStore();
 
 	const { userUid } = storeToRefs(authStore);
 	const { refDate } = storeToRefs(habbitsStore);
@@ -77,21 +75,19 @@ export const useTodosStore = defineStore("todos", () => {
 	// =========================
 
 	async function loadTodos() {
-		await loader.run(async () => {
-			try {
-				const userDocRef = doc(db, "users", userUid.value!!);
-				const userDoc = await getDoc(userDocRef);
+		try {
+			const userDocRef = doc(db, "users", userUid.value!!);
+			const userDoc = await getDoc(userDocRef);
 
-				if (userDoc.exists() && userDoc.data().todos) {
-					userTodosList.value = userDoc.data().todos;
-				} else {
-					await setDoc(userDocRef, { todos: [] }, { merge: true });
-					userTodosList.value = [];
-				}
-			} catch (error) {
-				console.error("Error loading todos:", error);
+			if (userDoc.exists() && userDoc.data().todos) {
+				userTodosList.value = userDoc.data().todos;
+			} else {
+				await setDoc(userDocRef, { todos: [] }, { merge: true });
+				userTodosList.value = [];
 			}
-		});
+		} catch (error) {
+			console.error("Error loading todos:", error);
+		}
 	}
 
 	// =========================
