@@ -91,27 +91,38 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		return formatedGoals;
 	});
 
+	const now = new Date();
 	const loadedStartDate = ref(
-		new Date(new Date().setDate(new Date().getDate() - 7)),
+		new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)),
 	);
-	const loadedEndDate = ref(new Date()); // today
+	const loadedEndDate = ref(
+		new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)),
+	);
 
 	async function loadHabbitsForDate(selectedDate: Date) {
 		if (
 			selectedDate < loadedStartDate.value ||
 			selectedDate > loadedEndDate.value
 		) {
-			console.log("Laduje nowy zakres dat");
+			console.log("Ładuję nowy miesiąc do kalendarza");
 
-			const newStartDate = new Date(selectedDate);
-			newStartDate.setDate(newStartDate.getDate() - 7);
-			const newEndDate = new Date(selectedDate);
-			newEndDate.setDate(newEndDate.getDate() + 7);
+			// Obliczamy pierwszy i ostatni dzień dla nowo wybranego miesiąca
+			const newStartDate = new Date(
+				Date.UTC(selectedDate.getUTCFullYear(), selectedDate.getUTCMonth(), 1),
+			);
+			// 0 jako dzień miesiąca oznacza ostatni dzień poprzedniego miesiąca
+			const newEndDate = new Date(
+				Date.UTC(
+					selectedDate.getUTCFullYear(),
+					selectedDate.getUTCMonth() + 1,
+					0,
+				),
+			);
 
-			// Fetch data for the new range
+			// Pobieramy dane dla całego miesiąca
 			await getDailyHabbitsInRange(newStartDate, newEndDate);
 
-			// Update the loaded range
+			// Rozszerzamy nasz załadowany zakres, aby nie pobierać tego ponownie
 			loadedStartDate.value =
 				newStartDate < loadedStartDate.value
 					? newStartDate
@@ -126,9 +137,10 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		endDate: Date | null = null,
 	) => {
 		try {
-			const _startDate =
-				startDate || new Date(new Date().setDate(new Date().getDate() - 7));
-			const _endDate = endDate || new Date();
+			// Jeśli nie podano daty, ładujemy zakres domyślny (czyli obecny miesiąc)
+			const _startDate = startDate || loadedStartDate.value;
+			const _endDate = endDate || loadedEndDate.value;
+
 			const habbitsRef = collection(db, "users", userUid.value!!, "habbits");
 			const q = query(
 				habbitsRef,
@@ -168,6 +180,24 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			refDate.value.getFullYear() === today.getFullYear()
 		);
 	}
+
+	// Sprawdza czy w danym dniu jest dodana jakakolwiek aktywność
+	function hasHabbitsOnDate(dateObj: any) {
+		if (!dateObj) return false;
+
+		// Używamy Date.UTC, aby uniknąć problemów ze strefą czasową!
+		const dateToCheck = new Date(
+			Date.UTC(dateObj.year, dateObj.month, dateObj.day),
+		);
+
+		// Tworzymy klucz daty (np. "2023-10-15") i szukamy go w liście
+		const key = toDateKey(dateToCheck);
+		const entry = userHabbitsList.value.find((item) => item.date === key);
+
+		// Jeśli znaleźliśmy wpis i ma on jakieś zadania, zwracamy true
+		return entry ? entry.habbits.length > 0 : false;
+	}
+
 	function setDate(date: Date) {
 		refDate.value = new Date(date);
 	}
@@ -457,6 +487,18 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			}
 		}
 	}
+	// Funkcja wywoływana tylko wtedy, gdy użytkownik zmienia miesiąc w kalendarzu
+	async function loadHabbitsForMonth(year: number, month: number) {
+		// PrimeVue zwraca miesiące od 1 (Styczeń) do 12 (Grudzień)
+		// JavaScript liczy miesiące od 0 do 11, dlatego odejmujemy 1
+		const jsMonth = month - 1;
+
+		const newStartDate = new Date(Date.UTC(year, jsMonth, 1));
+		const newEndDate = new Date(Date.UTC(year, jsMonth + 1, 0));
+
+		// Pobieramy dane za ten miesiąc w tle
+		await getDailyHabbitsInRange(newStartDate, newEndDate);
+	}
 
 	loadHabbitsFromFile();
 	loadTagCategories();
@@ -490,5 +532,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		loadRecentHabbits,
 		specialFilters,
 		loadHabbitsFromFile,
+		hasHabbitsOnDate,
+		loadHabbitsForMonth,
 	};
 });

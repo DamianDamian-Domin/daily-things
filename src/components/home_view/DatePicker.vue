@@ -1,12 +1,19 @@
 <template>
 	<div class="dp-bar">
 		<!-- Prev day -->
-		<button class="dp-arrow" aria-label="Previous day" :disabled="!isDateNavEnabled" @click="habbitsStore.changeDate(-1)">
+		<button
+			class="dp-arrow"
+			aria-label="Previous day"
+			:disabled="!isDateNavEnabled"
+			@click="habbitsStore.changeDate(-1)">
 			<i class="pi pi-chevron-left"></i>
 		</button>
 
 		<!-- Date display -->
-		<button class="dp-date" :disabled="!isDateNavEnabled" @click="visible = true">
+		<button
+			class="dp-date"
+			:disabled="!isDateNavEnabled"
+			@click="visible = true">
 			<span class="dp-weekday">{{ dateFormated[0] }}</span>
 			<span class="dp-full">{{ dateFormated[1] }}</span>
 		</button>
@@ -38,17 +45,28 @@
 				<DatePicker
 					v-model="calendarValue"
 					@update:modelValue="onDateSelect($event)"
+					@month-change="onMonthChange"
 					inline
 					showWeek
 					:maxDate="new Date()"
-					class="dp-calendar" />
-
+					class="dp-calendar">
+					<template #date="slotProps">
+						<div class="dp-custom-day">
+							<span>{{ slotProps.date.day }}</span>
+							<i
+								v-if="habbitsStore.hasHabbitsOnDate(slotProps.date)"
+								class="pi pi-bolt dp-day-marker-icon"></i>
+						</div>
+					</template>
+				</DatePicker>
 				<!-- Today shortcut -->
 				<button
 					v-if="!habbitsStore.isToday()"
 					class="dp-today-btn"
 					@click="goToToday">
-					<i class="pi pi-home" style="font-size: 0.7rem"></i>
+					<i
+						class="pi pi-home"
+						style="font-size: 0.7rem"></i>
 					Back to today
 				</button>
 			</div>
@@ -71,27 +89,41 @@ const visible = ref(false);
 const calendarValue = ref(new Date());
 
 // Nawigacja dat dostępna tylko na karcie habitów
-const isDateNavEnabled = computed(() => carouselStore.activeCardId === "manage");
+const isDateNavEnabled = computed(
+	() => carouselStore.activeCardId === "manage",
+);
 
-function onDateSelect(selectedDate: undefined | null | Date | Date[] | (null | Date)[]) {
+function onDateSelect(
+	selectedDate: undefined | null | Date | Date[] | (null | Date)[],
+) {
 	if (!selectedDate || Array.isArray(selectedDate)) {
 		return;
 	}
-	const utcDate = new Date(Date.UTC(
-		selectedDate.getFullYear(),
-		selectedDate.getMonth(),
-		selectedDate.getDate()
-	));
+	const utcDate = new Date(
+		Date.UTC(
+			selectedDate.getFullYear(),
+			selectedDate.getMonth(),
+			selectedDate.getDate(),
+		),
+	);
 	habbitsStore.setDate(utcDate);
 	visible.value = false;
 }
 
 function goToToday() {
 	const now = new Date();
-	const utcToday = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+	const utcToday = new Date(
+		Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()),
+	);
 	habbitsStore.setDate(utcToday);
 	calendarValue.value = new Date();
 	visible.value = false;
+}
+function onMonthChange(event: any) {
+	if (event && event.year && event.month) {
+		// Pobierz dane dla nowego miesiąca w tle!
+		habbitsStore.loadHabbitsForMonth(event.year, event.month);
+	}
 }
 
 watch(
@@ -99,7 +131,7 @@ watch(
 	(newValue) => {
 		habbitsStore.loadHabbitsForDate(newValue);
 	},
-	{ immediate: true }
+	{ immediate: true },
 );
 </script>
 
@@ -173,7 +205,7 @@ watch(
 	background: color-mix(in srgb, var(--p-gray-700) 40%, transparent);
 }
 .dp-weekday {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 1rem;
 	font-weight: 700;
 	color: var(--p-gray-800);
@@ -183,7 +215,7 @@ watch(
 	color: var(--p-gray-100);
 }
 .dp-full {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.72rem;
 	font-style: italic;
 	color: var(--p-gray-400);
@@ -219,7 +251,7 @@ watch(
 	font-size: 1.1rem;
 }
 .dp-dialog-title {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.95rem;
 	font-weight: 600;
 	color: var(--p-gray-700);
@@ -233,7 +265,7 @@ watch(
 :deep(.dp-calendar) {
 	border: none !important;
 	background: transparent !important;
-	font-family: 'Lora', serif !important;
+	font-family: "Lora", serif !important;
 }
 :deep(.dp-calendar .p-datepicker-header) {
 	border: none !important;
@@ -241,7 +273,7 @@ watch(
 	padding: 0.25rem 0 0.5rem !important;
 }
 :deep(.dp-calendar .p-datepicker-title) {
-	font-family: 'Lora', serif !important;
+	font-family: "Lora", serif !important;
 	font-weight: 600 !important;
 }
 :deep(.dp-calendar .p-datepicker-calendar td > span) {
@@ -249,7 +281,11 @@ watch(
 	transition: all 0.15s ease !important;
 }
 :deep(.dp-calendar .p-datepicker-calendar td > span:hover) {
-	background: color-mix(in srgb, var(--p-orange-100) 60%, transparent) !important;
+	background: color-mix(
+		in srgb,
+		var(--p-orange-100) 60%,
+		transparent
+	) !important;
 }
 :deep(.dp-calendar .p-datepicker-calendar td > span.p-datepicker-day-selected),
 :deep(.dp-calendar .p-datepicker-calendar td > span.p-highlight) {
@@ -284,7 +320,7 @@ watch(
 	border: none;
 	background: color-mix(in srgb, var(--p-orange-100) 50%, transparent);
 	color: var(--p-orange-600);
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.75rem;
 	font-weight: 600;
 	padding: 0.4rem 1rem;
@@ -304,5 +340,41 @@ watch(
 :where(.my-app-dark, .my-app-dark *) .dp-today-btn:hover {
 	background: var(--p-orange-600);
 	color: white;
+}
+
+/* Custom day formatting */
+.dp-custom-day {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	height: 100%;
+	position: relative;
+}
+
+/* Wymuszamy, aby kalendarz nie obcinał niczego, co wystaje poza dzień */
+:deep(.dp-calendar .p-datepicker-calendar td > span) {
+	overflow: visible !important;
+	position: relative !important;
+}
+.dp-day-marker-icon {
+	font-size: 1rem; /* Zmień to, jeśli ikona ma być większa/mniejsza */
+	color: var(--p-orange-500);
+	position: absolute;
+	bottom: -8px;
+}
+
+/* Zmiana koloru ikony na białym tle zaznaczonego dnia */
+:deep(.dp-calendar .p-datepicker-calendar td > span.p-datepicker-day-selected)
+	.dp-day-marker-icon,
+:deep(.dp-calendar .p-datepicker-calendar td > span.p-highlight)
+	.dp-day-marker-icon {
+	color: white !important;
+}
+
+:deep(.p-datepicker-prev-icon),
+:deep(.p-datepicker-next-icon) {
+	color: var(--p-gray-600) !important;
 }
 </style>
