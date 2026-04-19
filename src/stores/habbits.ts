@@ -15,13 +15,11 @@ import { db } from "@/firebase";
 import { Goal, UserHabbits, Habbit } from "@/libs/types";
 import { nanoid } from "nanoid";
 import { useAuthStore } from "./auth";
-import { useLoaderStore } from "./loader";
 import { handleAsyncAction } from "@/stores/asyncActionHandler";
 
 export const useHabbitsStore = defineStore("habbits", () => {
 	const authStore = useAuthStore();
 	const { userUid } = storeToRefs(authStore);
-	const loader = useLoaderStore();
 
 	// Date refs
 	const refDate = ref(new Date());
@@ -48,7 +46,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		set(newHabbits) {
 			const key = toDateKey(refDate.value);
 			const index = userHabbitsList.value.findIndex(
-				(item) => item.date === key
+				(item) => item.date === key,
 			);
 			if (index !== -1) {
 				userHabbitsList.value[index].habbits = newHabbits;
@@ -69,7 +67,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 		for (const goal of dailyGoalsList.value) {
 			const currentDayTaskCount = selectedDayHabbits.value.filter(
-				(g) => g.name === goal.name
+				(g) => g.name === goal.name,
 			).length;
 
 			if (!counters.hasOwnProperty(goal.name)) {
@@ -93,95 +91,78 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		return formatedGoals;
 	});
 
+	const now = new Date();
 	const loadedStartDate = ref(
-		new Date(new Date().setDate(new Date().getDate() - 7))
+		new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)),
 	);
-	const loadedEndDate = ref(new Date()); // today
+	const loadedEndDate = ref(
+		new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)),
+	);
+
 	async function loadHabbitsForDate(selectedDate: Date) {
-		await loader.run(async () => {
-			if (
-				selectedDate < loadedStartDate.value ||
-				selectedDate > loadedEndDate.value
-			) {
-				console.log("Laduje nowy zakres dat");
+		if (
+			selectedDate < loadedStartDate.value ||
+			selectedDate > loadedEndDate.value
+		) {
+			console.log("Ładuję nowy miesiąc do kalendarza");
 
-				const newStartDate = new Date(selectedDate);
-				newStartDate.setDate(newStartDate.getDate() - 7);
-				const newEndDate = new Date(selectedDate);
-				newEndDate.setDate(newEndDate.getDate() + 7);
+			// Obliczamy pierwszy i ostatni dzień dla nowo wybranego miesiąca
+			const newStartDate = new Date(
+				Date.UTC(selectedDate.getUTCFullYear(), selectedDate.getUTCMonth(), 1),
+			);
+			// 0 jako dzień miesiąca oznacza ostatni dzień poprzedniego miesiąca
+			const newEndDate = new Date(
+				Date.UTC(
+					selectedDate.getUTCFullYear(),
+					selectedDate.getUTCMonth() + 1,
+					0,
+				),
+			);
 
-				// Fetch data for the new range
-				await getDailyHabbitsInRange(newStartDate, newEndDate);
+			// Pobieramy dane dla całego miesiąca
+			await getDailyHabbitsInRange(newStartDate, newEndDate);
 
-				// Update the loaded range
-				loadedStartDate.value =
-					newStartDate < loadedStartDate.value
-						? newStartDate
-						: loadedStartDate.value;
-				loadedEndDate.value =
-					newEndDate > loadedEndDate.value ? newEndDate : loadedEndDate.value;
-			}
-		});
+			// Rozszerzamy nasz załadowany zakres, aby nie pobierać tego ponownie
+			loadedStartDate.value =
+				newStartDate < loadedStartDate.value
+					? newStartDate
+					: loadedStartDate.value;
+			loadedEndDate.value =
+				newEndDate > loadedEndDate.value ? newEndDate : loadedEndDate.value;
+		}
 	}
 
 	const getDailyHabbitsInRange = async (
 		startDate: Date | null = null,
-		endDate: Date | null = null
+		endDate: Date | null = null,
 	) => {
-		await loader.run(async () => {
-			try {
-				const _startDate =
-					startDate || new Date(new Date().setDate(new Date().getDate() - 7));
-				const _endDate = endDate || new Date();
-				const habbitsRef = collection(db, "users", userUid.value!!, "habbits");
-				const q = query(
-					habbitsRef,
-					where("date", ">=", toDateKey(_startDate)),
-					where("date", "<=", toDateKey(_endDate))
+		try {
+			// Jeśli nie podano daty, ładujemy zakres domyślny (czyli obecny miesiąc)
+			const _startDate = startDate || loadedStartDate.value;
+			const _endDate = endDate || loadedEndDate.value;
+
+			const habbitsRef = collection(db, "users", userUid.value!!, "habbits");
+			const q = query(
+				habbitsRef,
+				where("date", ">=", toDateKey(_startDate)),
+				where("date", "<=", toDateKey(_endDate)),
+			);
+			const querySnapshot = await getDocs(q);
+
+			querySnapshot.forEach((doc) => {
+				const { date, habbits } = doc.data();
+
+				const alreadyExists = userHabbitsList.value.some(
+					(entry) => entry.date === date,
 				);
-				const querySnapshot = await getDocs(q);
 
-				querySnapshot.forEach((doc) => {
-					const { date, habbits } = doc.data();
-
-					const alreadyExists = userHabbitsList.value.some(
-						(entry) => entry.date === date
-					);
-
-					if (!alreadyExists) {
-						userHabbitsList.value.push({ date, habbits });
-					}
-				});
-			} catch (error) {
-				console.error("Error fetching daily habbits:", error);
-			}
-			try {
-				const _startDate =
-					startDate || new Date(new Date().setDate(new Date().getDate() - 7));
-				const _endDate = endDate || new Date();
-				const habbitsRef = collection(db, "users", userUid.value!!, "habbits");
-				const q = query(
-					habbitsRef,
-					where("date", ">=", toDateKey(_startDate)),
-					where("date", "<=", toDateKey(_endDate))
-				);
-				const querySnapshot = await getDocs(q);
-
-				querySnapshot.forEach((doc) => {
-					const { date, habbits } = doc.data();
-
-					const alreadyExists = userHabbitsList.value.some(
-						(entry) => entry.date === date
-					);
-
-					if (!alreadyExists) {
-						userHabbitsList.value.push({ date, habbits });
-					}
-				});
-			} catch (error) {
-				console.error("Error fetching daily habbits:", error);
-			}
-		});
+				if (!alreadyExists) {
+					userHabbitsList.value.push({ date, habbits });
+				}
+			});
+		} catch (error) {
+			console.error("Error fetching daily habbits:", error);
+		}
 	};
 
 	// Date functions
@@ -199,6 +180,24 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			refDate.value.getFullYear() === today.getFullYear()
 		);
 	}
+
+	// Sprawdza czy w danym dniu jest dodana jakakolwiek aktywność
+	function hasHabbitsOnDate(dateObj: any) {
+		if (!dateObj) return false;
+
+		// Używamy Date.UTC, aby uniknąć problemów ze strefą czasową!
+		const dateToCheck = new Date(
+			Date.UTC(dateObj.year, dateObj.month, dateObj.day),
+		);
+
+		// Tworzymy klucz daty (np. "2023-10-15") i szukamy go w liście
+		const key = toDateKey(dateToCheck);
+		const entry = userHabbitsList.value.find((item) => item.date === key);
+
+		// Jeśli znaleźliśmy wpis i ma on jakieś zadania, zwracamy true
+		return entry ? entry.habbits.length > 0 : false;
+	}
+
 	function setDate(date: Date) {
 		refDate.value = new Date(date);
 	}
@@ -221,7 +220,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			async () => {
 				const formattedDate = toDateKey(refDate.value);
 				const dayEntry = userHabbitsList.value.find(
-					(day) => day.date === formattedDate
+					(day) => day.date === formattedDate,
 				);
 				const habbitWithId = { ...habbit, id: nanoid() };
 
@@ -231,7 +230,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 						"users",
 						userUid.value!!,
 						"habbits",
-						formattedDate
+						formattedDate,
 					);
 
 					if (dayEntry) {
@@ -255,7 +254,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 				}
 			},
 			"Habbit added!",
-			"Failed to add habbit."
+			"Failed to add habbit.",
 		);
 	}
 
@@ -264,12 +263,12 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			async () => {
 				const formattedDate = toDateKey(refDate.value);
 				const dayEntry = userHabbitsList.value.find(
-					(day) => day.date === formattedDate
+					(day) => day.date === formattedDate,
 				);
 
 				if (dayEntry) {
 					const index = dayEntry.habbits.findIndex(
-						(t) => t.name === habbit.name
+						(t) => t.name === habbit.name,
 					);
 					const updatedHabbits = [...dayEntry.habbits];
 					updatedHabbits.splice(index, 1);
@@ -280,7 +279,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 								"users",
 								userUid.value!!,
 								"habbits",
-								formattedDate
+								formattedDate,
 							);
 							await updateDoc(habbitsRef, {
 								habbits: updatedHabbits,
@@ -293,27 +292,25 @@ export const useHabbitsStore = defineStore("habbits", () => {
 				}
 			},
 			"Habbit deleted!",
-			"Failed to deleted habbit."
+			"Failed to deleted habbit.",
 		);
 	}
 
 	// Goals functions
 	async function loadDailyGoals() {
-		await loader.run(async () => {
-			try {
-				const userDocRef = doc(db, "users", userUid.value!!);
-				const userDoc = await getDoc(userDocRef);
+		try {
+			const userDocRef = doc(db, "users", userUid.value!!);
+			const userDoc = await getDoc(userDocRef);
 
-				if (userDoc.exists() && userDoc.data().dailyGoals) {
-					dailyGoalsList.value = userDoc.data().dailyGoals;
-				} else {
-					setDoc(userDocRef, { dailyGoals: [] }, { merge: true });
-					console.log("No dailyGoals found for the user. Creating empty entry");
-				}
-			} catch (error) {
-				console.error("Error loading dailyGoals from Firestore:", error);
+			if (userDoc.exists() && userDoc.data().dailyGoals) {
+				dailyGoalsList.value = userDoc.data().dailyGoals;
+			} else {
+				setDoc(userDocRef, { dailyGoals: [] }, { merge: true });
+				console.log("No dailyGoals found for the user. Creating empty entry");
 			}
-		});
+		} catch (error) {
+			console.error("Error loading dailyGoals from Firestore:", error);
+		}
 	}
 
 	async function addDailyGoal(goal: Goal) {
@@ -334,7 +331,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 				}
 			},
 			"Goal added!",
-			"Failed to add goal."
+			"Failed to add goal.",
 		);
 	}
 
@@ -343,7 +340,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			async () => {
 				try {
 					const updatedList = dailyGoalsList.value.filter(
-						(g) => g.id !== goal.id
+						(g) => g.id !== goal.id,
 					);
 
 					const userDocRef = doc(db, "users", userUid.value!!);
@@ -356,7 +353,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 				}
 			},
 			"Goal deleted!",
-			"Failed to deleted goal."
+			"Failed to deleted goal.",
 		);
 	}
 
@@ -369,7 +366,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		else {
 			// change severity to original
 			const goalFormatted = dailyGoalsList.value.find(
-				(g) => g.name === goal.name
+				(g) => g.name === goal.name,
 			);
 			if (!goalFormatted) {
 				console.error("Goal not found:", goal.name);
@@ -382,44 +379,41 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	//Update habbits after drag and drop
 	// This function updates the order of habbits in Firestore after drag and drop
 	async function updateHabbitsOrderInFirestore() {
-		await loader.run(async () => {
-			const formattedDate = toDateKey(refDate.value);
-			const entryIndex = userHabbitsList.value.findIndex(
-				(day) => day.date === formattedDate
-			);
-			if (entryIndex === -1) return;
+		const formattedDate = toDateKey(refDate.value);
+		const entryIndex = userHabbitsList.value.findIndex(
+			(day) => day.date === formattedDate,
+		);
+		if (entryIndex === -1) return;
 
-			const habbitsRef = doc(
-				db,
-				"users",
-				userUid.value!!,
-				"habbits",
-				formattedDate
-			);
-			try {
-				await updateDoc(habbitsRef, {
-					habbits: userHabbitsList.value[entryIndex].habbits,
-				});
-				console.log("Habbits order updated in Firestore.");
-			} catch (error) {
-				console.error("Error updating habbits order in Firestore:", error);
-			}
-		});
+		const habbitsRef = doc(
+			db,
+			"users",
+			userUid.value!!,
+			"habbits",
+			formattedDate,
+		);
+		try {
+			await updateDoc(habbitsRef, {
+				habbits: userHabbitsList.value[entryIndex].habbits,
+			});
+			console.log("Habbits order updated in Firestore.");
+		} catch (error) {
+			console.error("Error updating habbits order in Firestore:", error);
+		}
 	}
+
 	//Update goals after drag and drop
 	// This function updates the order of daily goals in Firestore after drag and drop
 	async function updateGoalsOrderInFirestore() {
-		await loader.run(async () => {
-			try {
-				const userDocRef = doc(db, "users", userUid.value!!);
-				await updateDoc(userDocRef, {
-					dailyGoals: dailyGoalsList.value,
-				});
-				console.log("Daily goals order updated in Firestore.");
-			} catch (error) {
-				console.error("Error updating daily goals order:", error);
-			}
-		});
+		try {
+			const userDocRef = doc(db, "users", userUid.value!!);
+			await updateDoc(userDocRef, {
+				dailyGoals: dailyGoalsList.value,
+			});
+			console.log("Daily goals order updated in Firestore.");
+		} catch (error) {
+			console.error("Error updating daily goals order:", error);
+		}
 	}
 
 	function getGoalSeverity(goal: Goal) {
@@ -432,6 +426,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		}
 		return "empty";
 	}
+
 	// Helper function to get the index of a goal instance in the list
 	// It checks the name and id of the goal to find its index
 	function getGoalInstanceIndex(goal: Goal, list: Goal[]) {
@@ -465,17 +460,15 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 	// This function saves the recent habbits to the user's document in Firestore
 	async function saveRecentHabbits(recentHabbits: string[]) {
-		await loader.run(async () => {
-			try {
-				const userDocRef = doc(db, "users", userUid.value!!);
-				await updateDoc(userDocRef, {
-					recentlyUsed: recentHabbits,
-				});
-				console.log("recentHabbits saved to Firestore.");
-			} catch (error) {
-				console.error("Error saving recentHabbits to Firestore:", error);
-			}
-		});
+		try {
+			const userDocRef = doc(db, "users", userUid.value!!);
+			await updateDoc(userDocRef, {
+				recentlyUsed: recentHabbits,
+			});
+			console.log("recentHabbits saved to Firestore.");
+		} catch (error) {
+			console.error("Error saving recentHabbits to Firestore:", error);
+		}
 	}
 
 	// This function loads the recent habbits from the user's document in Firestore
@@ -483,18 +476,28 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	// and when the user logs in
 	// It will also be called when the user updates their recent habbits
 	async function loadRecentHabbits() {
-		await loader.run(async () => {
-			const userDocRef = doc(db, "users", userUid.value!!);
-			const docSnap = await getDoc(userDocRef);
+		const userDocRef = doc(db, "users", userUid.value!!);
+		const docSnap = await getDoc(userDocRef);
 
-			if (docSnap.exists()) {
-				const data = docSnap.data();
-				if (data.recentlyUsed && Array.isArray(data.recentlyUsed)) {
-					recentHabbits.value = data.recentlyUsed;
-					console.log("recentHabbits loaded from Firestore.");
-				}
+		if (docSnap.exists()) {
+			const data = docSnap.data();
+			if (data.recentlyUsed && Array.isArray(data.recentlyUsed)) {
+				recentHabbits.value = data.recentlyUsed;
+				console.log("recentHabbits loaded from Firestore.");
 			}
-		});
+		}
+	}
+	// Funkcja wywoływana tylko wtedy, gdy użytkownik zmienia miesiąc w kalendarzu
+	async function loadHabbitsForMonth(year: number, month: number) {
+		// PrimeVue zwraca miesiące od 1 (Styczeń) do 12 (Grudzień)
+		// JavaScript liczy miesiące od 0 do 11, dlatego odejmujemy 1
+		const jsMonth = month - 1;
+
+		const newStartDate = new Date(Date.UTC(year, jsMonth, 1));
+		const newEndDate = new Date(Date.UTC(year, jsMonth + 1, 0));
+
+		// Pobieramy dane za ten miesiąc w tle
+		await getDailyHabbitsInRange(newStartDate, newEndDate);
 	}
 
 	loadHabbitsFromFile();
@@ -529,5 +532,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		loadRecentHabbits,
 		specialFilters,
 		loadHabbitsFromFile,
+		hasHabbitsOnDate,
+		loadHabbitsForMonth,
 	};
 });

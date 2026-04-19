@@ -1,20 +1,17 @@
-import { useLoaderStore } from "@/stores/loader";
 import { useFeedbackCheckStore } from "@/stores/useFeedbackCheck";
 
 export async function handleAsyncAction<T>(
 	callback: () => Promise<T>,
 	successMessage: string,
-	errorMessage = "An error occurred."
+	errorMessage = "An error occurred.",
 ): Promise<T | null> {
-	const loader = useLoaderStore();
 	const { showSuccessCheck, showErrorCheck } = useFeedbackCheckStore();
 
 	try {
-		await loader.run(async () => {
-			await callback();
-		});
+		// Wykonujemy naszą akcję (np. zapis do bazy) już bez loadera!
+		await callback();
 
-		// ✨ Wait 300–600 ms after loader before showing feedback
+		// ✨ Czekamy chwilę przed pokazaniem komunikatu o sukcesie
 		await new Promise((resolve) => setTimeout(resolve, 600));
 		showSuccessCheck();
 		return null;
