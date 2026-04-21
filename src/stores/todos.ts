@@ -113,6 +113,26 @@ export const useTodosStore = defineStore("todos", () => {
 	// =========================
 	// UPDATE TODO
 	// =========================
+
+	async function updateTodo(
+		todoId: string,
+		newText: string,
+		newDescription: string = "",
+	) {
+		const todo = userTodosList.value.find((t) => t.id === todoId);
+		if (!todo) return;
+
+		todo.text = newText;
+		todo.description = newDescription;
+
+		try {
+			const userDocRef = doc(db, "users", userUid.value!!);
+			await updateDoc(userDocRef, { todos: userTodosList.value });
+		} catch (error) {
+			console.error("Error updating todo:", error);
+		}
+	}
+
 	async function updateTodosOrder(newOrderedList: TodoItem[]) {
 		// 1. Nadajemy każdemu zadaniu nowy indeks w oparciu o ich ułożenie na liście
 		newOrderedList.forEach((todo, index) => {
@@ -155,6 +175,7 @@ export const useTodosStore = defineStore("todos", () => {
 		loadTodos,
 		addTodo,
 		deleteTodo,
+		updateTodo,
 		updateTodosOrder,
 		toggleTodo,
 	};
