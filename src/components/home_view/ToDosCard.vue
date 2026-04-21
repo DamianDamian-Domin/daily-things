@@ -332,6 +332,10 @@ onMounted(() => {
 	overflow: hidden;
 }
 
+.td-check-done i {
+	transform: translateY(1px);
+}
+
 /* ====== TOP — title + progress ring ====== */
 .td-top {
 	display: flex;
