@@ -41,8 +41,10 @@
 								{{ item.text }}
 							</span>
 							<i
-								v-if="item.desc"
-								class="pi pi-align-left td-item-desc-icon"></i>
+								v-if="item.description"
+								v-tooltip.top="'This task has an additional description'"
+								class="pi pi-align-left td-item-desc-icon">
+							</i>
 						</div>
 					</template>
 				</draggable>
@@ -62,7 +64,6 @@
 						@keydown.escape="cancelInline" />
 				</div>
 
-				<!-- Completed tasks (collapsed section) -->
 				<template v-if="completedTodos.length > 0">
 					<button
 						class="td-done-toggle"
@@ -73,6 +74,7 @@
 							style="font-size: 0.6rem"></i>
 						<span>{{ completedTodos.length }} completed</span>
 					</button>
+
 					<Transition name="td-slide">
 						<div
 							v-if="showCompleted"
@@ -88,11 +90,18 @@
 										class="pi pi-check"
 										style="font-size: 0.55rem"></i>
 								</button>
+
 								<span
-									class="td-item-text td-text-done"
+									class="td-item-text td-text-done line-through"
 									@click="openEditDialog(item)">
 									{{ item.text }}
 								</span>
+
+								<i
+									v-if="item.description"
+									v-tooltip.top="'This task has an additional description'"
+									class="pi pi-align-left td-item-desc-icon">
+								</i>
 							</div>
 						</div>
 					</Transition>
