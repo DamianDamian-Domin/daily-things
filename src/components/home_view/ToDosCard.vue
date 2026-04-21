@@ -22,25 +22,30 @@
 			<!-- Task list -->
 			<div class="td-list">
 				<!-- Active tasks -->
-				<div
-					v-for="item in activeTodos"
-					:key="item.id"
-					class="td-item">
-					<button
-						class="td-check"
-						@click="toggleCompletion(item)">
-						<span class="td-check-inner"></span>
-					</button>
-					<span
-						class="td-item-text"
-						@click="openEditDialog(item)">
-						{{ item.text }}
-					</span>
-					<i
-						v-if="item.description"
-						class="pi pi-align-left td-item-desc-icon"
-						v-tooltip.bottom="'Has notes'"></i>
-				</div>
+				<draggable
+					v-model="activeTodos"
+					item-key="id"
+					ghost-class="opacity-40"
+					:animation="150"
+					@end="handleDragEnd">
+					<template #item="{ element: item }">
+						<div class="td-item cursor-grab active:cursor-grabbing">
+							<button
+								class="td-check"
+								@click="toggleCompletion(item)">
+								<span class="td-check-inner"></span>
+							</button>
+							<span
+								class="td-item-text"
+								@click="openEditDialog(item)">
+								{{ item.text }}
+							</span>
+							<i
+								v-if="item.desc"
+								class="pi pi-align-left td-item-desc-icon"></i>
+						</div>
+					</template>
+				</draggable>
 
 				<!-- Inline add input -->
 				<div class="td-add-row">
@@ -159,26 +164,48 @@ import { ref, computed, onMounted, nextTick } from "vue";
 import { storeToRefs } from "pinia";
 import { useTodosStore } from "@/stores/todos";
 import Dialog from "primevue/dialog";
+import draggable from "vuedraggable"; // <-- Dodany import dla Drag & Drop
 
 defineProps<{ isActive: boolean }>();
-
 const todosStore = useTodosStore();
 
-// ZMIANA: Pobieramy teraz sortedTodos zamiast selectedDayTodos
+// Pobieramy posortowane zadania ze sklepu (store)
 const { sortedTodos } = storeToRefs(todosStore);
 
-// ZMIANA: Filtrujemy na podstawie sortedTodos
-const activeTodos = computed(() =>
-	sortedTodos.value.filter((t) => !t.completed),
-);
+// ========================
+// DRAG & DROP COMPUTEDS
+// ========================
+// Najpierw filtrujemy ukończone zadania (zostają na dole, tylko odczyt)
 const completedTodos = computed(() =>
 	sortedTodos.value.filter((t) => t.completed),
 );
 
-// ZMIANA: Zliczamy na podstawie sortedTodos
+const activeTodos = computed({
+	get() {
+		return sortedTodos.value.filter((t) => !t.completed);
+	},
+	set(newValue) {
+		// Łączymy nową ułożoną tablicę aktywnych zadań z ukończonymi
+		const newOrder = [...newValue, ...completedTodos.value];
+
+		// Przekazujemy połączoną listę do naszej nowej akcji w storze!
+		todosStore.updateTodosOrder(newOrder);
+	},
+});
+
+// Funkcja wywoływana, gdy użytkownik puści element (zdarzenie @end)
+const handleDragEnd = () => {
+	// Jeśli w swoim useTodosStore masz funkcję, która zapisuje nową kolejność
+	// do bazy danych (np. Firebase), możesz ją tu wywołać, np:
+	// todosStore.updateOrderInDatabase();
+	console.log("Drag & Drop zakończony, nowa kolejność w pamięci!");
+};
+
+// ========================
+// COUNTERS & UI
+// ========================
 const totalCount = computed(() => sortedTodos.value.length);
 const completedCount = computed(() => completedTodos.value.length);
-
 const showCompleted = ref(true);
 
 // Progress ring — CSS conic-gradient
@@ -290,13 +317,23 @@ onMounted(() => {
 	display: flex;
 	flex-direction: column;
 	overflow: hidden;
+	border: 1px solid var(--p-gray-200);
+}
+
+:where(.my-app-dark, .my-app-dark *) .td-card {
+	border: 1px solid var(--p-gray-800);
 }
 .td-inner {
 	display: flex;
 	flex-direction: column;
 	flex: 1;
 	min-height: 0;
+
 	overflow: hidden;
+}
+
+.td-check-done i {
+	transform: translateY(1px);
 }
 
 /* ====== TOP — title + progress ring ====== */
@@ -369,7 +406,7 @@ onMounted(() => {
 /* ====== TASK ITEM ====== */
 .td-item {
 	display: flex;
-	align-items: flex-start;
+	align-items: center;
 	gap: 0.65rem;
 	padding: 0.5rem 0.4rem;
 	border-radius: 0.6rem;
@@ -394,7 +431,6 @@ onMounted(() => {
 	align-items: center;
 	justify-content: center;
 	cursor: pointer;
-	margin-top: 0.15rem;
 	transition: all 0.2s ease;
 	padding: 0;
 }
@@ -470,17 +506,16 @@ onMounted(() => {
 /* Completed task text */
 .td-text-done {
 	text-decoration: line-through;
-	color: var(--p-gray-400) !important;
+	color: var(--p-gray-700) !important;
 }
 :where(.my-app-dark, .my-app-dark *) .td-text-done {
-	color: var(--p-gray-500) !important;
+	color: var(--p-gray-200);
 }
 
 /* Description icon */
 .td-item-desc-icon {
 	font-size: 0.7rem;
 	color: var(--p-gray-300);
-	margin-top: 0.25rem;
 	flex-shrink: 0;
 }
 :where(.my-app-dark, .my-app-dark *) .td-item-desc-icon {
@@ -570,7 +605,21 @@ onMounted(() => {
 	display: flex;
 	flex-direction: column;
 	gap: 0.1rem;
+	padding: 0.6rem;
+	border-radius: 0.85rem;
+	margin-top: 0.4rem;
+
+	/* Idealnie skopiowane tło i ramka z Goals */
+	background: color-mix(in srgb, var(--p-orange-50) 40%, transparent);
+	border: 1px solid color-mix(in srgb, var(--p-orange-100) 50%, transparent);
 }
+
+/* Tryb ciemny dla kontenera (Dark Mode) */
+:where(.my-app-dark, .my-app-dark *) .td-completed-list {
+	background: color-mix(in srgb, var(--p-gray-700) 30%, transparent);
+	border-color: color-mix(in srgb, var(--p-gray-600) 30%, transparent);
+}
+
 .td-slide-enter-active,
 .td-slide-leave-active {
 	transition: all 0.25s ease;
@@ -589,9 +638,11 @@ onMounted(() => {
 /* Done item — dimmed */
 .td-item-done {
 	opacity: 0.55;
+	background: transparent;
 }
 .td-item-done:hover {
 	opacity: 0.8;
+	background: transparent;
 }
 
 /* ====== EMPTY STATE ====== */
