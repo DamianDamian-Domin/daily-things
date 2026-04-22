@@ -4,18 +4,32 @@
 		:class="{ 'hi-labeled': props.showLabel }"
 		@click="handleClick"
 		v-tooltip.bottom="tooltipValue">
-		<div class="hi-btn" :class="[severityClass, { 'hi-add': isAddButton }]">
+		<div
+			class="hi-btn"
+			:class="[severityClass, { 'hi-add': isAddButton }]">
 			<span class="material-icons material-symbols-outlined hi-icon">
 				{{ data.icon }}
 			</span>
-			<!-- Zielone kółko z ✓ — widoczne dla ukończonych celów -->
+
 			<Transition name="hi-badge">
-				<span v-if="showCheckBadge" class="hi-check-badge">
-					<i class="pi pi-check"></i>
+				<span
+					v-if="showCheckBadge || (count && count > 1)"
+					class="hi-check-badge">
+					<span
+						v-if="count && count > 1"
+						style="font-size: 0.7rem; font-weight: bold; color: white">
+						{{ count }}
+					</span>
+					<i
+						v-else
+						class="pi pi-check"
+						style="font-size: 0.5rem; color: white"></i>
 				</span>
 			</Transition>
 		</div>
-		<span v-if="props.showLabel" class="hi-label">
+		<span
+			v-if="props.showLabel"
+			class="hi-label">
 			{{ data.display_name || data.name }}
 		</span>
 	</div>
@@ -30,8 +44,8 @@ const props = defineProps<{
 	showLabel?: boolean;
 	showTooltip?: boolean;
 	showCheckBadge?: boolean;
+	count?: number; // <--- Dodaj tę linijkę
 }>();
-
 const emit = defineEmits(["select", "click"]);
 
 const isAddButton = computed(() => props.data.icon === "add");
@@ -69,6 +83,13 @@ function handleClick() {
 }
 .hi-root.hi-labeled {
 	width: 4rem;
+}
+
+.hi-badge-text {
+	font-size: 0.65rem;
+	font-weight: 700;
+	color: white;
+	line-height: 1;
 }
 
 /* The squircle icon button */
@@ -202,7 +223,7 @@ function handleClick() {
 
 /* Label below icon */
 .hi-label {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.65rem;
 	font-weight: 500;
 	color: var(--p-gray-500);

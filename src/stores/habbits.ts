@@ -59,6 +59,36 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		},
 	});
 
+	const groupedSelectedDayHabbits = computed({
+		get() {
+			const grouped: Record<string, any> = {};
+			selectedDayHabbits.value.forEach((habbit: any) => {
+				if (!grouped[habbit.name]) {
+					grouped[habbit.name] = { ...habbit, count: 1 };
+				} else {
+					grouped[habbit.name].count += 1;
+				}
+			});
+			return Object.values(grouped);
+		},
+		set(newGroupedArray) {
+			const newRawArray: any[] = [];
+
+			// Kiedy zmieniamy kolejność na ekranie, przechodzimy przez nową listę
+			newGroupedArray.forEach((group: any) => {
+				// Szukamy w oryginalnej liście wszystkich wykonań danego nawyku
+				const originalItems = selectedDayHabbits.value.filter(
+					(h: any) => h.name === group.name,
+				);
+				// Wrzucamy je do nowej tablicy (dzięki temu np. 3 szklanki wody będą teraz obok siebie w nowym miejscu)
+				newRawArray.push(...originalItems);
+			});
+
+			// Zapisujemy nową ułożoną listę do głównej zmiennej, która wyśle to do Firestore
+			selectedDayHabbits.value = newRawArray;
+		},
+	});
+
 	// Goals refs
 	const dailyGoalsList = ref<Goal[]>([]);
 	const dailyGoalsColored = computed<Goal[]>(() => {
@@ -511,6 +541,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		isToday,
 		setDate,
 		selectedDayHabbits,
+		groupedSelectedDayHabbits,
 		addHabbitToSelectedDay,
 		toDateKey,
 		deleteHabbitFromSelectedDay,
