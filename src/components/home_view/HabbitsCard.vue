@@ -8,13 +8,19 @@
 		class="hs-dialog w-[clamp(22rem,85vw,42rem)]">
 		<!-- Dialog hero header -->
 		<div class="hs-dialog-hero">
-			<div class="hs-dialog-hero-bg" aria-hidden="true"></div>
-			<span class="hs-dialog-emoji">{{ addDialogMode === 'habbit' ? '🌱' : '🎯' }}</span>
+			<div
+				class="hs-dialog-hero-bg"
+				aria-hidden="true"></div>
+			<span class="hs-dialog-emoji">{{
+				addDialogMode === "habbit" ? "🌱" : "🎯"
+			}}</span>
 			<h3 class="hs-dialog-title">{{ headerText }}</h3>
 			<p class="hs-dialog-subtitle">
-				{{ addDialogMode === 'habbit'
-					? 'Find and pick habits to track today'
-					: 'Choose a goal you want to achieve' }}
+				{{
+					addDialogMode === "habbit"
+						? "Find and pick habits to track today"
+						: "Choose a goal you want to achieve"
+				}}
 			</p>
 		</div>
 		<!-- Search content -->
@@ -26,11 +32,15 @@
 		<!-- Done footer with counter -->
 		<div class="hs-dialog-footer">
 			<Transition name="hs-badge">
-				<span v-if="addedInSession.length > 0" class="hs-added-badge">
+				<span
+					v-if="addedInSession.length > 0"
+					class="hs-added-badge">
 					{{ addedInSession.length }} added ✓
 				</span>
 			</Transition>
-			<button class="hs-done-btn" @click="showHabbitDialog = false">
+			<button
+				class="hs-done-btn"
+				@click="showHabbitDialog = false">
 				Done
 			</button>
 		</div>
@@ -49,7 +59,10 @@
 						<span class="hc-greeting-hello">{{ greetingEmoji }}</span>
 						<h2 class="hc-greeting-text">{{ greetingText }}</h2>
 					</div>
-					<div v-if="streak > 0" class="hc-streak" v-tooltip.bottom="streak + ' day streak'">
+					<div
+						v-if="streak > 0"
+						class="hc-streak"
+						v-tooltip.bottom="streak + ' day streak'">
 						<span class="hc-streak-fire">🔥</span>
 						<span class="hc-streak-num">{{ streak }}</span>
 					</div>
@@ -59,9 +72,16 @@
 				<div class="hc-header">
 					<template v-if="selectedDayHabbits.length > 0">
 						<span class="hc-count">{{ selectedDayHabbits.length }}</span>
-						<span class="hc-count-label">{{ selectedDayHabbits.length === 1 ? 'habit' : 'habits' }} tracked ✨</span>
+						<span class="hc-count-label"
+							>{{
+								selectedDayHabbits.length === 1 ? "habit" : "habits"
+							}}
+							tracked ✨</span
+						>
 					</template>
-					<p v-else class="hc-encourage">
+					<p
+						v-else
+						class="hc-encourage">
 						Tap <span class="hc-plus-badge">+</span> to start tracking 🌱
 					</p>
 				</div>
@@ -70,8 +90,8 @@
 				<div class="tasks-area mt-4">
 					<div class="flex flex-row flex-wrap h-min gap-3">
 						<draggable
-							v-model="selectedDayHabbits"
-							item-key="id"
+							v-model="habbitsStore.groupedSelectedDayHabbits"
+							item-key="name"
 							class="flex flex-row flex-wrap h-min gap-3"
 							ghost-class="opacity-40"
 							:animation="150"
@@ -79,6 +99,8 @@
 							<template #item="{ element }">
 								<HabbitItem
 									:data="getHabbitDisplayData(element)"
+									:count="element.count"
+									:showCheckBadge="true"
 									:showTooltip="!editMode"
 									@click="() => toggleMarkHabbit(element)" />
 							</template>
@@ -101,7 +123,9 @@
 							class="hc-goals-ring"
 							:style="goalsRingStyle">
 							<div class="hc-goals-ring-inner">
-								<span class="hc-goals-ring-text">{{ completedGoals }}/{{ totalGoals }}</span>
+								<span class="hc-goals-ring-text"
+									>{{ completedGoals }}/{{ totalGoals }}</span
+								>
 							</div>
 						</div>
 						<h3 class="hc-goals-title">Daily goals 🎯</h3>
@@ -110,8 +134,11 @@
 						class="hc-edit-pill"
 						:class="{ active: editMode }"
 						@click="toggleEditMode">
-						<i class="pi" :class="editMode ? 'pi-check' : 'pi-pencil'" style="font-size: 0.6rem"></i>
-						{{ editMode ? 'Done' : 'Edit' }}
+						<i
+							class="pi"
+							:class="editMode ? 'pi-check' : 'pi-pencil'"
+							style="font-size: 0.6rem"></i>
+						{{ editMode ? "Done" : "Edit" }}
 					</button>
 				</div>
 				<div
@@ -138,7 +165,8 @@
 							:key="goal.id"
 							:data="{
 								...getFullGoalData(goal),
-								severity: habbitsStore.getGoalSeverity(goal) === 'empty' ? 'empty' : '',
+								severity:
+									habbitsStore.getGoalSeverity(goal) === 'empty' ? 'empty' : '',
 							}"
 							:showCheckBadge="habbitsStore.getGoalSeverity(goal) !== 'empty'"
 							:showTooltip="!editMode"
@@ -151,11 +179,17 @@
 						:data="{ severity: 'empty', icon: 'add', name: 'add' }" />
 				</div>
 				<!-- Pusty stan celów -->
-				<div v-if="dailyGoalsList.length === 0 && !editMode" class="hc-goals-empty">
+				<div
+					v-if="dailyGoalsList.length === 0 && !editMode"
+					class="hc-goals-empty">
 					<span class="hc-goals-empty-emoji">🎯</span>
 					<p class="hc-goals-empty-text">Set goals to track your progress</p>
-					<button class="hc-goals-empty-btn" @click="toggleEditMode">
-						<i class="pi pi-plus" style="font-size: 0.55rem"></i>
+					<button
+						class="hc-goals-empty-btn"
+						@click="toggleEditMode">
+						<i
+							class="pi pi-plus"
+							style="font-size: 0.55rem"></i>
 						Add goals
 					</button>
 				</div>
@@ -244,9 +278,8 @@ const goalsPercent = computed(() => {
 });
 const goalsRingStyle = computed(() => {
 	const pct = goalsPercent.value;
-	const color = pct >= 100
-		? "var(--p-green-500, #22c55e)"
-		: "var(--p-orange-400, #fb923c)";
+	const color =
+		pct >= 100 ? "var(--p-green-500, #22c55e)" : "var(--p-orange-400, #fb923c)";
 	const track = "color-mix(in srgb, var(--p-gray-200) 60%, transparent)";
 	return {
 		background: `conic-gradient(${color} ${pct}%, ${track} ${pct}%)`,
@@ -262,9 +295,7 @@ const selectedGoalToDelete = ref<Habbit | null>(null);
 const addedInSession = ref<string[]>([]);
 
 const headerText = computed(() =>
-	addDialogMode.value === "habbit"
-		? "Add daily habit"
-		: "Add goal to complete",
+	addDialogMode.value === "habbit" ? "Add daily habit" : "Add goal to complete",
 );
 const editMode = ref(false);
 
@@ -462,12 +493,14 @@ function getFullHabbitData(habbit: Habbit) {
 	color: var(--p-gray-700) !important;
 	transform: scale(1.06);
 }
-:where(.my-app-dark, .my-app-dark *) :deep(.hs-dialog .p-dialog-header-actions .p-button) {
+:where(.my-app-dark, .my-app-dark *)
+	:deep(.hs-dialog .p-dialog-header-actions .p-button) {
 	background: rgba(0, 0, 0, 0.35) !important;
 	border-color: rgba(255, 255, 255, 0.08) !important;
 	color: var(--p-gray-400) !important;
 }
-:where(.my-app-dark, .my-app-dark *) :deep(.hs-dialog .p-dialog-header-actions .p-button:hover) {
+:where(.my-app-dark, .my-app-dark *)
+	:deep(.hs-dialog .p-dialog-header-actions .p-button:hover) {
 	background: rgba(0, 0, 0, 0.55) !important;
 	color: var(--p-gray-200) !important;
 }
@@ -520,7 +553,7 @@ function getFullHabbitData(habbit: Habbit) {
 	margin-bottom: 0.45rem;
 }
 .hs-dialog-title {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 1.15rem;
 	font-weight: 700;
 	color: var(--p-gray-800);
@@ -585,7 +618,7 @@ function getFullHabbitData(habbit: Habbit) {
 	border: none;
 	background: var(--p-orange-500);
 	color: white;
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.82rem;
 	font-weight: 600;
 	cursor: pointer;
@@ -594,7 +627,8 @@ function getFullHabbitData(habbit: Habbit) {
 .hs-done-btn:hover {
 	background: var(--p-orange-600);
 	transform: translateY(-1px);
-	box-shadow: 0 3px 10px color-mix(in srgb, var(--p-orange-500) 30%, transparent);
+	box-shadow: 0 3px 10px
+		color-mix(in srgb, var(--p-orange-500) 30%, transparent);
 }
 :where(.my-app-dark, .my-app-dark *) .hs-done-btn {
 	background: var(--p-orange-600);
@@ -633,7 +667,7 @@ function getFullHabbitData(habbit: Habbit) {
 	vertical-align: middle;
 }
 .hc-greeting-text {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 1.05rem;
 	font-weight: 600;
 	color: var(--p-gray-700);
@@ -668,7 +702,7 @@ function getFullHabbitData(habbit: Habbit) {
 	line-height: 1;
 }
 .hc-streak-num {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.85rem;
 	font-weight: 700;
 	color: var(--p-orange-600);
@@ -684,7 +718,7 @@ function getFullHabbitData(habbit: Habbit) {
 	padding: 0.25rem 0;
 }
 .hc-count {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 1.6rem;
 	font-weight: 700;
 	color: var(--p-orange-500);
@@ -694,7 +728,7 @@ function getFullHabbitData(habbit: Habbit) {
 	color: var(--p-orange-400);
 }
 .hc-count-label {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.82rem;
 	font-weight: 500;
 	color: var(--p-gray-500);
@@ -704,7 +738,7 @@ function getFullHabbitData(habbit: Habbit) {
 	color: var(--p-gray-400);
 }
 .hc-encourage {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.85rem;
 	color: var(--p-gray-400);
 	font-style: italic;
@@ -778,7 +812,7 @@ function getFullHabbitData(habbit: Habbit) {
 	background: color-mix(in srgb, var(--p-gray-700) 80%, var(--p-gray-800));
 }
 .hc-goals-ring-text {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.48rem;
 	font-weight: 700;
 	color: var(--p-gray-600);
@@ -790,7 +824,7 @@ function getFullHabbitData(habbit: Habbit) {
 }
 
 .hc-goals-title {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.85rem;
 	font-weight: 600;
 	color: var(--p-gray-700);
@@ -808,7 +842,7 @@ function getFullHabbitData(habbit: Habbit) {
 	border: 1px solid var(--p-orange-200);
 	background: white;
 	color: var(--p-gray-500);
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.7rem;
 	font-weight: 500;
 	cursor: pointer;
@@ -857,7 +891,7 @@ function getFullHabbitData(habbit: Habbit) {
 	opacity: 0.5;
 }
 .hc-goals-empty-text {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.72rem;
 	color: var(--p-gray-400);
 	margin: 0 0 0.35rem 0;
@@ -874,7 +908,7 @@ function getFullHabbitData(habbit: Habbit) {
 	border: 1px dashed var(--p-orange-300);
 	background: transparent;
 	color: var(--p-orange-500);
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.72rem;
 	font-weight: 600;
 	cursor: pointer;
