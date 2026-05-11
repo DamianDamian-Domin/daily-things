@@ -44,6 +44,22 @@
 
 			<!-- ====== CALENDAR VIEW ====== -->
 			<div v-if="viewMode === 'calendar'" ref="scrollContainer" class="sc-scroll">
+				<!-- Sub-toggle: Habits / Categories -->
+				<div class="sc-sub-toggle">
+					<button
+						class="sc-sub-btn"
+						:class="calendarMode === 'habits' && 'sc-sub-active'"
+						@click="calendarMode = 'habits'">
+						Habits
+					</button>
+					<button
+						class="sc-sub-btn"
+						:class="calendarMode === 'categories' && 'sc-sub-active'"
+						@click="calendarMode = 'categories'">
+						Categories
+					</button>
+				</div>
+
 				<div
 					v-for="day in calendarDays"
 					:key="day.dateKey"
@@ -53,18 +69,38 @@
 						<span class="sc-day-name">{{ day.dayName }}</span>
 						<span class="sc-day-date">{{ day.dateLabel }}</span>
 					</div>
-					<!-- Habit tiles -->
-					<div v-if="day.groups.length > 0" class="sc-tiles">
-						<div
-							v-for="g in day.groups"
-							:key="g.displayName"
-							class="sc-tile"
-							v-tooltip.bottom="g.displayName + (g.count > 1 ? ' ×' + g.count : '')">
-							<span class="material-symbols-outlined sc-tile-icon">{{ g.icon }}</span>
-							<span v-if="g.count > 1" class="sc-tile-badge">{{ g.count }}</span>
+
+					<!-- Habits mode -->
+					<template v-if="calendarMode === 'habits'">
+						<div v-if="day.groups.length > 0" class="sc-tiles">
+							<div
+								v-for="g in day.groups"
+								:key="g.displayName"
+								class="sc-tile"
+								v-tooltip.bottom="g.displayName + (g.count > 1 ? ' ×' + g.count : '')">
+								<span class="material-symbols-outlined sc-tile-icon">{{ g.icon }}</span>
+								<span v-if="g.count > 1" class="sc-tile-badge">{{ g.count }}</span>
+							</div>
 						</div>
-					</div>
-					<span v-else class="sc-day-empty">No habits</span>
+						<span v-else class="sc-day-empty">No habits</span>
+					</template>
+
+					<!-- Categories mode -->
+					<template v-else>
+						<div v-if="day.cats.length > 0" class="sc-day-cats">
+							<div
+								v-for="cat in day.cats"
+								:key="cat.name"
+								class="sc-day-cat-pill"
+								:class="'sc-day-cat-pill-' + cat.name"
+								v-tooltip.bottom="cat.name + ': ' + cat.count + '×'">
+								<span class="sc-day-cat-dot" :class="'sc-cat-' + cat.name"></span>
+								<span class="sc-day-cat-label">{{ cat.name }}</span>
+								<span class="sc-day-cat-count">{{ cat.count }}</span>
+							</div>
+						</div>
+						<span v-else class="sc-day-empty">No habits</span>
+					</template>
 				</div>
 
 				<!-- Empty state -->
@@ -166,6 +202,7 @@ const { userHabbitsList, allHabbitsList, tag_categories } = storeToRefs(habbitsS
 const period = ref<"week" | "month">("week");
 const viewMode = ref<"calendar" | "chart">("calendar");
 const chartMode = ref<"habits" | "categories">("habits");
+const calendarMode = ref<"habits" | "categories">("habits");
 const scrollContainer = ref<HTMLElement | null>(null);
 
 function resetScroll() {
@@ -209,6 +246,7 @@ const calendarDays = computed(() => {
 		dayName: string;
 		dateLabel: string;
 		groups: Array<{ displayName: string; icon: string; count: number }>;
+		cats: Array<{ name: string; count: number }>;
 	}> = [];
 
 	for (let i = 0; i < daysBack; i++) {
@@ -233,6 +271,16 @@ const calendarDays = computed(() => {
 			}
 		}
 
+		// Grupowanie po kategorii
+		const catMap = new Map<string, number>();
+		for (const h of habbits) {
+			const cat = getHabitCategory(h.name);
+			catMap.set(cat, (catMap.get(cat) ?? 0) + 1);
+		}
+		const cats = Array.from(catMap.entries())
+			.map(([name, count]) => ({ name, count }))
+			.sort((a, b) => b.count - a.count);
+
 		const dayName = i === 0 ? "Today" : i === 1 ? "Yesterday" : dayNames[d.getDay()];
 		const dateLabel = String(d.getDate()).padStart(2, "0") + "." + String(d.getMonth() + 1).padStart(2, "0");
 
@@ -241,6 +289,7 @@ const calendarDays = computed(() => {
 			dayName,
 			dateLabel,
 			groups: Array.from(grouped.values()),
+			cats,
 		});
 	}
 	return result;
@@ -741,4 +790,58 @@ const categoryData = computed(() => {
 	gap: 0.3rem;
 	padding-left: 1.05rem;
 }
+
+/* ====== CALENDAR CATEGORY PILLS ====== */
+.sc-day-cats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3rem;
+}
+.sc-day-cat-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.18rem 0.45rem;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--p-orange-100) 55%, transparent);
+	cursor: default;
+	transition: transform 0.15s ease;
+}
+.sc-day-cat-pill:hover { transform: scale(1.05); }
+:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill {
+	background: color-mix(in srgb, var(--p-gray-700) 55%, transparent);
+}
+.sc-day-cat-pill-sport    { background: color-mix(in srgb, var(--p-green-100) 55%, transparent); }
+.sc-day-cat-pill-health   { background: color-mix(in srgb, var(--p-red-100) 55%, transparent); }
+.sc-day-cat-pill-work     { background: color-mix(in srgb, var(--p-blue-100) 55%, transparent); }
+.sc-day-cat-pill-learning { background: color-mix(in srgb, var(--p-purple-100) 55%, transparent); }
+.sc-day-cat-pill-relax    { background: color-mix(in srgb, var(--p-teal-100) 55%, transparent); }
+.sc-day-cat-pill-negative { background: color-mix(in srgb, var(--p-gray-100) 55%, transparent); }
+:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-sport    { background: color-mix(in srgb, var(--p-green-900) 35%, transparent); }
+:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-health   { background: color-mix(in srgb, var(--p-red-900) 35%, transparent); }
+:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-work     { background: color-mix(in srgb, var(--p-blue-900) 35%, transparent); }
+:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-learning { background: color-mix(in srgb, var(--p-purple-900) 35%, transparent); }
+:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-relax    { background: color-mix(in srgb, var(--p-teal-900) 35%, transparent); }
+.sc-day-cat-dot {
+	width: 0.45rem;
+	height: 0.45rem;
+	border-radius: 50%;
+	flex-shrink: 0;
+	background: var(--p-orange-400);
+}
+.sc-day-cat-label {
+	font-family: 'Lora', serif;
+	font-size: 0.62rem;
+	font-weight: 600;
+	text-transform: capitalize;
+	color: var(--p-gray-700);
+}
+:where(.my-app-dark, .my-app-dark *) .sc-day-cat-label { color: var(--p-gray-200); }
+.sc-day-cat-count {
+	font-family: 'Lora', serif;
+	font-size: 0.6rem;
+	font-weight: 700;
+	color: var(--p-gray-500);
+}
+:where(.my-app-dark, .my-app-dark *) .sc-day-cat-count { color: var(--p-gray-400); }
 </style>
