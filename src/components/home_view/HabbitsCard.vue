@@ -93,7 +93,7 @@
 						<draggable
 							v-model="habbitsStore.groupedSelectedDayHabbits"
 							item-key="name"
-							class="flex flex-row flex-wrap h-min gap-3"
+							class="contents"
 							ghost-class="opacity-40"
 							:animation="150"
 							@end="habbitsStore.updateHabbitsOrderInFirestore">
@@ -101,7 +101,7 @@
 								<HabbitItem
 									:data="getHabbitDisplayData(element)"
 									:count="element.count"
-									:showCheckBadge="true"
+									:showCheckBadge="false"
 									:showTooltip="!editMode"
 									@click="() => toggleMarkHabbit(element)" />
 							</template>

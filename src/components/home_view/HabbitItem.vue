@@ -119,7 +119,7 @@ function handleClick() {
 	box-shadow: 0 2px 8px color-mix(in srgb, var(--p-green-300) 18%, transparent);
 }
 .hi-success .hi-icon {
-	color: var(--p-green-600);
+	color: var(--p-gray-500);
 }
 .hi-success:hover {
 	background: color-mix(in srgb, var(--p-green-100) 75%, var(--p-orange-50));
@@ -130,7 +130,7 @@ function handleClick() {
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 :where(.my-app-dark, .my-app-dark *) .hi-success .hi-icon {
-	color: var(--p-green-400);
+	color: var(--p-gray-400);
 }
 :where(.my-app-dark, .my-app-dark *) .hi-success:hover {
 	background: color-mix(in srgb, var(--p-green-800) 40%, transparent);
