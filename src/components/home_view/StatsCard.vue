@@ -76,28 +76,77 @@
 
 			<!-- ====== CHART VIEW ====== -->
 			<div v-if="viewMode === 'chart'" ref="scrollContainer" class="sc-scroll">
-				<div
-					v-for="h in chartData"
-					:key="h.name"
-					class="sc-bar-row">
-					<!-- Habit tile -->
-					<div class="sc-bar-tile" v-tooltip.bottom="h.displayName">
-						<span class="material-symbols-outlined sc-bar-tile-icon">{{ h.icon }}</span>
-					</div>
-					<!-- Bar + count -->
-					<div class="sc-bar-track">
-						<div
-							class="sc-bar-fill"
-							:style="{ width: h.pct + '%' }"></div>
-					</div>
-					<span class="sc-bar-count">{{ h.count }}×</span>
+				<!-- Sub-toggle: Habits / Categories -->
+				<div class="sc-sub-toggle">
+					<button
+						class="sc-sub-btn"
+						:class="chartMode === 'habits' && 'sc-sub-active'"
+						@click="chartMode = 'habits'">
+						Habits
+					</button>
+					<button
+						class="sc-sub-btn"
+						:class="chartMode === 'categories' && 'sc-sub-active'"
+						@click="chartMode = 'categories'">
+						Categories
+					</button>
 				</div>
 
-				<!-- Empty state -->
-				<div v-if="chartData.length === 0" class="sc-empty">
-					<span class="sc-empty-emoji">📭</span>
-					<p class="sc-empty-text">No data for this period</p>
-				</div>
+				<!-- By habit -->
+				<template v-if="chartMode === 'habits'">
+					<div
+						v-for="h in chartData"
+						:key="h.name"
+						class="sc-bar-row">
+						<div class="sc-bar-tile" v-tooltip.bottom="h.displayName">
+							<span class="material-symbols-outlined sc-bar-tile-icon">{{ h.icon }}</span>
+						</div>
+						<div class="sc-bar-track">
+							<div
+								class="sc-bar-fill"
+								:style="{ width: h.pct + '%' }"></div>
+						</div>
+						<span class="sc-bar-count">{{ h.count }}×</span>
+					</div>
+					<div v-if="chartData.length === 0" class="sc-empty">
+						<span class="sc-empty-emoji">📭</span>
+						<p class="sc-empty-text">No data for this period</p>
+					</div>
+				</template>
+
+				<!-- By category -->
+				<template v-else>
+					<div
+						v-for="cat in categoryData"
+						:key="cat.name"
+						class="sc-cat-row">
+						<div class="sc-cat-header">
+							<span class="sc-cat-dot" :class="'sc-cat-' + cat.name"></span>
+							<span class="sc-cat-name">{{ cat.name }}</span>
+							<div class="sc-bar-track sc-cat-track">
+								<div
+									class="sc-bar-fill sc-cat-fill"
+									:class="'sc-cat-fill-' + cat.name"
+									:style="{ width: cat.pct + '%' }"></div>
+							</div>
+							<span class="sc-bar-count">{{ cat.count }}×</span>
+						</div>
+						<div class="sc-cat-habits">
+							<div
+								v-for="h in cat.habits"
+								:key="h.name"
+								class="sc-tile"
+								v-tooltip.bottom="h.displayName + (h.count > 1 ? ' ×' + h.count : '')">
+								<span class="material-symbols-outlined sc-tile-icon">{{ h.icon }}</span>
+								<span v-if="h.count > 1" class="sc-tile-badge">{{ h.count }}</span>
+							</div>
+						</div>
+					</div>
+					<div v-if="categoryData.length === 0" class="sc-empty">
+						<span class="sc-empty-emoji">📭</span>
+						<p class="sc-empty-text">No data for this period</p>
+					</div>
+				</template>
 			</div>
 		</div>
 	</div>
@@ -112,10 +161,11 @@ import { toDateKey } from "@/utils/timeUtils";
 defineProps<{ isActive: boolean }>();
 
 const habbitsStore = useHabbitsStore();
-const { userHabbitsList } = storeToRefs(habbitsStore);
+const { userHabbitsList, allHabbitsList, tag_categories } = storeToRefs(habbitsStore);
 
 const period = ref<"week" | "month">("week");
 const viewMode = ref<"calendar" | "chart">("calendar");
+const chartMode = ref<"habits" | "categories">("habits");
 const scrollContainer = ref<HTMLElement | null>(null);
 
 function resetScroll() {
@@ -232,6 +282,56 @@ const chartData = computed(() => {
 		item.pct = Math.round((item.count / max) * 100);
 	}
 
+	return arr;
+});
+
+// ========================
+// CATEGORY VIEW DATA
+// ========================
+function getHabitCategory(habitName: string): string {
+	const habit = allHabbitsList.value.find((h) => h.name === habitName);
+	if (!habit) return "other";
+	for (const [cat, tags] of Object.entries(tag_categories.value)) {
+		if (habit.tags?.some((t) => tags.includes(t))) return cat;
+	}
+	return "other";
+}
+
+const categoryData = computed(() => {
+	const daysBack = period.value === "week" ? 7 : 30;
+	const catTotals = new Map<string, { count: number; habits: Map<string, { name: string; displayName: string; icon: string; count: number }> }>();
+
+	for (let i = 0; i < daysBack; i++) {
+		const d = new Date();
+		d.setDate(d.getDate() - i);
+		const key = toDateKey(d);
+		const entry = userHabbitsList.value.find((e) => e.date === key);
+		if (!entry) continue;
+		for (const h of entry.habbits) {
+			const cat = getHabitCategory(h.name);
+			if (!catTotals.has(cat)) catTotals.set(cat, { count: 0, habits: new Map() });
+			const catEntry = catTotals.get(cat)!;
+			catEntry.count++;
+			const existing = catEntry.habits.get(h.name);
+			if (existing) {
+				existing.count++;
+			} else {
+					catEntry.habits.set(h.name, { name: h.name, displayName: h.display_name || h.name, icon: h.icon, count: 1 });
+			}
+		}
+	}
+
+	const arr = Array.from(catTotals.entries())
+		.map(([name, data]) => ({
+			name,
+			count: data.count,
+			habits: Array.from(data.habits.values()).sort((a, b) => b.count - a.count),
+			pct: 0,
+		}))
+		.sort((a, b) => b.count - a.count);
+
+	const max = arr.length > 0 ? arr[0].count : 1;
+	for (const item of arr) item.pct = Math.round((item.count / max) * 100);
 	return arr;
 });
 </script>
@@ -543,5 +643,102 @@ const chartData = computed(() => {
 }
 :where(.my-app-dark, .my-app-dark *) .sc-empty-text {
 	color: var(--p-gray-500);
+}
+
+/* ====== CHART SUB-TOGGLE ====== */
+.sc-sub-toggle {
+	display: flex;
+	gap: 0.2rem;
+	background: color-mix(in srgb, var(--p-orange-100) 50%, transparent);
+	border-radius: 0.5rem;
+	padding: 0.15rem;
+	margin-bottom: 0.5rem;
+	align-self: flex-start;
+	flex-shrink: 0;
+}
+:where(.my-app-dark, .my-app-dark *) .sc-sub-toggle {
+	background: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
+}
+.sc-sub-btn {
+	font-family: 'Lora', serif;
+	font-size: 0.68rem;
+	font-weight: 500;
+	padding: 0.25rem 0.6rem;
+	border: none;
+	border-radius: 0.35rem;
+	background: transparent;
+	color: var(--p-gray-500);
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+.sc-sub-btn:hover { color: var(--p-gray-700); }
+:where(.my-app-dark, .my-app-dark *) .sc-sub-btn:hover { color: var(--p-gray-300); }
+.sc-sub-active {
+	background: white;
+	color: var(--p-orange-600) !important;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+:where(.my-app-dark, .my-app-dark *) .sc-sub-active {
+	background: var(--p-gray-600);
+	color: var(--p-orange-400) !important;
+}
+
+/* ====== CATEGORY ROWS ====== */
+.sc-cat-row {
+	padding: 0.55rem 0.3rem;
+	border-bottom: 1px solid color-mix(in srgb, var(--p-orange-100) 60%, transparent);
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+}
+:where(.my-app-dark, .my-app-dark *) .sc-cat-row {
+	border-bottom-color: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
+}
+.sc-cat-header {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+.sc-cat-dot {
+	width: 0.55rem;
+	height: 0.55rem;
+	border-radius: 50%;
+	flex-shrink: 0;
+	background: var(--p-orange-400);
+}
+.sc-cat-dot.sc-cat-sport   { background: var(--p-green-400); }
+.sc-cat-dot.sc-cat-health  { background: var(--p-red-400); }
+.sc-cat-dot.sc-cat-work    { background: var(--p-blue-400); }
+.sc-cat-dot.sc-cat-learning{ background: var(--p-purple-400); }
+.sc-cat-dot.sc-cat-relax   { background: var(--p-teal-400); }
+.sc-cat-dot.sc-cat-negative{ background: var(--p-gray-400); }
+
+.sc-cat-name {
+	font-family: 'Lora', serif;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--p-gray-700);
+	text-transform: capitalize;
+	min-width: 4rem;
+	flex-shrink: 0;
+}
+:where(.my-app-dark, .my-app-dark *) .sc-cat-name { color: var(--p-gray-200); }
+
+.sc-cat-track { margin: 0; }
+
+/* Category-specific fill colors */
+.sc-cat-fill { background: linear-gradient(90deg, var(--p-orange-400), var(--p-orange-500)); }
+.sc-cat-fill-sport    { background: linear-gradient(90deg, var(--p-green-300), var(--p-green-500)); }
+.sc-cat-fill-health   { background: linear-gradient(90deg, var(--p-red-300), var(--p-red-500)); }
+.sc-cat-fill-work     { background: linear-gradient(90deg, var(--p-blue-300), var(--p-blue-500)); }
+.sc-cat-fill-learning { background: linear-gradient(90deg, var(--p-purple-300), var(--p-purple-500)); }
+.sc-cat-fill-relax    { background: linear-gradient(90deg, var(--p-teal-300), var(--p-teal-500)); }
+.sc-cat-fill-negative { background: linear-gradient(90deg, var(--p-gray-300), var(--p-gray-500)); }
+
+.sc-cat-habits {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3rem;
+	padding-left: 1.05rem;
 }
 </style>
