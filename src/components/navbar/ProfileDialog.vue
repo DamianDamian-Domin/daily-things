@@ -78,7 +78,7 @@
                             v-model="newPassword"
                             type="password"
                             class="w-full"
-                            placeholder="Min. 6 characters"
+                            placeholder="Min. 8 characters"
                             :disabled="savingPassword" />
                     </div>
                     <div>
@@ -93,10 +93,14 @@
                     </div>
 
                     <!-- Password rules -->
-                    <div class="profile-password-rules">
-                        <div class="profile-rule" :class="{ fulfilled: newPassword.length >= 6 }">
-                            <i :class="newPassword.length >= 6 ? 'pi pi-check-circle' : 'pi pi-circle'"></i>
-                            Min. 6 characters
+                    <div v-if="newPassword.length > 0" class="profile-password-rules">
+                        <div
+                            v-for="rule in passwordRules"
+                            :key="rule.label"
+                            class="profile-rule"
+                            :class="{ fulfilled: rule.valid }">
+                            <i :class="rule.valid ? 'pi pi-check-circle' : 'pi pi-circle'"></i>
+                            {{ rule.label }}
                         </div>
                         <div class="profile-rule" :class="{ fulfilled: passwordsMatch }">
                             <i :class="passwordsMatch ? 'pi pi-check-circle' : 'pi pi-circle'"></i>
@@ -257,13 +261,24 @@ const savingPassword = ref(false);
 const passwordSuccess = ref(false);
 const passwordError = ref<string | null>(null);
 
+const passwordRules = computed(() => [
+    { label: 'Min. 8 characters', valid: newPassword.value.length >= 8 },
+    { label: 'Uppercase letter', valid: /[A-Z]/.test(newPassword.value) },
+    { label: 'Lowercase letter', valid: /[a-z]/.test(newPassword.value) },
+    { label: 'Number', valid: /\d/.test(newPassword.value) },
+]);
+
+const newPasswordValid = computed(() =>
+    passwordRules.value.every(r => r.valid)
+);
+
 const passwordsMatch = computed(() =>
     newPassword.value.length > 0 && newPassword.value === confirmPassword.value
 );
 
 const canChangePassword = computed(() =>
     currentPassword.value.length >= 1 &&
-    newPassword.value.length >= 6 &&
+    newPasswordValid.value &&
     passwordsMatch.value
 );
 
