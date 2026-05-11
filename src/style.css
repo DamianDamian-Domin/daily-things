@@ -32,7 +32,7 @@
 	/* Logo — white mask under transparent flowers */
 	.logo-mask {
 		@apply relative flex items-center justify-center rounded-full;
-		background: radial-gradient(circle, white 35%, transparent 70%);
+		background: radial-gradient(circle, white 50%, transparent 70%);
 	}
 
 	/* shapes — rounded, warm shadows */
