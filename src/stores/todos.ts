@@ -7,6 +7,8 @@ import { nanoid } from "nanoid";
 import { useAuthStore } from "./auth";
 import { handleAsyncAction } from "@/stores/asyncActionHandler";
 
+export type TodoColor = "" | "red" | "orange" | "yellow" | "green" | "blue" | "purple";
+
 export interface TodoItem {
 	id: string;
 	text: string;
@@ -14,6 +16,7 @@ export interface TodoItem {
 	description?: string;
 	createdAt?: number;
 	order?: number;
+	color?: TodoColor;
 }
 
 export const useTodosStore = defineStore("todos", () => {
@@ -169,6 +172,36 @@ export const useTodosStore = defineStore("todos", () => {
 		}
 	}
 
+	// =========================
+	// UPDATE TODO COLOR
+	// =========================
+	async function updateTodoColor(todoId: string, color: import("./todos").TodoColor) {
+		const todo = userTodosList.value.find((t) => t.id === todoId);
+		if (!todo) return;
+		todo.color = color;
+		try {
+			const userDocRef = doc(db, "users", userUid.value!!);
+			await updateDoc(userDocRef, { todos: userTodosList.value });
+		} catch (error) {
+			console.error("Error updating todo color:", error);
+		}
+	}
+
+	// =========================
+	// CLEAR COMPLETED TODOS
+	// =========================
+	async function clearCompletedTodos() {
+		await handleAsyncAction(
+			async () => {
+				userTodosList.value = userTodosList.value.filter((t) => !t.completed);
+				const userDocRef = doc(db, "users", userUid.value!!);
+				await updateDoc(userDocRef, { todos: userTodosList.value });
+			},
+			"Completed tasks cleared!",
+			"Failed to clear completed tasks.",
+		);
+	}
+
 	return {
 		userTodosList,
 		sortedTodos,
@@ -178,5 +211,7 @@ export const useTodosStore = defineStore("todos", () => {
 		updateTodo,
 		updateTodosOrder,
 		toggleTodo,
+		clearCompletedTodos,
+		updateTodoColor,
 	};
 });
