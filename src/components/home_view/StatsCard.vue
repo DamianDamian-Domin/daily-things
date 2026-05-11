@@ -12,16 +12,27 @@
 					<button
 						class="sc-period-btn"
 						:class="period === 'week' && 'sc-period-active'"
-						@click="period = 'week'">
+						@click="setPeriod('week')">
 						Week
 					</button>
 					<button
 						class="sc-period-btn"
 						:class="period === 'month' && 'sc-period-active'"
-						@click="period = 'month'">
+						@click="setPeriod('month')">
 						Month
 					</button>
 				</div>
+			</div>
+
+			<!-- Period navigator -->
+			<div class="sc-navigator">
+				<button class="sc-nav-btn" @click="offset--" v-tooltip.bottom="'Previous'">
+					<i class="pi pi-chevron-left" style="font-size: 0.65rem"></i>
+				</button>
+				<span class="sc-nav-label">{{ periodLabel }}</span>
+				<button class="sc-nav-btn" :disabled="offset >= 0" @click="offset++" v-tooltip.bottom="'Next'">
+					<i class="pi pi-chevron-right" style="font-size: 0.65rem"></i>
+				</button>
 			</div>
 
 			<!-- View mode toggle -->
@@ -200,10 +211,57 @@ const habbitsStore = useHabbitsStore();
 const { userHabbitsList, allHabbitsList, tag_categories } = storeToRefs(habbitsStore);
 
 const period = ref<"week" | "month">("week");
+const offset = ref(0); // 0 = bieżący tydzień/miesiąc, -1 = poprzedni itd.
 const viewMode = ref<"calendar" | "chart">("calendar");
 const chartMode = ref<"habits" | "categories">("habits");
 const calendarMode = ref<"habits" | "categories">("habits");
 const scrollContainer = ref<HTMLElement | null>(null);
+
+function setPeriod(p: "week" | "month") {
+	period.value = p;
+	offset.value = 0;
+}
+
+// Oblicza zakres dat dla aktualnego okresu + offset
+const periodRange = computed(() => {
+	const today = new Date();
+	if (period.value === "week") {
+		// Poniedziałek jako pierwszy dzień tygodnia
+		const dow = (today.getDay() + 6) % 7; // 0=pon, 6=nie
+		const monday = new Date(today);
+		monday.setDate(today.getDate() - dow + offset.value * 7);
+		monday.setHours(0, 0, 0, 0);
+		const sunday = new Date(monday);
+		sunday.setDate(monday.getDate() + 6);
+		return { start: monday, end: sunday };
+	} else {
+		const year = today.getFullYear();
+		const month = today.getMonth() + offset.value;
+		const start = new Date(year, month, 1);
+		const end = new Date(year, month + 1, 0);
+		return { start, end };
+	}
+});
+
+// Etykieta tygodnia/miesiąca
+const periodLabel = computed(() => {
+	const { start, end } = periodRange.value;
+	if (period.value === "week") {
+		const weekNum = getISOWeek(start);
+		const sLabel = String(start.getDate()).padStart(2, "0") + "." + String(start.getMonth() + 1).padStart(2, "0");
+		const eLabel = String(end.getDate()).padStart(2, "0") + "." + String(end.getMonth() + 1).padStart(2, "0");
+		return `W${weekNum}  ${sLabel} – ${eLabel}`;
+	} else {
+		return start.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+	}
+});
+
+function getISOWeek(date: Date): number {
+	const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+	d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+	const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+	return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+}
 
 function resetScroll() {
 	nextTick(() => {
@@ -211,25 +269,12 @@ function resetScroll() {
 	});
 }
 
-// Upewnij się, że dane są załadowane dla wybranego zakresu
-onMounted(() => {
-	ensureDataLoaded();
-});
-
-watch(period, () => {
-	ensureDataLoaded();
-	resetScroll();
-});
-
-watch(viewMode, () => {
-	resetScroll();
-});
+onMounted(() => { ensureDataLoaded(); });
+watch(periodRange, () => { ensureDataLoaded(); resetScroll(); });
+watch(viewMode, () => { resetScroll(); });
 
 async function ensureDataLoaded() {
-	const end = new Date();
-	const start = new Date();
-	const daysBack = period.value === "week" ? 7 : 30;
-	start.setDate(start.getDate() - daysBack);
+	const { start, end } = periodRange.value;
 	await habbitsStore.getDailyHabbitsInRange(start, end);
 }
 
@@ -240,7 +285,7 @@ const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 // CALENDAR VIEW DATA
 // ========================
 const calendarDays = computed(() => {
-	const daysBack = period.value === "week" ? 7 : 30;
+	const { start, end } = periodRange.value;
 	const result: Array<{
 		dateKey: string;
 		dayName: string;
@@ -249,29 +294,28 @@ const calendarDays = computed(() => {
 		cats: Array<{ name: string; count: number }>;
 	}> = [];
 
-	for (let i = 0; i < daysBack; i++) {
-		const d = new Date();
-		d.setDate(d.getDate() - i);
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
+	const yesterday = new Date(today);
+	yesterday.setDate(today.getDate() - 1);
+
+	const days: Date[] = [];
+	for (let d = new Date(end); d >= start; d.setDate(d.getDate() - 1)) {
+		days.push(new Date(d));
+	}
+
+	for (const d of days) {
 		const key = toDateKey(d);
 		const entry = userHabbitsList.value.find((e) => e.date === key);
 		const habbits = entry?.habbits ?? [];
 
-		// Grupowanie habbitów po nazwie
 		const grouped = new Map<string, { displayName: string; icon: string; count: number }>();
 		for (const h of habbits) {
 			const existing = grouped.get(h.name);
-			if (existing) {
-				existing.count++;
-			} else {
-				grouped.set(h.name, {
-					displayName: h.display_name || h.name,
-					icon: h.icon,
-					count: 1,
-				});
-			}
+			if (existing) { existing.count++; }
+			else { grouped.set(h.name, { displayName: h.display_name || h.name, icon: h.icon, count: 1 }); }
 		}
 
-		// Grupowanie po kategorii
 		const catMap = new Map<string, number>();
 		for (const h of habbits) {
 			const cat = getHabitCategory(h.name);
@@ -281,16 +325,14 @@ const calendarDays = computed(() => {
 			.map(([name, count]) => ({ name, count }))
 			.sort((a, b) => b.count - a.count);
 
-		const dayName = i === 0 ? "Today" : i === 1 ? "Yesterday" : dayNames[d.getDay()];
+		const dTime = d.getTime();
+		const dayName =
+			dTime === today.getTime() ? "Today" :
+			dTime === yesterday.getTime() ? "Yesterday" :
+			dayNames[d.getDay()];
 		const dateLabel = String(d.getDate()).padStart(2, "0") + "." + String(d.getMonth() + 1).padStart(2, "0");
 
-		result.push({
-			dateKey: key,
-			dayName,
-			dateLabel,
-			groups: Array.from(grouped.values()),
-			cats,
-		});
+		result.push({ dateKey: key, dayName, dateLabel, groups: Array.from(grouped.values()), cats });
 	}
 	return result;
 });
@@ -299,38 +341,25 @@ const calendarDays = computed(() => {
 // CHART VIEW DATA
 // ========================
 const chartData = computed(() => {
-	const daysBack = period.value === "week" ? 7 : 30;
+	const { start, end } = periodRange.value;
 	const totals = new Map<string, { displayName: string; icon: string; count: number }>();
 
-	for (let i = 0; i < daysBack; i++) {
-		const d = new Date();
-		d.setDate(d.getDate() - i);
+	for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
 		const key = toDateKey(d);
 		const entry = userHabbitsList.value.find((e) => e.date === key);
 		if (!entry) continue;
 		for (const h of entry.habbits) {
 			const existing = totals.get(h.name);
-			if (existing) {
-				existing.count++;
-			} else {
-				totals.set(h.name, {
-					displayName: h.display_name || h.name,
-					icon: h.icon,
-					count: 1,
-				});
-			}
+			if (existing) { existing.count++; }
+			else { totals.set(h.name, { displayName: h.display_name || h.name, icon: h.icon, count: 1 }); }
 		}
 	}
 
 	const arr = Array.from(totals.entries())
 		.map(([name, data]) => ({ name, ...data, pct: 0 }))
 		.sort((a, b) => b.count - a.count);
-
 	const max = arr.length > 0 ? arr[0].count : 1;
-	for (const item of arr) {
-		item.pct = Math.round((item.count / max) * 100);
-	}
-
+	for (const item of arr) item.pct = Math.round((item.count / max) * 100);
 	return arr;
 });
 
@@ -347,12 +376,10 @@ function getHabitCategory(habitName: string): string {
 }
 
 const categoryData = computed(() => {
-	const daysBack = period.value === "week" ? 7 : 30;
+	const { start, end } = periodRange.value;
 	const catTotals = new Map<string, { count: number; habits: Map<string, { name: string; displayName: string; icon: string; count: number }> }>();
 
-	for (let i = 0; i < daysBack; i++) {
-		const d = new Date();
-		d.setDate(d.getDate() - i);
+	for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
 		const key = toDateKey(d);
 		const entry = userHabbitsList.value.find((e) => e.date === key);
 		if (!entry) continue;
@@ -362,11 +389,8 @@ const categoryData = computed(() => {
 			const catEntry = catTotals.get(cat)!;
 			catEntry.count++;
 			const existing = catEntry.habits.get(h.name);
-			if (existing) {
-				existing.count++;
-			} else {
-					catEntry.habits.set(h.name, { name: h.name, displayName: h.display_name || h.name, icon: h.icon, count: 1 });
-			}
+			if (existing) { existing.count++; }
+			else { catEntry.habits.set(h.name, { name: h.name, displayName: h.display_name || h.name, icon: h.icon, count: 1 }); }
 		}
 	}
 
@@ -378,7 +402,6 @@ const categoryData = computed(() => {
 			pct: 0,
 		}))
 		.sort((a, b) => b.count - a.count);
-
 	const max = arr.length > 0 ? arr[0].count : 1;
 	for (const item of arr) item.pct = Math.round((item.count / max) * 100);
 	return arr;
@@ -500,6 +523,57 @@ const categoryData = computed(() => {
 	border-color: var(--p-orange-500) !important;
 	background: color-mix(in srgb, var(--p-orange-900) 30%, transparent);
 	color: var(--p-orange-400) !important;
+}
+
+/* ====== PERIOD NAVIGATOR ====== */
+.sc-navigator {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	margin-bottom: 0.5rem;
+	flex-shrink: 0;
+}
+.sc-nav-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.6rem;
+	height: 1.6rem;
+	border-radius: 0.4rem;
+	border: 1.5px solid var(--p-orange-200);
+	background: transparent;
+	color: var(--p-orange-500);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+}
+.sc-nav-btn:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--p-orange-100) 60%, transparent);
+	border-color: var(--p-orange-400);
+}
+.sc-nav-btn:disabled {
+	opacity: 0.3;
+	cursor: default;
+}
+:where(.my-app-dark, .my-app-dark *) .sc-nav-btn {
+	border-color: var(--p-gray-600);
+	color: var(--p-orange-400);
+}
+:where(.my-app-dark, .my-app-dark *) .sc-nav-btn:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
+	border-color: var(--p-gray-500);
+}
+.sc-nav-label {
+	flex: 1;
+	text-align: center;
+	font-family: 'Lora', serif;
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--p-gray-700);
+	white-space: nowrap;
+}
+:where(.my-app-dark, .my-app-dark *) .sc-nav-label {
+	color: var(--p-gray-200);
 }
 
 /* ====== SCROLLABLE AREA ====== */
