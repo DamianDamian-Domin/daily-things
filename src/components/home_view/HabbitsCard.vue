@@ -27,6 +27,7 @@
 		<div class="hs-dialog-body">
 			<HabbitSearch
 				:addedNames="addedInSession"
+				:goalMode="addDialogMode === 'goal'"
 				@select="handleHabbitSelect" />
 		</div>
 		<!-- Done footer with counter -->
@@ -148,7 +149,7 @@
 						v-if="editMode"
 						v-model="dailyGoalsList"
 						item-key="id"
-						class="flex flex-row flex-wrap gap-3"
+						class="contents"
 						ghost-class="opacity-40"
 						:animation="150"
 						@end="habbitsStore.updateGoalsOrderInFirestore">
@@ -383,7 +384,7 @@ function getGoalDisplayData(goal: Goal) {
 
 	return {
 		...goal,
-		severity,
+		severity: severity === "empty" ? "empty" : "",
 	};
 }
 
