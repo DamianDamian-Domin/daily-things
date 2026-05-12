@@ -50,7 +50,7 @@
 		class="card-root"
 		:data-active="isActive">
 		<div
-			class="flex flex-col justify-between card-a sm:w-[480px] surface-content w-full min-h-[30rem] sm:max-h-[50rem] sm:overflow-auto"
+			class="flex flex-col justify-between card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] sm:max-h-[50rem] sm:overflow-auto hc-inner"
 			@click.capture="handleGlobalClick">
 			<!-- Top area: greeting + habits -->
 			<div>
@@ -544,6 +544,16 @@ function getFullHabbitData(habbit: Habbit) {
 .card-root {
 	display: flex;
 	flex-direction: column;
+}
+@media (max-width: 640px) {
+	.card-root {
+		height: auto;
+	}
+	.hc-inner {
+		height: auto !important;
+		max-height: none !important;
+		overflow: visible !important;
+	}
 }
 .card-root[data-active="false"] {
 	pointer-events: none;

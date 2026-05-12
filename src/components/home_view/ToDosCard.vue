@@ -421,12 +421,18 @@ onMounted(() => {
 	overflow: hidden;
 }
 @media (max-width: 640px) {
+	.td-card {
+		height: auto !important;
+		max-height: none !important;
+		overflow: visible;
+	}
 	.td-inner {
 		overflow: visible;
 		min-height: unset;
 	}
-	.td-card {
-		overflow: visible;
+	.td-list {
+		overflow-y: visible;
+		min-height: unset;
 	}
 }
 

@@ -491,6 +491,17 @@ const categoryData = computed(() => {
 	min-height: 0;
 	overflow: hidden;
 }
+@media (max-width: 640px) {
+	.sc-card {
+		height: auto !important;
+		max-height: none !important;
+		overflow: visible;
+	}
+	.sc-inner {
+		overflow: visible;
+		min-height: unset;
+	}
+}
 
 /* ====== HEADER ====== */
 .sc-top {
