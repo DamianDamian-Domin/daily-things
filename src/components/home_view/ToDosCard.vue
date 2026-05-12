@@ -31,7 +31,7 @@
 					<template #item="{ element: item }">
 						<div class="td-item cursor-grab active:cursor-grabbing">
 							<button
-								class="td-check"
+								:class="['td-check', { 'td-check-bounce': bouncingCheckId === item.id }]"
 								@click="toggleCompletion(item)">
 								<i class="pi pi-check td-check-inner"></i>
 							</button>
@@ -198,6 +198,7 @@ import { storeToRefs } from "pinia";
 import { useTodosStore } from "@/stores/todos";
 import { useSound } from "@/utils/useSound";
 import { useConfetti } from "@/utils/useConfetti";
+import { useCompliment } from "@/utils/useCompliment";
 import Dialog from "primevue/dialog";
 import draggable from "vuedraggable"; // <-- Dodany import dla Drag & Drop
 
@@ -260,9 +261,10 @@ const ringStyle = computed(() => {
 	};
 });
 
-const { playCheck, playUncheck, playAdd } = useSound();
-const { playVictory } = useSound();
+const { playCheck, playUncheck, playAdd, playVictory } = useSound();
 const { launch: launchConfetti } = useConfetti();
+const { show: showCompliment } = useCompliment();
+const bouncingCheckId = ref<string | null>(null);
 
 // Obserwujemy ukończenie wszystkich zadań — odpalamy fanfarę i konfetti
 let todosCelebrated = false;
@@ -303,8 +305,14 @@ function cancelInline() {
 // TASK ACTIONS
 // ========================
 function toggleCompletion(item: any) {
-	if (item.completed) playUncheck();
-	else playCheck();
+	if (!item.completed) {
+		playCheck();
+		showCompliment();
+		bouncingCheckId.value = item.id;
+		setTimeout(() => { bouncingCheckId.value = null; }, 400);
+	} else {
+		playUncheck();
+	}
 	todosStore.toggleTodo(item.id);
 }
 
@@ -382,6 +390,18 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Bounce animacja kółka przy zaznaczaniu */
+@keyframes td-check-pop {
+	0%   { transform: scale(1); }
+	40%  { transform: scale(1.45); }
+	70%  { transform: scale(0.88); }
+	100% { transform: scale(1); }
+}
+.td-check-bounce {
+	animation: td-check-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+	transition: none !important;
+}
+
 /* ====== CARD SHELL ====== */
 .td-card {
 	display: flex;

@@ -6,7 +6,7 @@
 		v-tooltip.bottom="tooltipValue">
 		<div
 			class="hi-btn"
-			:class="[severityClass, { 'hi-add': isAddButton }]">
+			:class="[severityClass, { 'hi-add': isAddButton, 'hi-bounce': bouncing }]">
 			<span class="material-icons material-symbols-outlined hi-icon">
 				{{ data.icon }}
 			</span>
@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { Habbit } from "@/libs/types";
 import { useSound } from "@/utils/useSound";
 
@@ -45,7 +45,8 @@ const props = defineProps<{
 	showLabel?: boolean;
 	showTooltip?: boolean;
 	showCheckBadge?: boolean;
-	count?: number; // <--- Dodaj tę linijkę
+	count?: number;
+	noCompliment?: boolean;
 }>();
 const emit = defineEmits(["select", "click"]);
 
@@ -66,15 +67,32 @@ const tooltipValue = computed(() => {
 });
 
 const { playHabitCheck } = useSound();
+const bouncing = ref(false);
 
 function handleClick() {
-	playHabitCheck();
+	if (!isAddButton.value) {
+		playHabitCheck();
+		bouncing.value = true;
+		setTimeout(() => { bouncing.value = false; }, 400);
+	}
 	emit("select", props.data);
 	emit("click", props.data);
 }
 </script>
 
 <style scoped>
+/* Bounce animacja przy kliknięciu */
+@keyframes hi-pop {
+	0%   { transform: scale(1); }
+	40%  { transform: scale(1.28); }
+	70%  { transform: scale(0.91); }
+	100% { transform: scale(1); }
+}
+.hi-bounce {
+	animation: hi-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+	transition: none !important;
+}
+
 /* Root wrapper */
 .hi-root {
 	display: flex;

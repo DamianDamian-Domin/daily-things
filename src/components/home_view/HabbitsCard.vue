@@ -72,7 +72,7 @@
 				<!-- Habits counter -->
 				<div class="hc-header">
 					<template v-if="selectedDayHabbits.length > 0">
-						<span class="hc-count">{{ selectedDayHabbits.length }}</span>
+						<span class="hc-count" :class="{ 'hc-count-bump': countBump }">{{ selectedDayHabbits.length }}</span>
 						<span class="hc-count-label"
 							>{{
 								selectedDayHabbits.length === 1 ? "habit" : "habits"
@@ -142,6 +142,12 @@
 						{{ editMode ? "Done" : "Edit" }}
 					</button>
 				</div>
+				<!-- Feature 5: Dobra passa baner -->
+				<Transition name="hc-banner-fade">
+					<div v-if="allGoalsDone" class="hc-banner">
+						🌟 On a roll! All goals for today completed!
+					</div>
+				</Transition>
 				<div
 					ref="goalsContainerRef"
 					class="flex flex-row flex-wrap h-min gap-3">
@@ -157,7 +163,8 @@
 							<HabbitItem
 								:data="getGoalDisplayData(goal)"
 								:showTooltip="!editMode"
-								@click="toggleMarkGoal(goal)" />
+                                                            :noCompliment="true"
+                                                            @click="toggleMarkGoal(goal)" />
 						</template>
 					</draggable>
 					<template v-else>
@@ -171,7 +178,8 @@
 							}"
 							:showCheckBadge="habbitsStore.getGoalSeverity(goal) !== 'empty'"
 							:showTooltip="!editMode"
-							@click="onReachGoal(goal)" />
+                                                    :noCompliment="true"
+                                                    @click="onReachGoal(goal)" />
 					</template>
 					<HabbitItem
 						v-if="editMode"
@@ -210,6 +218,7 @@ import draggable from "vuedraggable";
 import { toDateKey } from "@/utils/timeUtils";
 import { useSound } from "@/utils/useSound";
 import { useConfetti } from "@/utils/useConfetti";
+import { useCompliment } from "@/utils/useCompliment";
 
 import { Habbit, Goal } from "@/libs/types";
 
@@ -306,6 +315,58 @@ watch(completedGoals, (val) => {
 });
 
 const showHabbitDialog = ref(false);
+
+// Feature 3: animacja licznika habitów
+const countBump = ref(false);
+watch(() => selectedDayHabbits.value.length, (newVal, oldVal) => {
+	if (newVal > (oldVal ?? 0)) {
+		countBump.value = true;
+		setTimeout(() => { countBump.value = false; }, 420);
+	}
+});
+
+// Feature 5: dobra passa — computed
+const allGoalsDone = computed(() => totalGoals.value > 0 && completedGoals.value === totalGoals.value);
+
+// Feature 6: emoji wylatuje przy ukończeniu celu
+function injectGoalFlyStyles() {
+	if (document.getElementById('goal-fly-styles')) return;
+	const style = document.createElement('style');
+	style.id = 'goal-fly-styles';
+	style.textContent = `
+		@keyframes goal-fly {
+			0%   { opacity: 1; transform: translateY(0) scale(1); }
+			100% { opacity: 0; transform: translateY(-110px) scale(1.8); }
+		}
+		.goal-fly-emoji {
+			position: fixed;
+			pointer-events: none;
+			z-index: 9999;
+			font-size: 1.9rem;
+			animation: goal-fly 0.85s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+		}
+	`;
+	document.head.appendChild(style);
+}
+
+function flyGoalEmoji() {
+	injectGoalFlyStyles();
+	const emojis = ['🎯', '✨', '⭐', '🌟', '💫'];
+	const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+	const el = document.createElement('span');
+	el.className = 'goal-fly-emoji';
+	el.textContent = emoji;
+	el.style.left = `${38 + Math.random() * 24}vw`;
+	el.style.bottom = `${120 + Math.random() * 60}px`;
+	document.body.appendChild(el);
+	setTimeout(() => el.remove(), 850);
+}
+
+watch(completedGoals, (newVal, oldVal) => {
+	if (newVal > (oldVal ?? 0)) {
+		flyGoalEmoji();
+	}
+});
 const addDialogMode = ref("");
 const selectedTaskToDelete = ref<Habbit | null>(null);
 const selectedGoalToDelete = ref<Habbit | null>(null);
@@ -333,6 +394,7 @@ function openaddDailyGoalDialog() {
 function handleHabbitSelect(habbit: Habbit) {
 	if (addDialogMode.value === "habbit") {
 		habbitsStore.addHabbitToSelectedDay(habbit);
+		showCompliment();
 	} else if (addDialogMode.value === "goal") {
 		habbitsStore.addDailyGoal(habbit);
 	}
@@ -349,7 +411,9 @@ function deleteSelectedTask() {
 	}
 }
 const onReachGoal = (goal: Goal) => {
+	const wasCompleted = habbitsStore.getGoalSeverity(goal) !== 'empty';
 	habbitsStore.onGoalClick(goal);
+	if (!wasCompleted) showCompliment();
 };
 
 function toggleEditMode() {
@@ -423,6 +487,8 @@ function handleGlobalClick(event: MouseEvent) {
 	}
 }
 const markedHabbitToDelete = ref<string | null>(null);
+
+const { show: showCompliment } = useCompliment();
 
 function toggleMarkHabbit(habbit: Habbit) {
 	if (markedHabbitToDelete.value === habbit.id) {
@@ -944,4 +1010,45 @@ function getFullHabbitData(habbit: Habbit) {
 :where(.my-app-dark, .my-app-dark *) .hc-goals-empty-btn:hover {
 	background: color-mix(in srgb, var(--p-gray-700) 50%, transparent);
 }
+
+/* Feature 3: animacja licznika habitów */
+@keyframes hc-count-bump {
+	0%   { transform: scale(1); }
+	50%  { transform: scale(1.38); color: var(--p-orange-500); }
+	100% { transform: scale(1); }
+}
+.hc-count-bump {
+	animation: hc-count-bump 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+	display: inline-block;
+}
+
+/* Feature 5: dobra passa baner */
+.hc-banner {
+	margin: 0.4rem 0 0.5rem;
+	padding: 0.5rem 1rem;
+	border-radius: 0.9rem;
+	background: color-mix(in srgb, var(--p-green-100) 70%, var(--p-orange-50));
+	border: 1.5px solid var(--p-green-200);
+	text-align: center;
+	font-family: 'Lora', serif;
+	font-size: 0.8rem;
+	font-weight: 600;
+	color: var(--p-green-700);
+	box-shadow: 0 2px 12px color-mix(in srgb, var(--p-green-300) 30%, transparent);
+	animation: hc-banner-pulse 2.2s ease-in-out infinite;
+}
+:where(.my-app-dark, .my-app-dark *) .hc-banner {
+	background: color-mix(in srgb, var(--p-green-900) 40%, var(--p-gray-800));
+	border-color: var(--p-green-800);
+	color: var(--p-green-400);
+	box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+@keyframes hc-banner-pulse {
+	0%, 100% { box-shadow: 0 2px 12px color-mix(in srgb, var(--p-green-300) 30%, transparent); }
+	50%       { box-shadow: 0 2px 18px color-mix(in srgb, var(--p-green-300) 55%, transparent); }
+}
+.hc-banner-fade-enter-active { transition: all 0.42s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.hc-banner-fade-leave-active { transition: all 0.25s ease; }
+.hc-banner-fade-enter-from   { opacity: 0; transform: translateY(8px) scale(0.94); }
+.hc-banner-fade-leave-to     { opacity: 0; transform: translateY(-4px) scale(0.97); }
 </style>
