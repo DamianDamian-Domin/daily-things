@@ -1,5 +1,5 @@
 <template>
-	<div class="flex flex-col gap-2 items-center flex-grow">
+	<div class="flex flex-col gap-2 items-center flex-grow min-h-0">
 		<DatePicker></DatePicker>
 		<CarouselView />
 	</div>

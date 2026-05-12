@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="td-card card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] max-h-[50rem]">
+		class="td-card card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] sm:max-h-[50rem]">
 		<div
 			class="td-inner"
 			:class="!isActive && 'pointer-events-none'">
@@ -418,8 +418,16 @@ onMounted(() => {
 	flex-direction: column;
 	flex: 1;
 	min-height: 0;
-
 	overflow: hidden;
+}
+@media (max-width: 640px) {
+	.td-inner {
+		overflow: visible;
+		min-height: unset;
+	}
+	.td-card {
+		overflow: visible;
+	}
 }
 
 .td-check-done i {
@@ -497,6 +505,12 @@ onMounted(() => {
 	display: flex;
 	flex-direction: column;
 	gap: 0.15rem;
+}
+@media (max-width: 640px) {
+	.td-list {
+		overflow-y: visible;
+		min-height: unset;
+	}
 }
 :where(.my-app-dark, .my-app-dark *) .td-list {
 	scrollbar-color: var(--p-gray-600) transparent;

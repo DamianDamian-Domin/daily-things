@@ -50,7 +50,7 @@
 		class="card-root"
 		:data-active="isActive">
 		<div
-			class="flex flex-col justify-between card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] max-h-[50rem] overflow-auto"
+			class="flex flex-col justify-between card-a sm:w-[480px] surface-content w-full min-h-[30rem] sm:max-h-[50rem] sm:overflow-auto"
 			@click.capture="handleGlobalClick">
 			<!-- Top area: greeting + habits -->
 			<div>
@@ -114,7 +114,7 @@
 				</div>
 			</div>
 
-			<!-- Goals section -->
+			<!-- Goals section (zawsze widoczna, nie scrolluje) -->
 			<div class="hc-goals-section">
 				<div class="hc-goals-header">
 					<div class="hc-goals-header-left">
@@ -541,6 +541,10 @@ function getFullHabbitData(habbit: Habbit) {
 }
 </script>
 <style scoped>
+.card-root {
+	display: flex;
+	flex-direction: column;
+}
 .card-root[data-active="false"] {
 	pointer-events: none;
 	user-select: none;

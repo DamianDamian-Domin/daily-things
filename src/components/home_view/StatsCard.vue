@@ -1,5 +1,5 @@
 <template>
-	<div class="sc-card card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] max-h-[50rem] overflow-hidden">
+	<div class="sc-card card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] sm:max-h-[50rem] overflow-hidden">
 		<div
 			class="sc-inner"
 			:class="!isActive && 'pointer-events-none'">
