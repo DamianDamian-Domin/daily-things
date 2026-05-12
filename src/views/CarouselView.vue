@@ -43,19 +43,6 @@
 					:isActive="true" />
 			</div>
 		</TransitionGroup>
-		<!-- Swipe hint arrows -->
-		<button
-			v-if="carouselStore.leftCard"
-			class="mobile-nav mobile-nav--left"
-			@click="carouselStore.goPrev()">
-			<i class="pi pi-chevron-left" style="font-size: 0.8rem"></i>
-		</button>
-		<button
-			v-if="carouselStore.rightCard"
-			class="mobile-nav mobile-nav--right"
-			@click="carouselStore.goNext()">
-			<i class="pi pi-chevron-right" style="font-size: 0.8rem"></i>
-		</button>
 	</div>
 </template>
 
@@ -128,6 +115,9 @@ function onTouchEnd(e: TouchEvent) {
 	align-items: center;
 	gap: 10px;
 	margin-top: 10px;
+}
+@media (max-width: 640px) {
+	.carousel-dots { display: none; }
 }
 .dot {
 	width: 8px;
@@ -209,34 +199,6 @@ function onTouchEnd(e: TouchEvent) {
 	padding: 0 0.5rem 0.75rem;
 }
 .mobile-card > * { width: 100%; }
-
-/* Mobile nav arrows */
-.mobile-nav {
-	position: absolute;
-	top: 50%;
-	transform: translateY(-50%);
-	width: 2rem;
-	height: 2rem;
-	border-radius: 50%;
-	border: none;
-	background: color-mix(in srgb, var(--p-orange-100) 80%, white);
-	color: var(--p-orange-500);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	cursor: pointer;
-	box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-	opacity: 0.7;
-	transition: opacity 0.2s ease;
-	z-index: 10;
-}
-.mobile-nav:hover { opacity: 1; }
-.mobile-nav--left  { left: 0.25rem; }
-.mobile-nav--right { right: 0.25rem; }
-:where(.my-app-dark, .my-app-dark *) .mobile-nav {
-	background: color-mix(in srgb, var(--p-gray-700) 80%, transparent);
-	color: var(--p-orange-400);
-}
 
 /* Slide transitions */
 .slide-left-enter-active,
