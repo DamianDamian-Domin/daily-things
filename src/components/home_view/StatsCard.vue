@@ -239,21 +239,22 @@ function setPeriod(p: "week" | "month") {
 
 // Oblicza zakres dat dla aktualnego okresu + offset
 const periodRange = computed(() => {
-	const today = new Date();
+	const now = new Date();
+	// Używamy UTC aby być spójnym z toDateKey
+	const utcYear = now.getUTCFullYear();
+	const utcMonth = now.getUTCMonth();
+	const utcDay = now.getUTCDate();
+	const utcDow = now.getUTCDay();
 	if (period.value === "week") {
-		// Poniedziałek jako pierwszy dzień tygodnia
-		const dow = (today.getDay() + 6) % 7; // 0=pon, 6=nie
-		const monday = new Date(today);
-		monday.setDate(today.getDate() - dow + offset.value * 7);
-		monday.setHours(0, 0, 0, 0);
-		const sunday = new Date(monday);
-		sunday.setDate(monday.getDate() + 6);
+		// Poniedziałek jako pierwszy dzień tygodnia (UTC)
+		const dow = (utcDow + 6) % 7; // 0=pon, 6=nie
+		const monday = new Date(Date.UTC(utcYear, utcMonth, utcDay - dow + offset.value * 7));
+		const sunday = new Date(Date.UTC(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate() + 6));
 		return { start: monday, end: sunday };
 	} else {
-		const year = today.getFullYear();
-		const month = today.getMonth() + offset.value;
-		const start = new Date(year, month, 1);
-		const end = new Date(year, month + 1, 0);
+		const month = utcMonth + offset.value;
+		const start = new Date(Date.UTC(utcYear, month, 1));
+		const end = new Date(Date.UTC(utcYear, month + 1, 0));
 		return { start, end };
 	}
 });
@@ -311,13 +312,12 @@ const calendarDays = computed(() => {
 		goalsTotal: number;
 	}> = [];
 
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
-	const yesterday = new Date(today);
-	yesterday.setDate(today.getDate() - 1);
+	const now = new Date();
+	const todayKey = toDateKey(now);
+	const yesterdayKey = toDateKey(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1)));
 
 	const days: Date[] = [];
-	for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+	for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
 		days.push(new Date(d));
 	}
 
@@ -354,8 +354,8 @@ const calendarDays = computed(() => {
 
 		const dTime = d.getTime();
 		const dayName =
-			dTime === today.getTime() ? "Today" :
-			dTime === yesterday.getTime() ? "Yesterday" :
+			key === todayKey ? "Today" :
+			key === yesterdayKey ? "Yesterday" :
 			dayNames[d.getDay()];
 		const dateLabel = String(d.getDate()).padStart(2, "0") + "." + String(d.getMonth() + 1).padStart(2, "0");
 

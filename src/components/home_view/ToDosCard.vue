@@ -33,16 +33,11 @@
 							<button
 								class="td-check"
 								@click="toggleCompletion(item)">
-								<span class="td-check-inner"></span>
+								<i class="pi pi-check td-check-inner"></i>
 							</button>
 							<span
 								class="td-item-label"
 								:class="item.color ? 'td-item--' + item.color : ''">
-							<button
-								class="td-check"
-								@click="toggleCompletion(item)">
-								<span class="td-check-inner"></span>
-							</button>
 								<span
 									class="td-item-text"
 									@click="openEditDialog(item)">
@@ -465,12 +460,7 @@ onMounted(() => {
 	border: 1px solid transparent;
 	transition: background 0.15s ease;
 }
-.td-item:not([class*="td-item--"]):hover {
-	background: color-mix(in srgb, var(--p-orange-50) 50%, transparent);
-}
-:where(.my-app-dark, .my-app-dark *) .td-item:not([class*="td-item--"]):hover {
-	background: color-mix(in srgb, var(--p-gray-700) 40%, transparent);
-}
+
 
 /* Colored label wrapper (text + desc icon only) */
 .td-item-label {
@@ -499,28 +489,32 @@ onMounted(() => {
 	padding: 0;
 }
 .td-check:hover {
-	border-color: var(--p-gray-400);
-	background: color-mix(in srgb, var(--p-gray-100) 40%, transparent);
+	border-color: var(--p-orange-400);
+	background: color-mix(in srgb, var(--p-orange-100) 60%, transparent);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-orange-300) 25%, transparent);
+	transform: scale(1.1);
 }
 .td-check:hover .td-check-inner {
 	opacity: 1;
+	transform: scale(1);
 }
 :where(.my-app-dark, .my-app-dark *) .td-check {
 	border-color: var(--p-gray-500);
 }
 :where(.my-app-dark, .my-app-dark *) .td-check:hover {
-	border-color: var(--p-gray-400);
-	background: color-mix(in srgb, var(--p-gray-700) 40%, transparent);
+	border-color: var(--p-orange-400);
+	background: color-mix(in srgb, var(--p-orange-900) 30%, transparent);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-orange-500) 20%, transparent);
+	transform: scale(1.1);
 }
 
-/* Hover preview dot */
+/* Hover preview check icon */
 .td-check-inner {
-	width: 0.35rem;
-	height: 0.35rem;
-	border-radius: 50%;
-	background: var(--p-gray-400);
+	font-size: 0.55rem;
+	color: var(--p-orange-400);
 	opacity: 0;
-	transition: opacity 0.15s ease;
+	transform: scale(0);
+	transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
 /* Checkbox — checked */
@@ -542,8 +536,10 @@ onMounted(() => {
 	height: 100%;
 }
 .td-check-done:hover {
-	border-color: var(--p-orange-400);
-	background: var(--p-orange-400);
+	border-color: var(--p-green-600);
+	background: var(--p-green-600);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-green-400) 25%, transparent);
+	transform: scale(1.1);
 }
 :where(.my-app-dark, .my-app-dark *) .td-check-done {
 	border-color: var(--p-green-600);
@@ -561,14 +557,8 @@ onMounted(() => {
 	word-break: break-word;
 	transition: color 0.15s ease;
 }
-.td-item-text:hover {
-	color: var(--p-orange-600);
-}
 :where(.my-app-dark, .my-app-dark *) .td-item-text {
 	color: var(--p-gray-200);
-}
-:where(.my-app-dark, .my-app-dark *) .td-item-text:hover {
-	color: var(--p-orange-400);
 }
 
 /* Completed task text */
@@ -743,10 +733,7 @@ onMounted(() => {
 	opacity: 0.55;
 	background: transparent;
 }
-.td-item-done:hover {
-	opacity: 0.8;
-	background: transparent;
-}
+
 
 /* ====== EMPTY STATE ====== */
 .td-empty {
