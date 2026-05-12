@@ -292,9 +292,9 @@ const goalsRingStyle = computed(() => {
 	const pct = goalsPercent.value;
 	const color =
 		pct >= 100 ? "var(--p-green-500, #22c55e)" : "var(--p-orange-400, #fb923c)";
-	const track = "color-mix(in srgb, var(--p-gray-200) 60%, transparent)";
 	return {
-		background: `conic-gradient(${color} ${pct}%, ${track} ${pct}%)`,
+		"--ring-pct": pct,
+		"--ring-color": color,
 	};
 });
 
@@ -875,6 +875,11 @@ function getFullHabbitData(habbit: Habbit) {
 }
 
 /* ====== Goals Progress Ring ====== */
+@property --ring-pct {
+	syntax: "<number>";
+	inherits: false;
+	initial-value: 0;
+}
 .hc-goals-ring {
 	width: 2rem;
 	height: 2rem;
@@ -882,7 +887,11 @@ function getFullHabbitData(habbit: Habbit) {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: background 0.4s ease;
+	background: conic-gradient(
+		var(--ring-color, var(--p-orange-400)) calc(var(--ring-pct) * 1%),
+		color-mix(in srgb, var(--p-gray-200) 60%, transparent) calc(var(--ring-pct) * 1%)
+	);
+	transition: --ring-pct 0.5s ease, --ring-color 0.4s ease;
 }
 .hc-goals-ring-inner {
 	width: 1.45rem;

@@ -255,9 +255,9 @@ const ringStyle = computed(() => {
 	else if (pct >= 100) color = "var(--p-green-500, #22c55e)";
 	else if (pct >= 50) color = "var(--p-orange-500, #f97316)";
 	else color = "var(--p-orange-400, #fb923c)";
-	const track = "var(--p-orange-200, #fed7aa)";
 	return {
-		background: `conic-gradient(${color} ${pct}%, ${track} ${pct}%)`,
+		"--ring-pct": pct,
+		"--ring-color": color,
 	};
 });
 
@@ -446,6 +446,11 @@ onMounted(() => {
 }
 
 /* Progress ring — conic-gradient */
+@property --ring-pct {
+	syntax: "<number>";
+	inherits: false;
+	initial-value: 0;
+}
 .td-ring {
 	width: 2.6rem;
 	height: 2.6rem;
@@ -453,7 +458,11 @@ onMounted(() => {
 	flex-shrink: 0;
 	cursor: default;
 	position: relative;
-	transition: background 0.4s ease;
+	background: conic-gradient(
+		var(--ring-color, var(--p-orange-400)) calc(var(--ring-pct) * 1%),
+		var(--p-orange-200, #fed7aa) calc(var(--ring-pct) * 1%)
+	);
+	transition: --ring-pct 0.5s ease, --ring-color 0.4s ease;
 }
 .td-ring-inner {
 	position: absolute;
