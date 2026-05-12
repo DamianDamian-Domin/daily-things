@@ -203,11 +203,13 @@
 import HabbitItem from "@/components/home_view/HabbitItem.vue";
 import HabbitSearch from "@/components/home_view/HabbitSearch.vue";
 import Dialog from "primevue/dialog";
-import { ref, computed, onBeforeUnmount, nextTick } from "vue";
+import { ref, computed, onBeforeUnmount, nextTick, watch } from "vue";
 import { useHabbitsStore } from "@/stores/habbits";
 import { storeToRefs } from "pinia";
 import draggable from "vuedraggable";
 import { toDateKey } from "@/utils/timeUtils";
+import { useSound } from "@/utils/useSound";
+import { useConfetti } from "@/utils/useConfetti";
 
 import { Habbit, Goal } from "@/libs/types";
 
@@ -285,6 +287,22 @@ const goalsRingStyle = computed(() => {
 	return {
 		background: `conic-gradient(${color} ${pct}%, ${track} ${pct}%)`,
 	};
+});
+
+// Obserwujemy ukończenie wszystkich celów — odpalamy fanfarę i konfetti
+const { playVictory } = useSound();
+const { launch: launchConfetti } = useConfetti();
+let goalsCelebrated = false;
+watch(completedGoals, (val) => {
+	if (val > 0 && val === totalGoals.value) {
+		if (!goalsCelebrated) {
+			goalsCelebrated = true;
+			playVictory();
+			launchConfetti();
+		}
+	} else {
+		goalsCelebrated = false;
+	}
 });
 
 const showHabbitDialog = ref(false);

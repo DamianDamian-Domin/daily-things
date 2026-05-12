@@ -185,8 +185,8 @@ onMounted(() => {
 
 /* Avatar button in navbar */
 .avatar-btn {
-    width: 2.75rem;
-    height: 2.75rem;
+    width: 2.3rem;
+    height: 2.3rem;
     border-radius: 0.85rem;
     cursor: pointer;
     display: flex;

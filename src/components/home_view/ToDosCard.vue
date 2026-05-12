@@ -193,9 +193,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from "vue";
+import { ref, computed, onMounted, nextTick, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useTodosStore } from "@/stores/todos";
+import { useSound } from "@/utils/useSound";
+import { useConfetti } from "@/utils/useConfetti";
 import Dialog from "primevue/dialog";
 import draggable from "vuedraggable"; // <-- Dodany import dla Drag & Drop
 
@@ -258,6 +260,24 @@ const ringStyle = computed(() => {
 	};
 });
 
+const { playCheck, playUncheck, playAdd } = useSound();
+const { playVictory } = useSound();
+const { launch: launchConfetti } = useConfetti();
+
+// Obserwujemy ukończenie wszystkich zadań — odpalamy fanfarę i konfetti
+let todosCelebrated = false;
+watch(completedCount, (val) => {
+	if (val > 0 && val === totalCount.value) {
+		if (!todosCelebrated) {
+			todosCelebrated = true;
+			playVictory();
+			launchConfetti();
+		}
+	} else {
+		todosCelebrated = false;
+	}
+});
+
 // ========================
 // INLINE ADD
 // ========================
@@ -267,6 +287,7 @@ const inlineInput = ref<HTMLInputElement | null>(null);
 function submitInline() {
 	const text = inlineText.value.trim();
 	if (!text) return;
+	playAdd();
 	todosStore.addTodo(text);
 	inlineText.value = "";
 	// Keep focus for rapid entry
@@ -282,6 +303,8 @@ function cancelInline() {
 // TASK ACTIONS
 // ========================
 function toggleCompletion(item: any) {
+	if (item.completed) playUncheck();
+	else playCheck();
 	todosStore.toggleTodo(item.id);
 }
 

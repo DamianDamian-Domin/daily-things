@@ -38,6 +38,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { Habbit } from "@/libs/types";
+import { useSound } from "@/utils/useSound";
 
 const props = defineProps<{
 	data: Habbit;
@@ -64,7 +65,10 @@ const tooltipValue = computed(() => {
 	return props.data.display_name || props.data.name || false;
 });
 
+const { playHabitCheck } = useSound();
+
 function handleClick() {
+	playHabitCheck();
 	emit("select", props.data);
 	emit("click", props.data);
 }
