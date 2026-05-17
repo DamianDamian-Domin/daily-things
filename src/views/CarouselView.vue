@@ -185,20 +185,21 @@ function onTouchEnd(e: TouchEvent) {
 	display: none;
 	position: relative;
 	width: 100%;
-	flex: 1;
-	min-height: 0;
-	overflow-y: auto;
 	overflow-x: hidden;
 }
 .mobile-track {
 	width: 100%;
+	height: 100%;
 	position: relative;
 }
 .mobile-card {
 	width: 100%;
-	padding: 0 0.5rem 0.75rem;
+	height: 100%;
+	padding: 0 0.75rem 1rem;
+	display: flex;
+	flex-direction: column;
 }
-.mobile-card > * { width: 100%; }
+.mobile-card > * { width: 100%; flex: 1; min-height: 0; }
 
 /* Slide transitions */
 .slide-left-enter-active,
@@ -215,6 +216,7 @@ function onTouchEnd(e: TouchEvent) {
 /* ====== RESPONSIVE SWITCH ====== */
 @media (max-width: 640px) {
 	.desktop-carousel { display: none; }
-	.mobile-carousel  { display: flex; flex-direction: column; }
+	.mobile-carousel  { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+	.mobile-track { flex: 1; min-height: 0; }
 }
 </style>

@@ -8,12 +8,12 @@
 		</div>
 
 		<Loader></Loader>
-		<div class="flex-1 flex flex-col overflow-hidden min-h-0">
+		<div class="flex-1 flex flex-col min-h-0 content-scroll">
 			<RouterView />
 		</div>
 
-		<!-- Mobile bottom tab bar -->
-		<div class="sm:hidden">
+		<!-- Mobile bottom tab bar — fixed -->
+		<div class="sm:hidden fixed bottom-0 left-0 right-0 z-50">
 			<MobileTabBar v-if="showNavbar" />
 		</div>
 	</div>

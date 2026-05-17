@@ -547,12 +547,16 @@ function getFullHabbitData(habbit: Habbit) {
 }
 @media (max-width: 640px) {
 	.card-root {
-		height: auto;
+		flex: 1;
+		min-height: 0;
+		height: 100%;
 	}
 	.hc-inner {
-		height: auto !important;
+		flex: 1;
+		min-height: 0;
+		height: 100% !important;
 		max-height: none !important;
-		overflow: visible !important;
+		overflow-y: auto !important;
 	}
 }
 .card-root[data-active="false"] {
