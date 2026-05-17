@@ -5,21 +5,14 @@ export async function handleAsyncAction<T>(
 	successMessage: string,
 	errorMessage = "An error occurred.",
 ): Promise<T | null> {
-	const { showSuccessCheck, showErrorCheck } = useFeedbackCheckStore();
+	const { showErrorCheck } = useFeedbackCheckStore();
 
 	try {
-		// Wykonujemy naszą akcję (np. zapis do bazy) już bez loadera!
 		await callback();
-
-		// ✨ Czekamy chwilę przed pokazaniem komunikatu o sukcesie
-		await new Promise((resolve) => setTimeout(resolve, 600));
-		showSuccessCheck();
 		return null;
 	} catch (err) {
 		console.error("error:", err);
 		showErrorCheck();
-		await new Promise((resolve) => setTimeout(resolve, 600));
-
 		return null;
 	}
 }

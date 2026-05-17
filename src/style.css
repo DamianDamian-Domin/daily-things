@@ -4,6 +4,19 @@
 @import "tailwindcss-primeui";
 @custom-variant dark (&:where(.my-app-dark, .my-app-dark *));
 
+/* Desktop: overflow hidden (karty clipują wewnętrznie) */
+/* Mobile: overflow-y scroll + padding pod fixed tab bar */
+.content-scroll {
+	overflow: hidden;
+}
+@media (max-width: 640px) {
+	.content-scroll {
+		overflow-y: auto;
+		overflow-x: hidden;
+		padding-bottom: 68px;
+	}
+}
+
 /* === PrimeVue dark mode — warm, consistent colors === */
 .my-app-dark {
 	/* Dialog / overlay mask */

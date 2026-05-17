@@ -144,6 +144,11 @@ watch(
 	width: 100%;
 	max-width: 480px;
 }
+@media (max-width: 640px) {
+	.dp-bar {
+		max-width: 200px;
+	}
+}
 
 /* Arrow buttons */
 .dp-arrow {

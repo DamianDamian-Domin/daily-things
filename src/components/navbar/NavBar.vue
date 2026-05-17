@@ -1,10 +1,10 @@
 <template>
     <div class="w-full flex flex-row justify-between items-center">
         <div class="flex flex-row items-center gap-2">
-            <div class="logo-mask w-20 h-20">
+            <div class="logo-mask sm:w-20 sm:h-20 w-10 h-10">
                 <img class="w-full h-full object-contain" src="@/assets/logo.png" alt="">
             </div>
-            <h1 class="font-sacramento text-3xl">Daily Things</h1>
+            <h1 class="font-sacramento text-3xl hidden sm:block">Daily Things</h1>
         </div>
         <div class="flex flex-row items-center gap-2">
             <!-- Dark mode toggle — warm style -->
@@ -185,8 +185,8 @@ onMounted(() => {
 
 /* Avatar button in navbar */
 .avatar-btn {
-    width: 2.75rem;
-    height: 2.75rem;
+    width: 2.3rem;
+    height: 2.3rem;
     border-radius: 0.85rem;
     cursor: pointer;
     display: flex;

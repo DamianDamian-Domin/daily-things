@@ -6,7 +6,7 @@
 		v-tooltip.bottom="tooltipValue">
 		<div
 			class="hi-btn"
-			:class="[severityClass, { 'hi-add': isAddButton }]">
+			:class="[severityClass, { 'hi-add': isAddButton, 'hi-bounce': bouncing }]">
 			<span class="material-icons material-symbols-outlined hi-icon">
 				{{ data.icon }}
 			</span>
@@ -36,15 +36,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { Habbit } from "@/libs/types";
+import { useSound } from "@/utils/useSound";
 
 const props = defineProps<{
 	data: Habbit;
 	showLabel?: boolean;
 	showTooltip?: boolean;
 	showCheckBadge?: boolean;
-	count?: number; // <--- Dodaj tę linijkę
+	count?: number;
+	noCompliment?: boolean;
 }>();
 const emit = defineEmits(["select", "click"]);
 
@@ -64,13 +66,33 @@ const tooltipValue = computed(() => {
 	return props.data.display_name || props.data.name || false;
 });
 
+const { playHabitCheck } = useSound();
+const bouncing = ref(false);
+
 function handleClick() {
+	if (!isAddButton.value) {
+		playHabitCheck();
+		bouncing.value = true;
+		setTimeout(() => { bouncing.value = false; }, 400);
+	}
 	emit("select", props.data);
 	emit("click", props.data);
 }
 </script>
 
 <style scoped>
+/* Bounce animacja przy kliknięciu */
+@keyframes hi-pop {
+	0%   { transform: scale(1); }
+	40%  { transform: scale(1.28); }
+	70%  { transform: scale(0.91); }
+	100% { transform: scale(1); }
+}
+.hi-bounce {
+	animation: hi-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+	transition: none !important;
+}
+
 /* Root wrapper */
 .hi-root {
 	display: flex;
@@ -119,7 +141,7 @@ function handleClick() {
 	box-shadow: 0 2px 8px color-mix(in srgb, var(--p-green-300) 18%, transparent);
 }
 .hi-success .hi-icon {
-	color: var(--p-green-600);
+	color: var(--p-gray-500);
 }
 .hi-success:hover {
 	background: color-mix(in srgb, var(--p-green-100) 75%, var(--p-orange-50));
@@ -130,7 +152,7 @@ function handleClick() {
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 :where(.my-app-dark, .my-app-dark *) .hi-success .hi-icon {
-	color: var(--p-green-400);
+	color: var(--p-gray-400);
 }
 :where(.my-app-dark, .my-app-dark *) .hi-success:hover {
 	background: color-mix(in srgb, var(--p-green-800) 40%, transparent);

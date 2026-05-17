@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="td-card card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] max-h-[50rem]">
+		class="td-card card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] sm:max-h-[50rem]">
 		<div
 			class="td-inner"
 			:class="!isActive && 'pointer-events-none'">
@@ -31,20 +31,24 @@
 					<template #item="{ element: item }">
 						<div class="td-item cursor-grab active:cursor-grabbing">
 							<button
-								class="td-check"
+								:class="['td-check', { 'td-check-bounce': bouncingCheckId === item.id }]"
 								@click="toggleCompletion(item)">
-								<span class="td-check-inner"></span>
+								<i class="pi pi-check td-check-inner"></i>
 							</button>
 							<span
-								class="td-item-text"
-								@click="openEditDialog(item)">
-								{{ item.text }}
+								class="td-item-label"
+								:class="item.color ? 'td-item--' + item.color : ''">
+								<span
+									class="td-item-text"
+									@click="openEditDialog(item)">
+									{{ item.text }}
+								</span>
+								<i
+									v-if="item.description"
+									v-tooltip.top="'This task has an additional description'"
+									class="pi pi-align-left td-item-desc-icon">
+								</i>
 							</span>
-							<i
-								v-if="item.description"
-								v-tooltip.top="'This task has an additional description'"
-								class="pi pi-align-left td-item-desc-icon">
-							</i>
 						</div>
 					</template>
 				</draggable>
@@ -65,15 +69,23 @@
 				</div>
 
 				<template v-if="completedTodos.length > 0">
-					<button
-						class="td-done-toggle"
-						@click="showCompleted = !showCompleted">
-						<i
-							class="pi td-done-chevron"
-							:class="showCompleted ? 'pi-chevron-down' : 'pi-chevron-right'"
-							style="font-size: 0.6rem"></i>
-						<span>{{ completedTodos.length }} completed</span>
-					</button>
+					<div class="td-done-row">
+						<button
+							class="td-done-toggle"
+							@click="showCompleted = !showCompleted">
+							<i
+								class="pi td-done-chevron"
+								:class="showCompleted ? 'pi-chevron-down' : 'pi-chevron-right'"
+								style="font-size: 0.6rem"></i>
+							<span>{{ completedTodos.length }} completed</span>
+						</button>
+						<button
+							class="td-clear-pill"
+							@click="todosStore.clearCompletedTodos()">
+							<i class="pi pi-trash" style="font-size: 0.6rem"></i>
+							<span>Clear</span>
+						</button>
+					</div>
 
 					<Transition name="td-slide">
 						<div
@@ -140,6 +152,18 @@
 					placeholder="Notes, details, subtasks..."
 					@keydown.ctrl.enter.prevent="saveTask"
 					@keydown.meta.enter.prevent="saveTask"></textarea>
+				<!-- Color picker -->
+				<div class="td-color-picker">
+					<button
+						v-for="c in todoColors"
+						:key="c.value"
+						class="td-color-swatch"
+						:class="[`td-swatch--${c.value || 'none'}`, dialogColor === c.value && 'td-swatch--active']"
+						v-tooltip.top="c.label"
+						@click="dialogColor = c.value">
+						<i v-if="dialogColor === c.value" class="pi pi-check" style="font-size: 0.5rem"></i>
+					</button>
+				</div>
 				<div class="td-dialog-actions">
 					<button
 						class="td-dialog-delete"
@@ -169,9 +193,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from "vue";
+import { ref, computed, onMounted, nextTick, watch } from "vue";
 import { storeToRefs } from "pinia";
 import { useTodosStore } from "@/stores/todos";
+import { useSound } from "@/utils/useSound";
+import { useConfetti } from "@/utils/useConfetti";
+import { useCompliment } from "@/utils/useCompliment";
 import Dialog from "primevue/dialog";
 import draggable from "vuedraggable"; // <-- Dodany import dla Drag & Drop
 
@@ -228,10 +255,29 @@ const ringStyle = computed(() => {
 	else if (pct >= 100) color = "var(--p-green-500, #22c55e)";
 	else if (pct >= 50) color = "var(--p-orange-500, #f97316)";
 	else color = "var(--p-orange-400, #fb923c)";
-	const track = "var(--p-orange-200, #fed7aa)";
 	return {
-		background: `conic-gradient(${color} ${pct}%, ${track} ${pct}%)`,
+		"--ring-pct": pct,
+		"--ring-color": color,
 	};
+});
+
+const { playCheck, playUncheck, playAdd, playVictory } = useSound();
+const { launch: launchConfetti } = useConfetti();
+const { show: showCompliment } = useCompliment();
+const bouncingCheckId = ref<string | null>(null);
+
+// Obserwujemy ukończenie wszystkich zadań — odpalamy fanfarę i konfetti
+let todosCelebrated = false;
+watch(completedCount, (val) => {
+	if (val > 0 && val === totalCount.value) {
+		if (!todosCelebrated) {
+			todosCelebrated = true;
+			playVictory();
+			launchConfetti();
+		}
+	} else {
+		todosCelebrated = false;
+	}
 });
 
 // ========================
@@ -243,6 +289,7 @@ const inlineInput = ref<HTMLInputElement | null>(null);
 function submitInline() {
 	const text = inlineText.value.trim();
 	if (!text) return;
+	playAdd();
 	todosStore.addTodo(text);
 	inlineText.value = "";
 	// Keep focus for rapid entry
@@ -258,6 +305,14 @@ function cancelInline() {
 // TASK ACTIONS
 // ========================
 function toggleCompletion(item: any) {
+	if (!item.completed) {
+		playCheck();
+		showCompliment();
+		bouncingCheckId.value = item.id;
+		setTimeout(() => { bouncingCheckId.value = null; }, 400);
+	} else {
+		playUncheck();
+	}
 	todosStore.toggleTodo(item.id);
 }
 
@@ -267,13 +322,25 @@ function toggleCompletion(item: any) {
 const isDialogOpen = ref(false);
 const dialogText = ref("");
 const dialogDescription = ref("");
+const dialogColor = ref<import("@/stores/todos").TodoColor>("");
 const currentEditId = ref<string | null>(null);
 const dialogInput = ref<HTMLInputElement | null>(null);
 const descriptionInput = ref<HTMLTextAreaElement | null>(null);
 
+const todoColors: { value: import("@/stores/todos").TodoColor; label: string }[] = [
+	{ value: "", label: "None" },
+	{ value: "red", label: "Red" },
+	{ value: "orange", label: "Orange" },
+	{ value: "yellow", label: "Yellow" },
+	{ value: "green", label: "Green" },
+	{ value: "blue", label: "Blue" },
+	{ value: "purple", label: "Purple" },
+];
+
 function openEditDialog(item: any) {
 	dialogText.value = item.text;
 	dialogDescription.value = item.description || "";
+	dialogColor.value = item.color || "";
 	currentEditId.value = item.id;
 	isDialogOpen.value = true;
 	nextTick(() => dialogInput.value?.focus());
@@ -283,6 +350,7 @@ function closeDialog() {
 	isDialogOpen.value = false;
 	dialogText.value = "";
 	dialogDescription.value = "";
+	dialogColor.value = "";
 	currentEditId.value = null;
 }
 
@@ -299,6 +367,7 @@ function saveTask() {
 			text,
 			dialogDescription.value.trim(),
 		);
+		todosStore.updateTodoColor(currentEditId.value, dialogColor.value);
 	}
 	closeDialog();
 }
@@ -321,6 +390,18 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* Bounce animacja kółka przy zaznaczaniu */
+@keyframes td-check-pop {
+	0%   { transform: scale(1); }
+	40%  { transform: scale(1.45); }
+	70%  { transform: scale(0.88); }
+	100% { transform: scale(1); }
+}
+.td-check-bounce {
+	animation: td-check-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+	transition: none !important;
+}
+
 /* ====== CARD SHELL ====== */
 .td-card {
 	display: flex;
@@ -337,8 +418,22 @@ onMounted(() => {
 	flex-direction: column;
 	flex: 1;
 	min-height: 0;
-
 	overflow: hidden;
+}
+@media (max-width: 640px) {
+	.td-card {
+		height: auto !important;
+		max-height: none !important;
+		overflow: visible;
+	}
+	.td-inner {
+		overflow: visible;
+		min-height: unset;
+	}
+	.td-list {
+		overflow-y: visible;
+		min-height: unset;
+	}
 }
 
 .td-check-done i {
@@ -365,6 +460,11 @@ onMounted(() => {
 }
 
 /* Progress ring — conic-gradient */
+@property --ring-pct {
+	syntax: "<number>";
+	inherits: false;
+	initial-value: 0;
+}
 .td-ring {
 	width: 2.6rem;
 	height: 2.6rem;
@@ -372,7 +472,11 @@ onMounted(() => {
 	flex-shrink: 0;
 	cursor: default;
 	position: relative;
-	transition: background 0.4s ease;
+	background: conic-gradient(
+		var(--ring-color, var(--p-orange-400)) calc(var(--ring-pct) * 1%),
+		var(--p-orange-200, #fed7aa) calc(var(--ring-pct) * 1%)
+	);
+	transition: --ring-pct 0.5s ease, --ring-color 0.4s ease;
 }
 .td-ring-inner {
 	position: absolute;
@@ -408,6 +512,12 @@ onMounted(() => {
 	flex-direction: column;
 	gap: 0.15rem;
 }
+@media (max-width: 640px) {
+	.td-list {
+		overflow-y: visible;
+		min-height: unset;
+	}
+}
 :where(.my-app-dark, .my-app-dark *) .td-list {
 	scrollbar-color: var(--p-gray-600) transparent;
 }
@@ -417,15 +527,22 @@ onMounted(() => {
 	display: flex;
 	align-items: center;
 	gap: 0.65rem;
-	padding: 0.5rem 0.4rem;
-	border-radius: 0.6rem;
+	padding: 0.5rem 0.55rem;
+	border-radius: 0.85rem;
+	border: 1px solid transparent;
 	transition: background 0.15s ease;
 }
-.td-item:hover {
-	background: color-mix(in srgb, var(--p-orange-50) 50%, transparent);
-}
-:where(.my-app-dark, .my-app-dark *) .td-item:hover {
-	background: color-mix(in srgb, var(--p-gray-700) 40%, transparent);
+
+
+/* Colored label wrapper (text + desc icon only) */
+.td-item-label {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	flex: 1;
+	min-width: 0;
+	border-radius: 0.6rem;
+	padding: 0.15rem 0.5rem;
 }
 
 /* Checkbox — unchecked */
@@ -444,28 +561,32 @@ onMounted(() => {
 	padding: 0;
 }
 .td-check:hover {
-	border-color: var(--p-green-400);
-	background: color-mix(in srgb, var(--p-green-100) 30%, transparent);
+	border-color: var(--p-orange-400);
+	background: color-mix(in srgb, var(--p-orange-100) 60%, transparent);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-orange-300) 25%, transparent);
+	transform: scale(1.1);
 }
 .td-check:hover .td-check-inner {
 	opacity: 1;
+	transform: scale(1);
 }
 :where(.my-app-dark, .my-app-dark *) .td-check {
 	border-color: var(--p-gray-500);
 }
 :where(.my-app-dark, .my-app-dark *) .td-check:hover {
-	border-color: var(--p-green-500);
-	background: color-mix(in srgb, var(--p-green-900) 25%, transparent);
+	border-color: var(--p-orange-400);
+	background: color-mix(in srgb, var(--p-orange-900) 30%, transparent);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-orange-500) 20%, transparent);
+	transform: scale(1.1);
 }
 
-/* Hover preview dot */
+/* Hover preview check icon */
 .td-check-inner {
-	width: 0.35rem;
-	height: 0.35rem;
-	border-radius: 50%;
-	background: var(--p-green-400);
+	font-size: 0.55rem;
+	color: var(--p-orange-400);
 	opacity: 0;
-	transition: opacity 0.15s ease;
+	transform: scale(0);
+	transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
 /* Checkbox — checked */
@@ -473,6 +594,10 @@ onMounted(() => {
 	border-color: var(--p-green-500);
 	background: var(--p-green-500);
 	color: white;
+}
+:where(.my-app-dark, .my-app-dark *) .td-check-done {
+	border-color: var(--p-green-600);
+	background: var(--p-green-600);
 }
 .td-check-done .pi-check {
 	line-height: 1;
@@ -483,8 +608,10 @@ onMounted(() => {
 	height: 100%;
 }
 .td-check-done:hover {
-	border-color: var(--p-orange-400);
-	background: var(--p-orange-400);
+	border-color: var(--p-green-600);
+	background: var(--p-green-600);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--p-green-400) 25%, transparent);
+	transform: scale(1.1);
 }
 :where(.my-app-dark, .my-app-dark *) .td-check-done {
 	border-color: var(--p-green-600);
@@ -502,14 +629,8 @@ onMounted(() => {
 	word-break: break-word;
 	transition: color 0.15s ease;
 }
-.td-item-text:hover {
-	color: var(--p-orange-600);
-}
 :where(.my-app-dark, .my-app-dark *) .td-item-text {
 	color: var(--p-gray-200);
-}
-:where(.my-app-dark, .my-app-dark *) .td-item-text:hover {
-	color: var(--p-orange-400);
 }
 
 /* Completed task text */
@@ -579,13 +700,48 @@ onMounted(() => {
 	color: var(--p-gray-500);
 }
 
-/* ====== COMPLETED TOGGLE ====== */
+/* ====== COMPLETED TOGGLE ROW ====== */
+.td-done-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 0.5rem;
+}
+
+.td-clear-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	padding: 0.25rem 0.65rem;
+	border: none;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--p-red-100) 60%, transparent);
+	color: var(--p-red-400);
+	font-family: "Lora", serif;
+	font-size: 0.68rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+	user-select: none;
+}
+.td-clear-pill:hover {
+	background: var(--p-red-100);
+	color: var(--p-red-500);
+}
+:where(.my-app-dark, .my-app-dark *) .td-clear-pill {
+	background: color-mix(in srgb, var(--p-red-900) 40%, transparent);
+	color: var(--p-red-400);
+}
+:where(.my-app-dark, .my-app-dark *) .td-clear-pill:hover {
+	background: color-mix(in srgb, var(--p-red-900) 70%, transparent);
+	color: var(--p-red-300);
+}
+
 .td-done-toggle {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.35rem;
 	padding: 0.35rem 0.4rem;
-	margin-top: 0.5rem;
 	border: none;
 	background: none;
 	cursor: pointer;
@@ -649,10 +805,7 @@ onMounted(() => {
 	opacity: 0.55;
 	background: transparent;
 }
-.td-item-done:hover {
-	opacity: 0.8;
-	background: transparent;
-}
+
 
 /* ====== EMPTY STATE ====== */
 .td-empty {
@@ -825,4 +978,71 @@ onMounted(() => {
 	background: var(--p-gray-700);
 	color: var(--p-gray-500);
 }
+
+/* ====== COLOR PICKER ====== */
+.td-color-picker {
+	display: flex;
+	gap: 0.45rem;
+	align-items: center;
+	flex-wrap: wrap;
+}
+.td-color-swatch {
+	width: 1.4rem;
+	height: 1.4rem;
+	border-radius: 50%;
+	border: 2px solid transparent;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: transform 0.15s ease, border-color 0.15s ease;
+	color: white;
+}
+.td-color-swatch:hover {
+	transform: scale(1.15);
+}
+.td-swatch--none {
+	background: var(--p-gray-200);
+	border-color: var(--p-gray-300);
+	color: var(--p-gray-500);
+}
+.td-swatch--none.td-swatch--active {
+	border-color: var(--p-gray-400);
+}
+.td-swatch--red    { background: var(--p-red-400); }
+.td-swatch--orange { background: var(--p-orange-400); }
+.td-swatch--yellow { background: var(--p-yellow-400); }
+.td-swatch--green  { background: var(--p-green-400); }
+.td-swatch--blue   { background: var(--p-blue-400); }
+.td-swatch--purple { background: var(--p-purple-400); }
+.td-swatch--active {
+	border-color: white;
+	box-shadow: 0 0 0 2px currentColor;
+}
+.td-swatch--red.td-swatch--active    { box-shadow: 0 0 0 2px var(--p-red-400); }
+.td-swatch--orange.td-swatch--active { box-shadow: 0 0 0 2px var(--p-orange-400); }
+.td-swatch--yellow.td-swatch--active { box-shadow: 0 0 0 2px var(--p-yellow-400); }
+.td-swatch--green.td-swatch--active  { box-shadow: 0 0 0 2px var(--p-green-400); }
+.td-swatch--blue.td-swatch--active   { box-shadow: 0 0 0 2px var(--p-blue-400); }
+.td-swatch--purple.td-swatch--active { box-shadow: 0 0 0 2px var(--p-purple-400); }
+
+:where(.my-app-dark, .my-app-dark *) .td-swatch--none {
+	background: var(--p-gray-600);
+	border-color: var(--p-gray-500);
+}
+
+/* ====== COLORED TODO ITEMS ====== */
+.td-item--red    { background: color-mix(in srgb, var(--p-red-100) 60%, transparent);    border-color: color-mix(in srgb, var(--p-red-200) 70%, transparent); }
+.td-item--orange { background: color-mix(in srgb, var(--p-orange-100) 60%, transparent); border-color: color-mix(in srgb, var(--p-orange-200) 70%, transparent); }
+.td-item--yellow { background: color-mix(in srgb, var(--p-yellow-100) 60%, transparent); border-color: color-mix(in srgb, var(--p-yellow-200) 70%, transparent); }
+.td-item--green  { background: color-mix(in srgb, var(--p-green-100) 60%, transparent);  border-color: color-mix(in srgb, var(--p-green-200) 70%, transparent); }
+.td-item--blue   { background: color-mix(in srgb, var(--p-blue-100) 60%, transparent);   border-color: color-mix(in srgb, var(--p-blue-200) 70%, transparent); }
+.td-item--purple { background: color-mix(in srgb, var(--p-purple-100) 60%, transparent); border-color: color-mix(in srgb, var(--p-purple-200) 70%, transparent); }
+
+:where(.my-app-dark, .my-app-dark *) .td-item--red    { background: color-mix(in srgb, var(--p-red-900) 40%, transparent);    border-color: color-mix(in srgb, var(--p-red-700) 50%, transparent); }
+:where(.my-app-dark, .my-app-dark *) .td-item--orange { background: color-mix(in srgb, var(--p-orange-900) 40%, transparent); border-color: color-mix(in srgb, var(--p-orange-700) 50%, transparent); }
+:where(.my-app-dark, .my-app-dark *) .td-item--yellow { background: color-mix(in srgb, var(--p-yellow-900) 40%, transparent); border-color: color-mix(in srgb, var(--p-yellow-700) 50%, transparent); }
+:where(.my-app-dark, .my-app-dark *) .td-item--green  { background: color-mix(in srgb, var(--p-green-900) 40%, transparent);  border-color: color-mix(in srgb, var(--p-green-700) 50%, transparent); }
+:where(.my-app-dark, .my-app-dark *) .td-item--blue   { background: color-mix(in srgb, var(--p-blue-900) 40%, transparent);   border-color: color-mix(in srgb, var(--p-blue-700) 50%, transparent); }
+:where(.my-app-dark, .my-app-dark *) .td-item--purple { background: color-mix(in srgb, var(--p-purple-900) 40%, transparent); border-color: color-mix(in srgb, var(--p-purple-700) 50%, transparent); }
 </style>

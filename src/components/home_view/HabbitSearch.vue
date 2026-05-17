@@ -68,8 +68,9 @@
 					:class="{ added: isAdded(habit.name) }"
 					@click="onHabitClick(habit)">
 					<HabbitItem
-						:data="habit"
-						:showLabel="true" />
+						:data="goalMode && !isAdded(habit.name) ? { ...habit, severity: 'empty' } : habit"
+						:showLabel="true"
+						:showTooltip="true" />
 					<!-- Check overlay for added items -->
 					<Transition name="hs-check">
 						<div v-if="isAdded(habit.name)" class="hs-check-overlay">
@@ -109,8 +110,9 @@
 							:class="{ added: isAdded(habit.name) }"
 							@click="onHabitClick(habit)">
 							<HabbitItem
-								:data="habit"
-								:showLabel="true" />
+								:data="goalMode && !isAdded(habit.name) ? { ...habit, severity: 'empty' } : habit"
+								:showLabel="true"
+								:showTooltip="true" />
 							<Transition name="hs-check">
 								<div v-if="isAdded(habit.name)" class="hs-check-overlay">
 									<i class="pi pi-check"></i>
@@ -143,6 +145,8 @@ const tag_categories = habbitsStore.tag_categories;
 const props = defineProps<{
 	// Names of habits already added in this session (for checkmark overlay)
 	addedNames?: string[];
+	// Gdy true — ikony wyświetlane są w stylu "empty" (jak cele w trybie wyświetlania)
+	goalMode?: boolean;
 }>();
 
 const emit = defineEmits(["select"]);
