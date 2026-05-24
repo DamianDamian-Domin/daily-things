@@ -1,9 +1,9 @@
 <template>
-	<div class="sc-card card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] sm:max-h-[50rem] overflow-hidden">
+	<div
+		class="sc-card card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] sm:max-h-[50rem] overflow-hidden">
 		<div
 			class="sc-inner"
 			:class="!isActive && 'pointer-events-none'">
-
 			<!-- Header -->
 			<div class="sc-top">
 				<h3 class="sc-title">Summary 📊</h3>
@@ -26,12 +26,23 @@
 
 			<!-- Period navigator -->
 			<div class="sc-navigator">
-				<button class="sc-nav-btn" @click="offset--" v-tooltip.bottom="'Previous'">
-					<i class="pi pi-chevron-left" style="font-size: 0.65rem"></i>
+				<button
+					class="sc-nav-btn"
+					@click="offset--"
+					v-tooltip.bottom="'Previous'">
+					<i
+						class="pi pi-chevron-left"
+						style="font-size: 0.65rem"></i>
 				</button>
 				<span class="sc-nav-label">{{ periodLabel }}</span>
-				<button class="sc-nav-btn" :disabled="offset >= 0" @click="offset++" v-tooltip.bottom="'Next'">
-					<i class="pi pi-chevron-right" style="font-size: 0.65rem"></i>
+				<button
+					class="sc-nav-btn"
+					:disabled="offset >= 0"
+					@click="offset++"
+					v-tooltip.bottom="'Next'">
+					<i
+						class="pi pi-chevron-right"
+						style="font-size: 0.65rem"></i>
 				</button>
 			</div>
 
@@ -41,20 +52,27 @@
 					class="sc-view-btn"
 					:class="viewMode === 'calendar' && 'sc-view-active'"
 					@click="viewMode = 'calendar'">
-					<i class="pi pi-calendar" style="font-size: 0.75rem"></i>
+					<i
+						class="pi pi-calendar"
+						style="font-size: 0.75rem"></i>
 					Calendar
 				</button>
 				<button
 					class="sc-view-btn"
 					:class="viewMode === 'chart' && 'sc-view-active'"
 					@click="viewMode = 'chart'">
-					<i class="pi pi-chart-bar" style="font-size: 0.75rem"></i>
+					<i
+						class="pi pi-chart-bar"
+						style="font-size: 0.75rem"></i>
 					Chart
 				</button>
 			</div>
 
 			<!-- ====== CALENDAR VIEW ====== -->
-			<div v-if="viewMode === 'calendar'" ref="scrollContainer" class="sc-scroll">
+			<div
+				v-if="viewMode === 'calendar'"
+				ref="scrollContainer"
+				class="sc-scroll">
 				<!-- Sub-toggle: Habits / Categories -->
 				<div class="sc-sub-toggle">
 					<button
@@ -75,13 +93,18 @@
 					v-for="day in calendarDaysSorted"
 					:key="day.dateKey"
 					class="sc-day"
-					:class="{ 'sc-day--gold': day.goalsTotal > 0 && day.goalsCompleted === day.goalsTotal }">
+					:class="{
+						'sc-day--gold':
+							day.goalsTotal > 0 && day.goalsCompleted === day.goalsTotal,
+					}">
 					<!-- Day header -->
 					<span class="sc-day-medal-col">
 						<span
 							v-if="day.goalsTotal > 0 && day.goalsCompleted === day.goalsTotal"
 							class="sc-day-medal"
-							v-tooltip.right="'All goals completed! 🎉'">🏅</span>
+							v-tooltip.right="'All goals completed! 🎉'"
+							>🏅</span
+						>
 					</span>
 					<div class="sc-day-header">
 						<span class="sc-day-name">{{ day.dayName }}</span>
@@ -90,52 +113,84 @@
 
 					<!-- Habits mode -->
 					<template v-if="calendarMode === 'habits'">
-						<div v-if="day.groups.length > 0" class="sc-tiles">
+						<div
+							v-if="day.groups.length > 0"
+							class="sc-tiles">
 							<div
 								v-for="g in day.groups"
 								:key="g.displayName"
 								class="sc-tile"
-								v-tooltip.bottom="g.displayName + (g.count > 1 ? ' ×' + g.count : '')">
-								<span class="material-symbols-outlined sc-tile-icon">{{ g.icon }}</span>
-								<span v-if="g.count > 1" class="sc-tile-badge">{{ g.count }}</span>
+								v-tooltip.bottom="
+									g.displayName + (g.count > 1 ? ' ×' + g.count : '')
+								">
+								<span class="material-symbols-outlined sc-tile-icon">{{
+									g.icon
+								}}</span>
+								<span
+									v-if="g.count > 1"
+									class="sc-tile-badge"
+									>{{ g.count }}</span
+								>
 							</div>
 						</div>
-						<span v-else class="sc-day-empty">No habits</span>
+						<span
+							v-else
+							class="sc-day-empty"
+							>No habits</span
+						>
 					</template>
 
 					<!-- Categories mode -->
 					<template v-else>
-						<div v-if="day.cats.length > 0" class="sc-day-cats">
+						<div
+							v-if="day.cats.length > 0"
+							class="sc-day-cats">
 							<div
 								v-for="cat in day.cats"
 								:key="cat.name"
 								class="sc-day-cat-pill"
 								:class="'sc-day-cat-pill-' + cat.name"
 								v-tooltip.bottom="cat.name + ': ' + cat.count + '×'">
-								<span class="sc-day-cat-dot" :class="'sc-cat-' + cat.name"></span>
+								<span
+									class="sc-day-cat-dot"
+									:class="'sc-cat-' + cat.name"></span>
 								<span class="sc-day-cat-label">{{ cat.name }}</span>
 								<span class="sc-day-cat-count">{{ cat.count }}</span>
 							</div>
 						</div>
-						<span v-else class="sc-day-empty">No habits</span>
+						<span
+							v-else
+							class="sc-day-empty"
+							>No habits</span
+						>
 					</template>
 				</div>
 
 				<!-- Empty state -->
-				<div v-if="calendarDays.length === 0" class="sc-empty">
+				<div
+					v-if="calendarDays.length === 0"
+					class="sc-empty">
 					<span class="sc-empty-emoji">📭</span>
 					<p class="sc-empty-text">No data for this period</p>
 				</div>
 			</div>
 
 			<!-- ====== CHART VIEW ====== -->
-			<div v-if="viewMode === 'chart'" ref="scrollContainer" class="sc-scroll">
+			<div
+				v-if="viewMode === 'chart'"
+				ref="scrollContainer"
+				class="sc-scroll">
 				<!-- Goals completed tile -->
-				<div v-if="dailyGoalsList.length > 0" class="sc-medal-tile">
+				<div class="sc-medal-tile">
 					<span class="sc-medal-tile-emoji">🏅</span>
 					<div class="sc-medal-tile-text">
-						<span class="sc-medal-tile-count">{{ goalsCompletedCount }}</span>
-						<span class="sc-medal-tile-label">perfect {{ period === 'week' ? 'days' : 'days' }} this {{ period }}</span>
+						<span class="sc-medal-tile-count">
+							{{ goalsCompletedCount }}
+							<span style="font-size: 0.6em; opacity: 0.7"
+								>/ {{ totalDaysInPeriod }}</span
+							>
+						</span>
+						<span class="sc-medal-tile-label">{{ perfectDaysLabel }}</span>
 					</div>
 				</div>
 				<!-- Sub-toggle: Habits / Categories -->
@@ -160,8 +215,12 @@
 						v-for="h in chartData"
 						:key="h.name"
 						class="sc-bar-row">
-						<div class="sc-bar-tile" v-tooltip.bottom="h.displayName">
-							<span class="material-symbols-outlined sc-bar-tile-icon">{{ h.icon }}</span>
+						<div
+							class="sc-bar-tile"
+							v-tooltip.bottom="h.displayName">
+							<span class="material-symbols-outlined sc-bar-tile-icon">{{
+								h.icon
+							}}</span>
 						</div>
 						<div class="sc-bar-track">
 							<div
@@ -170,7 +229,9 @@
 						</div>
 						<span class="sc-bar-count">{{ h.count }}×</span>
 					</div>
-					<div v-if="chartData.length === 0" class="sc-empty">
+					<div
+						v-if="chartData.length === 0"
+						class="sc-empty">
 						<span class="sc-empty-emoji">📭</span>
 						<p class="sc-empty-text">No data for this period</p>
 					</div>
@@ -183,7 +244,9 @@
 						:key="cat.name"
 						class="sc-cat-row">
 						<div class="sc-cat-header">
-							<span class="sc-cat-dot" :class="'sc-cat-' + cat.name"></span>
+							<span
+								class="sc-cat-dot"
+								:class="'sc-cat-' + cat.name"></span>
 							<span class="sc-cat-name">{{ cat.name }}</span>
 							<div class="sc-bar-track sc-cat-track">
 								<div
@@ -198,13 +261,23 @@
 								v-for="h in cat.habits"
 								:key="h.name"
 								class="sc-tile"
-								v-tooltip.bottom="h.displayName + (h.count > 1 ? ' ×' + h.count : '')">
-								<span class="material-symbols-outlined sc-tile-icon">{{ h.icon }}</span>
-								<span v-if="h.count > 1" class="sc-tile-badge">{{ h.count }}</span>
+								v-tooltip.bottom="
+									h.displayName + (h.count > 1 ? ' ×' + h.count : '')
+								">
+								<span class="material-symbols-outlined sc-tile-icon">{{
+									h.icon
+								}}</span>
+								<span
+									v-if="h.count > 1"
+									class="sc-tile-badge"
+									>{{ h.count }}</span
+								>
 							</div>
 						</div>
 					</div>
-					<div v-if="categoryData.length === 0" class="sc-empty">
+					<div
+						v-if="categoryData.length === 0"
+						class="sc-empty">
 						<span class="sc-empty-emoji">📭</span>
 						<p class="sc-empty-text">No data for this period</p>
 					</div>
@@ -223,7 +296,8 @@ import { toDateKey } from "@/utils/timeUtils";
 defineProps<{ isActive: boolean }>();
 
 const habbitsStore = useHabbitsStore();
-const { userHabbitsList, allHabbitsList, tag_categories, dailyGoalsList } = storeToRefs(habbitsStore);
+const { userHabbitsList, allHabbitsList, tag_categories, dailyGoalsList } =
+	storeToRefs(habbitsStore);
 
 const period = ref<"week" | "month">("week");
 const offset = ref(0); // 0 = bieżący tydzień/miesiąc, -1 = poprzedni itd.
@@ -248,8 +322,16 @@ const periodRange = computed(() => {
 	if (period.value === "week") {
 		// Poniedziałek jako pierwszy dzień tygodnia (UTC)
 		const dow = (utcDow + 6) % 7; // 0=pon, 6=nie
-		const monday = new Date(Date.UTC(utcYear, utcMonth, utcDay - dow + offset.value * 7));
-		const sunday = new Date(Date.UTC(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate() + 6));
+		const monday = new Date(
+			Date.UTC(utcYear, utcMonth, utcDay - dow + offset.value * 7),
+		);
+		const sunday = new Date(
+			Date.UTC(
+				monday.getUTCFullYear(),
+				monday.getUTCMonth(),
+				monday.getUTCDate() + 6,
+			),
+		);
 		return { start: monday, end: sunday };
 	} else {
 		const month = utcMonth + offset.value;
@@ -264,16 +346,27 @@ const periodLabel = computed(() => {
 	const { start, end } = periodRange.value;
 	if (period.value === "week") {
 		const weekNum = getISOWeek(start);
-		const sLabel = String(start.getDate()).padStart(2, "0") + "." + String(start.getMonth() + 1).padStart(2, "0");
-		const eLabel = String(end.getDate()).padStart(2, "0") + "." + String(end.getMonth() + 1).padStart(2, "0");
+		const sLabel =
+			String(start.getDate()).padStart(2, "0") +
+			"." +
+			String(start.getMonth() + 1).padStart(2, "0");
+		const eLabel =
+			String(end.getDate()).padStart(2, "0") +
+			"." +
+			String(end.getMonth() + 1).padStart(2, "0");
 		return `W${weekNum}  ${sLabel} – ${eLabel}`;
 	} else {
-		return start.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+		return start.toLocaleDateString("en-GB", {
+			month: "long",
+			year: "numeric",
+		});
 	}
 });
 
 function getISOWeek(date: Date): number {
-	const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+	const d = new Date(
+		Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
+	);
 	d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
 	const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
 	return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
@@ -285,9 +378,16 @@ function resetScroll() {
 	});
 }
 
-onMounted(() => { ensureDataLoaded(); });
-watch(periodRange, () => { ensureDataLoaded(); resetScroll(); });
-watch(viewMode, () => { resetScroll(); });
+onMounted(() => {
+	ensureDataLoaded();
+});
+watch(periodRange, () => {
+	ensureDataLoaded();
+	resetScroll();
+});
+watch(viewMode, () => {
+	resetScroll();
+});
 
 async function ensureDataLoaded() {
 	const { start, end } = periodRange.value;
@@ -295,7 +395,15 @@ async function ensureDataLoaded() {
 }
 
 // Nazwy dni tygodnia
-const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const dayNames = [
+	"Sunday",
+	"Monday",
+	"Tuesday",
+	"Wednesday",
+	"Thursday",
+	"Friday",
+	"Saturday",
+];
 
 // ========================
 // CALENDAR VIEW DATA
@@ -314,7 +422,11 @@ const calendarDays = computed(() => {
 
 	const now = new Date();
 	const todayKey = toDateKey(now);
-	const yesterdayKey = toDateKey(new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1)));
+	const yesterdayKey = toDateKey(
+		new Date(
+			Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1),
+		),
+	);
 
 	const days: Date[] = [];
 	for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
@@ -326,11 +438,21 @@ const calendarDays = computed(() => {
 		const entry = userHabbitsList.value.find((e) => e.date === key);
 		const habbits = entry?.habbits ?? [];
 
-		const grouped = new Map<string, { displayName: string; icon: string; count: number }>();
+		const grouped = new Map<
+			string,
+			{ displayName: string; icon: string; count: number }
+		>();
 		for (const h of habbits) {
 			const existing = grouped.get(h.name);
-			if (existing) { existing.count++; }
-			else { grouped.set(h.name, { displayName: h.display_name || h.name, icon: h.icon, count: 1 }); }
+			if (existing) {
+				existing.count++;
+			} else {
+				grouped.set(h.name, {
+					displayName: h.display_name || h.name,
+					icon: h.icon,
+					count: 1,
+				});
+			}
 		}
 
 		const catMap = new Map<string, number>();
@@ -342,24 +464,44 @@ const calendarDays = computed(() => {
 			.map(([name, count]) => ({ name, count }))
 			.sort((a, b) => b.count - a.count);
 
-		// Postęp celów
+		// Postęp celów (z poprawką na migawki!)
 		const habitCounts: Record<string, number> = {};
-		for (const h of habbits) habitCounts[h.name] = (habitCounts[h.name] ?? 0) + 1;
+		for (const h of habbits)
+			habitCounts[h.name] = (habitCounts[h.name] ?? 0) + 1;
+
 		const goalCounters: Record<string, number> = {};
 		let completedGoals = 0;
-		for (const goal of dailyGoalsList.value) {
+
+		const snapshot =
+			key === todayKey ? dailyGoalsList.value : entry?.goalsSnapshot || [];
+
+		for (const goal of snapshot) {
 			goalCounters[goal.name] = (goalCounters[goal.name] ?? 0) + 1;
-			if (goalCounters[goal.name] <= (habitCounts[goal.name] ?? 0)) completedGoals++;
+			if (goalCounters[goal.name] <= (habitCounts[goal.name] ?? 0))
+				completedGoals++;
 		}
 
 		const dTime = d.getTime();
 		const dayName =
-			key === todayKey ? "Today" :
-			key === yesterdayKey ? "Yesterday" :
-			dayNames[d.getDay()];
-		const dateLabel = String(d.getDate()).padStart(2, "0") + "." + String(d.getMonth() + 1).padStart(2, "0");
+			key === todayKey
+				? "Today"
+				: key === yesterdayKey
+					? "Yesterday"
+					: dayNames[d.getDay()];
+		const dateLabel =
+			String(d.getDate()).padStart(2, "0") +
+			"." +
+			String(d.getMonth() + 1).padStart(2, "0");
 
-		result.push({ dateKey: key, dayName, dateLabel, groups: Array.from(grouped.values()), cats, goalsCompleted: completedGoals, goalsTotal: dailyGoalsList.value.length });
+		result.push({
+			dateKey: key,
+			dayName,
+			dateLabel,
+			groups: Array.from(grouped.values()),
+			cats,
+			goalsCompleted: completedGoals,
+			goalsTotal: snapshot.length,
+		});
 	}
 	return result;
 });
@@ -372,17 +514,25 @@ const globalHabitOrder = computed(() => {
 			freq.set(g.name, (freq.get(g.name) ?? 0) + g.count);
 		}
 	}
-	const sorted = Array.from(freq.entries()).sort((a, b) => b[1] - a[1]).map(([name]) => name);
+	const sorted = Array.from(freq.entries())
+		.sort((a, b) => b[1] - a[1])
+		.map(([name]) => name);
 	const order: Record<string, number> = {};
-	sorted.forEach((name, i) => { order[name] = i; });
+	sorted.forEach((name, i) => {
+		order[name] = i;
+	});
 	return order;
 });
 
 const calendarDaysSorted = computed(() =>
 	calendarDays.value.map((day) => ({
 		...day,
-		groups: [...day.groups].sort((a, b) => (globalHabitOrder.value[a.name] ?? 999) - (globalHabitOrder.value[b.name] ?? 999)),
-	}))
+		groups: [...day.groups].sort(
+			(a, b) =>
+				(globalHabitOrder.value[a.name] ?? 999) -
+				(globalHabitOrder.value[b.name] ?? 999),
+		),
+	})),
 );
 
 // ========================
@@ -390,7 +540,10 @@ const calendarDaysSorted = computed(() =>
 // ========================
 const chartData = computed(() => {
 	const { start, end } = periodRange.value;
-	const totals = new Map<string, { displayName: string; icon: string; count: number }>();
+	const totals = new Map<
+		string,
+		{ displayName: string; icon: string; count: number }
+	>();
 
 	for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
 		const key = toDateKey(d);
@@ -398,8 +551,15 @@ const chartData = computed(() => {
 		if (!entry) continue;
 		for (const h of entry.habbits) {
 			const existing = totals.get(h.name);
-			if (existing) { existing.count++; }
-			else { totals.set(h.name, { displayName: h.display_name || h.name, icon: h.icon, count: 1 }); }
+			if (existing) {
+				existing.count++;
+			} else {
+				totals.set(h.name, {
+					displayName: h.display_name || h.name,
+					icon: h.icon,
+					count: 1,
+				});
+			}
 		}
 	}
 
@@ -411,25 +571,81 @@ const chartData = computed(() => {
 	return arr;
 });
 
+// ========================
+// PERFECT DAYS (SKANER)
+// ========================
+
+// 1. Liczy ile było idealnych dni w wybranym oknie czasowym
 const goalsCompletedCount = computed(() => {
-	if (dailyGoalsList.value.length === 0) return 0;
 	const { start, end } = periodRange.value;
 	let count = 0;
-	for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+
+	for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
 		const key = toDateKey(d);
 		const entry = userHabbitsList.value.find((e) => e.date === key);
-		const habbits = entry?.habbits ?? [];
+
+		if (!entry) continue;
+
+		const habbits = entry.habbits ?? [];
+		const snapshot =
+			key === toDateKey(new Date())
+				? dailyGoalsList.value
+				: entry.goalsSnapshot || [];
+
+		if (snapshot.length === 0) continue;
+
 		const habitCounts: Record<string, number> = {};
-		for (const h of habbits) habitCounts[h.name] = (habitCounts[h.name] ?? 0) + 1;
+		for (const h of habbits) {
+			habitCounts[h.name] = (habitCounts[h.name] ?? 0) + 1;
+		}
+
 		const goalCounters: Record<string, number> = {};
 		let completed = 0;
-		for (const goal of dailyGoalsList.value) {
+
+		for (const goal of snapshot) {
 			goalCounters[goal.name] = (goalCounters[goal.name] ?? 0) + 1;
-			if (goalCounters[goal.name] <= (habitCounts[goal.name] ?? 0)) completed++;
+			if (goalCounters[goal.name] <= (habitCounts[goal.name] ?? 0)) {
+				completed++;
+			}
 		}
-		if (completed === dailyGoalsList.value.length) count++;
+
+		if (completed === snapshot.length) {
+			count++;
+		}
 	}
 	return count;
+});
+
+// 2. Liczy ile ogólnie DNI w okresie (mianownik) - pozwala na wyświetlenie np. 5 / 7
+const totalDaysInPeriod = computed(() => {
+	if (period.value === "week") {
+		return 7;
+	} else {
+		const { start, end } = periodRange.value;
+		return new Date(
+			Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()),
+		).getUTCDate();
+	}
+});
+
+// 3. Generuje inteligentny tekst (np. "perfect days this week" lub "perfect days in April")
+const perfectDaysLabel = computed(() => {
+	const isCurrentPeriod = offset.value === 0;
+
+	if (period.value === "week") {
+		return isCurrentPeriod
+			? "perfect days this week"
+			: "perfect days that week";
+	} else {
+		if (isCurrentPeriod) {
+			return "perfect days this month";
+		} else {
+			const monthName = periodRange.value.start.toLocaleDateString("en-US", {
+				month: "long",
+			});
+			return `perfect days in ${monthName}`;
+		}
+	}
 });
 
 // ========================
@@ -446,7 +662,16 @@ function getHabitCategory(habitName: string): string {
 
 const categoryData = computed(() => {
 	const { start, end } = periodRange.value;
-	const catTotals = new Map<string, { count: number; habits: Map<string, { name: string; displayName: string; icon: string; count: number }> }>();
+	const catTotals = new Map<
+		string,
+		{
+			count: number;
+			habits: Map<
+				string,
+				{ name: string; displayName: string; icon: string; count: number }
+			>;
+		}
+	>();
 
 	for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
 		const key = toDateKey(d);
@@ -454,12 +679,21 @@ const categoryData = computed(() => {
 		if (!entry) continue;
 		for (const h of entry.habbits) {
 			const cat = getHabitCategory(h.name);
-			if (!catTotals.has(cat)) catTotals.set(cat, { count: 0, habits: new Map() });
+			if (!catTotals.has(cat))
+				catTotals.set(cat, { count: 0, habits: new Map() });
 			const catEntry = catTotals.get(cat)!;
 			catEntry.count++;
 			const existing = catEntry.habits.get(h.name);
-			if (existing) { existing.count++; }
-			else { catEntry.habits.set(h.name, { name: h.name, displayName: h.display_name || h.name, icon: h.icon, count: 1 }); }
+			if (existing) {
+				existing.count++;
+			} else {
+				catEntry.habits.set(h.name, {
+					name: h.name,
+					displayName: h.display_name || h.name,
+					icon: h.icon,
+					count: 1,
+				});
+			}
 		}
 	}
 
@@ -467,7 +701,9 @@ const categoryData = computed(() => {
 		.map(([name, data]) => ({
 			name,
 			count: data.count,
-			habits: Array.from(data.habits.values()).sort((a, b) => b.count - a.count),
+			habits: Array.from(data.habits.values()).sort(
+				(a, b) => b.count - a.count,
+			),
 			pct: 0,
 		}))
 		.sort((a, b) => b.count - a.count);
@@ -512,7 +748,7 @@ const categoryData = computed(() => {
 	flex-shrink: 0;
 }
 .sc-title {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 1rem;
 	font-weight: 600;
 	color: var(--p-gray-700);
@@ -534,7 +770,7 @@ const categoryData = computed(() => {
 	background: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
 }
 .sc-period-btn {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.7rem;
 	font-weight: 500;
 	padding: 0.3rem 0.65rem;
@@ -554,7 +790,7 @@ const categoryData = computed(() => {
 .sc-period-active {
 	background: white;
 	color: var(--p-orange-600) !important;
-	box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 :where(.my-app-dark, .my-app-dark *) .sc-period-active {
 	background: var(--p-gray-600);
@@ -572,7 +808,7 @@ const categoryData = computed(() => {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.3rem;
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.7rem;
 	font-weight: 500;
 	padding: 0.3rem 0.7rem;
@@ -646,7 +882,7 @@ const categoryData = computed(() => {
 .sc-nav-label {
 	flex: 1;
 	text-align: center;
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.75rem;
 	font-weight: 600;
 	color: var(--p-gray-700);
@@ -677,17 +913,26 @@ const categoryData = computed(() => {
 	align-items: center;
 	gap: 0.15rem;
 	padding: 0.55rem 0.3rem;
-	border-bottom: 1px solid color-mix(in srgb, var(--p-orange-100) 60%, transparent);
+	border-bottom: 1px solid
+		color-mix(in srgb, var(--p-orange-100) 60%, transparent);
 }
 :where(.my-app-dark, .my-app-dark *) .sc-day {
 	border-bottom-color: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
 }
 .sc-day--gold {
-	background: linear-gradient(90deg, color-mix(in srgb, var(--p-yellow-100) 55%, transparent), transparent);
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--p-yellow-100) 55%, transparent),
+		transparent
+	);
 	border-radius: 0.5rem;
 }
 :where(.my-app-dark, .my-app-dark *) .sc-day--gold {
-	background: linear-gradient(90deg, color-mix(in srgb, var(--p-yellow-900) 35%, transparent), transparent);
+	background: linear-gradient(
+		90deg,
+		color-mix(in srgb, var(--p-yellow-900) 35%, transparent),
+		transparent
+	);
 }
 .sc-day-header {
 	flex-shrink: 0;
@@ -708,7 +953,7 @@ const categoryData = computed(() => {
 	flex-direction: column;
 }
 .sc-day-name {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.78rem;
 	font-weight: 600;
 	color: var(--p-gray-700);
@@ -718,7 +963,7 @@ const categoryData = computed(() => {
 	color: var(--p-gray-200);
 }
 .sc-day-date {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.65rem;
 	color: var(--p-gray-400);
 }
@@ -730,7 +975,7 @@ const categoryData = computed(() => {
 	line-height: 1;
 }
 .sc-day-empty {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.72rem;
 	font-style: italic;
 	color: var(--p-gray-300);
@@ -779,7 +1024,7 @@ const categoryData = computed(() => {
 	border-radius: 50%;
 	background: var(--p-orange-500);
 	color: white;
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.5rem;
 	font-weight: 700;
 	line-height: 1;
@@ -835,7 +1080,7 @@ const categoryData = computed(() => {
 	background: linear-gradient(90deg, var(--p-orange-500), var(--p-orange-600));
 }
 .sc-bar-count {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.72rem;
 	font-weight: 600;
 	color: var(--p-gray-600);
@@ -861,7 +1106,7 @@ const categoryData = computed(() => {
 	opacity: 0.5;
 }
 .sc-empty-text {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.78rem;
 	color: var(--p-gray-400);
 	margin: 0;
@@ -883,7 +1128,11 @@ const categoryData = computed(() => {
 	border-radius: 1rem;
 }
 :where(.my-app-dark, .my-app-dark *) .sc-medal-tile {
-	background: linear-gradient(135deg, color-mix(in srgb, #92400e 40%, transparent), color-mix(in srgb, #78350f 50%, transparent));
+	background: linear-gradient(
+		135deg,
+		color-mix(in srgb, #92400e 40%, transparent),
+		color-mix(in srgb, #78350f 50%, transparent)
+	);
 	border-color: #b45309;
 }
 .sc-medal-tile-emoji {
@@ -895,7 +1144,7 @@ const categoryData = computed(() => {
 	flex-direction: column;
 }
 .sc-medal-tile-count {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 1.6rem;
 	font-weight: 700;
 	color: #92400e;
@@ -905,7 +1154,7 @@ const categoryData = computed(() => {
 	color: #fde68a;
 }
 .sc-medal-tile-label {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.7rem;
 	color: #b45309;
 	margin-top: 0.1rem;
@@ -929,7 +1178,7 @@ const categoryData = computed(() => {
 	background: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
 }
 .sc-sub-btn {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.68rem;
 	font-weight: 500;
 	padding: 0.25rem 0.6rem;
@@ -940,12 +1189,16 @@ const categoryData = computed(() => {
 	cursor: pointer;
 	transition: all 0.2s ease;
 }
-.sc-sub-btn:hover { color: var(--p-gray-700); }
-:where(.my-app-dark, .my-app-dark *) .sc-sub-btn:hover { color: var(--p-gray-300); }
+.sc-sub-btn:hover {
+	color: var(--p-gray-700);
+}
+:where(.my-app-dark, .my-app-dark *) .sc-sub-btn:hover {
+	color: var(--p-gray-300);
+}
 .sc-sub-active {
 	background: white;
 	color: var(--p-orange-600) !important;
-	box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 :where(.my-app-dark, .my-app-dark *) .sc-sub-active {
 	background: var(--p-gray-600);
@@ -955,7 +1208,8 @@ const categoryData = computed(() => {
 /* ====== CATEGORY ROWS ====== */
 .sc-cat-row {
 	padding: 0.55rem 0.3rem;
-	border-bottom: 1px solid color-mix(in srgb, var(--p-orange-100) 60%, transparent);
+	border-bottom: 1px solid
+		color-mix(in srgb, var(--p-orange-100) 60%, transparent);
 	display: flex;
 	flex-direction: column;
 	gap: 0.4rem;
@@ -975,15 +1229,27 @@ const categoryData = computed(() => {
 	flex-shrink: 0;
 	background: var(--p-orange-400);
 }
-.sc-cat-dot.sc-cat-sport   { background: var(--p-green-400); }
-.sc-cat-dot.sc-cat-health  { background: var(--p-red-400); }
-.sc-cat-dot.sc-cat-work    { background: var(--p-blue-400); }
-.sc-cat-dot.sc-cat-learning{ background: var(--p-purple-400); }
-.sc-cat-dot.sc-cat-relax   { background: var(--p-teal-400); }
-.sc-cat-dot.sc-cat-negative{ background: var(--p-gray-400); }
+.sc-cat-dot.sc-cat-sport {
+	background: var(--p-green-400);
+}
+.sc-cat-dot.sc-cat-health {
+	background: var(--p-red-400);
+}
+.sc-cat-dot.sc-cat-work {
+	background: var(--p-blue-400);
+}
+.sc-cat-dot.sc-cat-learning {
+	background: var(--p-purple-400);
+}
+.sc-cat-dot.sc-cat-relax {
+	background: var(--p-teal-400);
+}
+.sc-cat-dot.sc-cat-negative {
+	background: var(--p-gray-400);
+}
 
 .sc-cat-name {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.75rem;
 	font-weight: 600;
 	color: var(--p-gray-700);
@@ -991,18 +1257,36 @@ const categoryData = computed(() => {
 	min-width: 4rem;
 	flex-shrink: 0;
 }
-:where(.my-app-dark, .my-app-dark *) .sc-cat-name { color: var(--p-gray-200); }
+:where(.my-app-dark, .my-app-dark *) .sc-cat-name {
+	color: var(--p-gray-200);
+}
 
-.sc-cat-track { margin: 0; }
+.sc-cat-track {
+	margin: 0;
+}
 
 /* Category-specific fill colors */
-.sc-cat-fill { background: linear-gradient(90deg, var(--p-orange-400), var(--p-orange-500)); }
-.sc-cat-fill-sport    { background: linear-gradient(90deg, var(--p-green-300), var(--p-green-500)); }
-.sc-cat-fill-health   { background: linear-gradient(90deg, var(--p-red-300), var(--p-red-500)); }
-.sc-cat-fill-work     { background: linear-gradient(90deg, var(--p-blue-300), var(--p-blue-500)); }
-.sc-cat-fill-learning { background: linear-gradient(90deg, var(--p-purple-300), var(--p-purple-500)); }
-.sc-cat-fill-relax    { background: linear-gradient(90deg, var(--p-teal-300), var(--p-teal-500)); }
-.sc-cat-fill-negative { background: linear-gradient(90deg, var(--p-gray-300), var(--p-gray-500)); }
+.sc-cat-fill {
+	background: linear-gradient(90deg, var(--p-orange-400), var(--p-orange-500));
+}
+.sc-cat-fill-sport {
+	background: linear-gradient(90deg, var(--p-green-300), var(--p-green-500));
+}
+.sc-cat-fill-health {
+	background: linear-gradient(90deg, var(--p-red-300), var(--p-red-500));
+}
+.sc-cat-fill-work {
+	background: linear-gradient(90deg, var(--p-blue-300), var(--p-blue-500));
+}
+.sc-cat-fill-learning {
+	background: linear-gradient(90deg, var(--p-purple-300), var(--p-purple-500));
+}
+.sc-cat-fill-relax {
+	background: linear-gradient(90deg, var(--p-teal-300), var(--p-teal-500));
+}
+.sc-cat-fill-negative {
+	background: linear-gradient(90deg, var(--p-gray-300), var(--p-gray-500));
+}
 
 .sc-cat-habits {
 	display: flex;
@@ -1027,21 +1311,45 @@ const categoryData = computed(() => {
 	cursor: default;
 	transition: transform 0.15s ease;
 }
-.sc-day-cat-pill:hover { transform: scale(1.05); }
+.sc-day-cat-pill:hover {
+	transform: scale(1.05);
+}
 :where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill {
 	background: color-mix(in srgb, var(--p-gray-700) 55%, transparent);
 }
-.sc-day-cat-pill-sport    { background: color-mix(in srgb, var(--p-green-100) 55%, transparent); }
-.sc-day-cat-pill-health   { background: color-mix(in srgb, var(--p-red-100) 55%, transparent); }
-.sc-day-cat-pill-work     { background: color-mix(in srgb, var(--p-blue-100) 55%, transparent); }
-.sc-day-cat-pill-learning { background: color-mix(in srgb, var(--p-purple-100) 55%, transparent); }
-.sc-day-cat-pill-relax    { background: color-mix(in srgb, var(--p-teal-100) 55%, transparent); }
-.sc-day-cat-pill-negative { background: color-mix(in srgb, var(--p-gray-100) 55%, transparent); }
-:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-sport    { background: color-mix(in srgb, var(--p-green-900) 35%, transparent); }
-:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-health   { background: color-mix(in srgb, var(--p-red-900) 35%, transparent); }
-:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-work     { background: color-mix(in srgb, var(--p-blue-900) 35%, transparent); }
-:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-learning { background: color-mix(in srgb, var(--p-purple-900) 35%, transparent); }
-:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-relax    { background: color-mix(in srgb, var(--p-teal-900) 35%, transparent); }
+.sc-day-cat-pill-sport {
+	background: color-mix(in srgb, var(--p-green-100) 55%, transparent);
+}
+.sc-day-cat-pill-health {
+	background: color-mix(in srgb, var(--p-red-100) 55%, transparent);
+}
+.sc-day-cat-pill-work {
+	background: color-mix(in srgb, var(--p-blue-100) 55%, transparent);
+}
+.sc-day-cat-pill-learning {
+	background: color-mix(in srgb, var(--p-purple-100) 55%, transparent);
+}
+.sc-day-cat-pill-relax {
+	background: color-mix(in srgb, var(--p-teal-100) 55%, transparent);
+}
+.sc-day-cat-pill-negative {
+	background: color-mix(in srgb, var(--p-gray-100) 55%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-sport {
+	background: color-mix(in srgb, var(--p-green-900) 35%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-health {
+	background: color-mix(in srgb, var(--p-red-900) 35%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-work {
+	background: color-mix(in srgb, var(--p-blue-900) 35%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-learning {
+	background: color-mix(in srgb, var(--p-purple-900) 35%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-relax {
+	background: color-mix(in srgb, var(--p-teal-900) 35%, transparent);
+}
 .sc-day-cat-dot {
 	width: 0.45rem;
 	height: 0.45rem;
@@ -1050,18 +1358,22 @@ const categoryData = computed(() => {
 	background: var(--p-orange-400);
 }
 .sc-day-cat-label {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.62rem;
 	font-weight: 600;
 	text-transform: capitalize;
 	color: var(--p-gray-700);
 }
-:where(.my-app-dark, .my-app-dark *) .sc-day-cat-label { color: var(--p-gray-200); }
+:where(.my-app-dark, .my-app-dark *) .sc-day-cat-label {
+	color: var(--p-gray-200);
+}
 .sc-day-cat-count {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.6rem;
 	font-weight: 700;
 	color: var(--p-gray-500);
 }
-:where(.my-app-dark, .my-app-dark *) .sc-day-cat-count { color: var(--p-gray-400); }
+:where(.my-app-dark, .my-app-dark *) .sc-day-cat-count {
+	color: var(--p-gray-400);
+}
 </style>
