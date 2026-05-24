@@ -6,7 +6,6 @@
 		:closable="true"
 		:show-header="false"
 		class="hs-dialog w-[clamp(22rem,85vw,42rem)]">
-		<!-- Dialog hero header -->
 		<div class="hs-dialog-hero">
 			<div
 				class="hs-dialog-hero-bg"
@@ -23,14 +22,12 @@
 				}}
 			</p>
 		</div>
-		<!-- Search content -->
 		<div class="hs-dialog-body">
 			<HabbitSearch
 				:addedNames="addedInSession"
 				:goalMode="addDialogMode === 'goal'"
 				@select="handleHabbitSelect" />
 		</div>
-		<!-- Done footer with counter -->
 		<div class="hs-dialog-footer">
 			<Transition name="hs-badge">
 				<span
@@ -52,9 +49,7 @@
 		<div
 			class="flex flex-col justify-between card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] sm:max-h-[50rem] sm:overflow-auto hc-inner"
 			@click.capture="handleGlobalClick">
-			<!-- Top area: greeting + habits -->
 			<div>
-				<!-- Greeting + streak -->
 				<div class="hc-greeting-area">
 					<div>
 						<span class="hc-greeting-hello">{{ greetingEmoji }}</span>
@@ -69,10 +64,13 @@
 					</div>
 				</div>
 
-				<!-- Habits counter -->
 				<div class="hc-header">
 					<template v-if="selectedDayHabbits.length > 0">
-						<span class="hc-count" :class="{ 'hc-count-bump': countBump }">{{ selectedDayHabbits.length }}</span>
+						<span
+							class="hc-count"
+							:class="{ 'hc-count-bump': countBump }"
+							>{{ selectedDayHabbits.length }}</span
+						>
 						<span class="hc-count-label"
 							>{{
 								selectedDayHabbits.length === 1 ? "habit" : "habits"
@@ -87,7 +85,6 @@
 					</p>
 				</div>
 
-				<!-- Tracked habits -->
 				<div class="tasks-area mt-4">
 					<div class="flex flex-row flex-wrap h-min gap-3">
 						<draggable
@@ -114,24 +111,25 @@
 				</div>
 			</div>
 
-			<!-- Goals section (zawsze widoczna, nie scrolluje) -->
 			<div class="hc-goals-section">
 				<div class="hc-goals-header">
 					<div class="hc-goals-header-left">
-						<!-- Kółko postępu celów -->
 						<div
-							v-if="totalGoals > 0"
+							v-if="habbitsStore.dailyGoalsColored.length > 0"
 							class="hc-goals-ring"
 							:style="goalsRingStyle">
 							<div class="hc-goals-ring-inner">
 								<span class="hc-goals-ring-text"
-									>{{ completedGoals }}/{{ totalGoals }}</span
+									>{{ completedGoals }}/{{
+										habbitsStore.dailyGoalsColored.length
+									}}</span
 								>
 							</div>
 						</div>
 						<h3 class="hc-goals-title">Daily goals 🎯</h3>
 					</div>
 					<button
+						v-if="habbitsStore.isToday()"
 						class="hc-edit-pill"
 						:class="{ active: editMode }"
 						@click="toggleEditMode">
@@ -142,9 +140,10 @@
 						{{ editMode ? "Done" : "Edit" }}
 					</button>
 				</div>
-				<!-- Feature 5: Dobra passa baner -->
 				<Transition name="hc-banner-fade">
-					<div v-if="allGoalsDone" class="hc-banner">
+					<div
+						v-if="allGoalsDone"
+						class="hc-banner">
 						🌟 On a roll! All goals for today completed!
 					</div>
 				</Transition>
@@ -152,8 +151,8 @@
 					ref="goalsContainerRef"
 					class="flex flex-row flex-wrap h-min gap-3">
 					<draggable
-						v-if="editMode"
-						v-model="dailyGoalsList"
+						v-if="editMode && habbitsStore.isToday()"
+						:list="dailyGoalsColored"
 						item-key="id"
 						class="contents"
 						ghost-class="opacity-40"
@@ -162,11 +161,12 @@
 						<template #item="{ element: goal }">
 							<HabbitItem
 								:data="getGoalDisplayData(goal)"
-								:showTooltip="!editMode"
-                                                            :noCompliment="true"
-                                                            @click="toggleMarkGoal(goal)" />
+								:showTooltip="false"
+								:noCompliment="true"
+								@click="toggleMarkGoal(goal)" />
 						</template>
 					</draggable>
+
 					<template v-else>
 						<HabbitItem
 							v-for="goal in dailyGoalsColored"
@@ -177,23 +177,33 @@
 									habbitsStore.getGoalSeverity(goal) === 'empty' ? 'empty' : '',
 							}"
 							:showCheckBadge="habbitsStore.getGoalSeverity(goal) !== 'empty'"
-							:showTooltip="!editMode"
-                                                    :noCompliment="true"
-                                                    @click="onReachGoal(goal)" />
+							:showTooltip="true"
+							:noCompliment="true"
+							@click="onReachGoal(goal)" />
 					</template>
+
 					<HabbitItem
-						v-if="editMode"
+						v-if="editMode && habbitsStore.isToday()"
 						@click="openaddDailyGoalDialog"
 						:showTooltip="!editMode"
 						:data="{ severity: 'empty', icon: 'add', name: 'add' }" />
 				</div>
-				<!-- Pusty stan celów -->
 				<div
-					v-if="dailyGoalsList.length === 0 && !editMode"
+					v-if="
+						habbitsStore.dailyGoalsColored.length === 0 &&
+						(!editMode || !habbitsStore.isToday())
+					"
 					class="hc-goals-empty">
 					<span class="hc-goals-empty-emoji">🎯</span>
-					<p class="hc-goals-empty-text">Set goals to track your progress</p>
+					<p class="hc-goals-empty-text">
+						{{
+							habbitsStore.isToday()
+								? "Set goals to track your progress"
+								: "No goals were tracked on this day"
+						}}
+					</p>
 					<button
+						v-if="habbitsStore.isToday()"
 						class="hc-goals-empty-btn"
 						@click="toggleEditMode">
 						<i
@@ -279,8 +289,8 @@ const streak = computed(() => {
 	return count;
 });
 
-// Licznik ukończonych celów i procent postępu
-const totalGoals = computed(() => dailyGoalsList.value.length);
+// POPRAWKA: Licznik celów teraz opiera się o historię wybranego dnia
+const totalGoals = computed(() => dailyGoalsColored.value.length);
 const completedGoals = computed(() => {
 	return dailyGoalsColored.value.filter((g) => g.severity !== "empty").length;
 });
@@ -318,21 +328,28 @@ const showHabbitDialog = ref(false);
 
 // Feature 3: animacja licznika habitów
 const countBump = ref(false);
-watch(() => selectedDayHabbits.value.length, (newVal, oldVal) => {
-	if (newVal > (oldVal ?? 0)) {
-		countBump.value = true;
-		setTimeout(() => { countBump.value = false; }, 420);
-	}
-});
+watch(
+	() => selectedDayHabbits.value.length,
+	(newVal, oldVal) => {
+		if (newVal > (oldVal ?? 0)) {
+			countBump.value = true;
+			setTimeout(() => {
+				countBump.value = false;
+			}, 420);
+		}
+	},
+);
 
 // Feature 5: dobra passa — computed
-const allGoalsDone = computed(() => totalGoals.value > 0 && completedGoals.value === totalGoals.value);
+const allGoalsDone = computed(
+	() => totalGoals.value > 0 && completedGoals.value === totalGoals.value,
+);
 
 // Feature 6: emoji wylatuje przy ukończeniu celu
 function injectGoalFlyStyles() {
-	if (document.getElementById('goal-fly-styles')) return;
-	const style = document.createElement('style');
-	style.id = 'goal-fly-styles';
+	if (document.getElementById("goal-fly-styles")) return;
+	const style = document.createElement("style");
+	style.id = "goal-fly-styles";
 	style.textContent = `
 		@keyframes goal-fly {
 			0%   { opacity: 1; transform: translateY(0) scale(1); }
@@ -351,10 +368,10 @@ function injectGoalFlyStyles() {
 
 function flyGoalEmoji() {
 	injectGoalFlyStyles();
-	const emojis = ['🎯', '✨', '⭐', '🌟', '💫'];
+	const emojis = ["🎯", "✨", "⭐", "🌟", "💫"];
 	const emoji = emojis[Math.floor(Math.random() * emojis.length)];
-	const el = document.createElement('span');
-	el.className = 'goal-fly-emoji';
+	const el = document.createElement("span");
+	el.className = "goal-fly-emoji";
 	el.textContent = emoji;
 	el.style.left = `${38 + Math.random() * 24}vw`;
 	el.style.bottom = `${120 + Math.random() * 60}px`;
@@ -411,7 +428,7 @@ function deleteSelectedTask() {
 	}
 }
 const onReachGoal = (goal: Goal) => {
-	const wasCompleted = habbitsStore.getGoalSeverity(goal) !== 'empty';
+	const wasCompleted = habbitsStore.getGoalSeverity(goal) !== "empty";
 	habbitsStore.onGoalClick(goal);
 	if (!wasCompleted) showCompliment();
 };
@@ -453,20 +470,21 @@ onBeforeUnmount(() => {
 	document.removeEventListener("mousedown", handleClickOutside);
 });
 
+// POPRAWKA: Przekazujemy pełne dane dla ikon edycji, aby móc usuwać również cele historyczne
 function getGoalDisplayData(goal: Goal) {
-	const severity = habbitsStore.getGoalSeverity(goal);
+	const fullGoal = getFullGoalData(goal);
 
 	if (editMode.value && markedGoalToDelete.value === goal.id) {
 		return {
-			...goal,
+			...fullGoal,
 			icon: "delete",
 			severity: "danger",
 		};
 	}
 
 	return {
-		...goal,
-		severity: severity === "empty" ? "empty" : "",
+		...fullGoal,
+		severity: "empty",
 	};
 }
 
@@ -518,8 +536,6 @@ onBeforeUnmount(() => {
 	document.removeEventListener("mousedown", handleHabbitClickOutside);
 });
 
-// This function is used to get the display data for a habbit, including its icon and severity.
-// If the habbit is marked for deletion, it will show a delete icon and danger severity
 function getHabbitDisplayData(habbit: Habbit) {
 	if (markedHabbitToDelete.value === habbit.id) {
 		return {
@@ -530,12 +546,9 @@ function getHabbitDisplayData(habbit: Habbit) {
 	}
 	return getFullHabbitData(habbit);
 }
-// This function merges the habbit data with the original data from allHabbitsList to ensure
-// that we have the most complete information, especially for display_name and icon.
+
 function getFullHabbitData(habbit: Habbit) {
-	// If display_name already exists, return the original
 	if (habbit.display_name) return habbit;
-	// Search in allHabbitsList by name
 	const original = allHabbitsList.value.find((h) => h.name === habbit.name);
 	return original ? { ...original, ...habbit } : habbit;
 }
@@ -907,9 +920,12 @@ function getFullHabbitData(habbit: Habbit) {
 	justify-content: center;
 	background: conic-gradient(
 		var(--ring-color, var(--p-orange-400)) calc(var(--ring-pct) * 1%),
-		color-mix(in srgb, var(--p-gray-200) 60%, transparent) calc(var(--ring-pct) * 1%)
+		color-mix(in srgb, var(--p-gray-200) 60%, transparent)
+			calc(var(--ring-pct) * 1%)
 	);
-	transition: --ring-pct 0.5s ease, --ring-color 0.4s ease;
+	transition:
+		--ring-pct 0.5s ease,
+		--ring-color 0.4s ease;
 }
 .hc-goals-ring-inner {
 	width: 1.45rem;
@@ -1040,9 +1056,16 @@ function getFullHabbitData(habbit: Habbit) {
 
 /* Feature 3: animacja licznika habitów */
 @keyframes hc-count-bump {
-	0%   { transform: scale(1); }
-	50%  { transform: scale(1.38); color: var(--p-orange-500); }
-	100% { transform: scale(1); }
+	0% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.38);
+		color: var(--p-orange-500);
+	}
+	100% {
+		transform: scale(1);
+	}
 }
 .hc-count-bump {
 	animation: hc-count-bump 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1057,7 +1080,7 @@ function getFullHabbitData(habbit: Habbit) {
 	background: color-mix(in srgb, var(--p-green-100) 70%, var(--p-orange-50));
 	border: 1.5px solid var(--p-green-200);
 	text-align: center;
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.8rem;
 	font-weight: 600;
 	color: var(--p-green-700);
@@ -1068,14 +1091,31 @@ function getFullHabbitData(habbit: Habbit) {
 	background: color-mix(in srgb, var(--p-green-900) 40%, var(--p-gray-800));
 	border-color: var(--p-green-800);
 	color: var(--p-green-400);
-	box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
 }
 @keyframes hc-banner-pulse {
-	0%, 100% { box-shadow: 0 2px 12px color-mix(in srgb, var(--p-green-300) 30%, transparent); }
-	50%       { box-shadow: 0 2px 18px color-mix(in srgb, var(--p-green-300) 55%, transparent); }
+	0%,
+	100% {
+		box-shadow: 0 2px 12px
+			color-mix(in srgb, var(--p-green-300) 30%, transparent);
+	}
+	50% {
+		box-shadow: 0 2px 18px
+			color-mix(in srgb, var(--p-green-300) 55%, transparent);
+	}
 }
-.hc-banner-fade-enter-active { transition: all 0.42s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.hc-banner-fade-leave-active { transition: all 0.25s ease; }
-.hc-banner-fade-enter-from   { opacity: 0; transform: translateY(8px) scale(0.94); }
-.hc-banner-fade-leave-to     { opacity: 0; transform: translateY(-4px) scale(0.97); }
+.hc-banner-fade-enter-active {
+	transition: all 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.hc-banner-fade-leave-active {
+	transition: all 0.25s ease;
+}
+.hc-banner-fade-enter-from {
+	opacity: 0;
+	transform: translateY(8px) scale(0.94);
+}
+.hc-banner-fade-leave-to {
+	opacity: 0;
+	transform: translateY(-4px) scale(0.97);
+}
 </style>
