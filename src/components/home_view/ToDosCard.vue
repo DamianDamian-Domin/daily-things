@@ -31,7 +31,10 @@
 					<template #item="{ element: item }">
 						<div class="td-item cursor-grab active:cursor-grabbing">
 							<button
-								:class="['td-check', { 'td-check-bounce': bouncingCheckId === item.id }]"
+								:class="[
+									'td-check',
+									{ 'td-check-bounce': bouncingCheckId === item.id },
+								]"
 								@click="toggleCompletion(item)">
 								<i class="pi pi-check td-check-inner"></i>
 							</button>
@@ -79,12 +82,44 @@
 								style="font-size: 0.6rem"></i>
 							<span>{{ completedTodos.length }} completed</span>
 						</button>
-						<button
-							class="td-clear-pill"
-							@click="todosStore.clearCompletedTodos()">
-							<i class="pi pi-trash" style="font-size: 0.6rem"></i>
-							<span>Clear</span>
-						</button>
+						<div
+							class="flex items-center"
+							ref="confirmContainerRef">
+							<button
+								v-if="!isConfirmingDelete"
+								class="td-clear-pill"
+								@click="openConfirm">
+								<i
+									class="pi pi-trash"
+									style="font-size: 0.6rem"></i>
+								<span>Clear</span>
+							</button>
+
+							<div
+								v-else
+								class="flex items-center gap-2 px-2 py-0.5 rounded-full border border-red-200 dark:border-red-800/50 bg-red-50 dark:bg-red-900/20">
+								<span
+									class="text-[0.7rem] text-red-600 dark:text-red-400 font-medium ml-1 uppercase tracking-wide">
+									Sure?
+								</span>
+
+								<button
+									@click="executeDeleteAll"
+									class="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-800/50 transition-colors flex items-center justify-center">
+									<i
+										class="pi pi-check"
+										style="font-size: 0.65rem"></i>
+								</button>
+
+								<button
+									@click="closeConfirm"
+									class="text-surface-500 hover:text-surface-700 dark:text-surface-400 dark:hover:text-surface-200 p-1 rounded-full hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors flex items-center justify-center">
+									<i
+										class="pi pi-times"
+										style="font-size: 0.65rem"></i>
+								</button>
+							</div>
+						</div>
 					</div>
 
 					<Transition name="td-slide">
@@ -158,10 +193,16 @@
 						v-for="c in todoColors"
 						:key="c.value"
 						class="td-color-swatch"
-						:class="[`td-swatch--${c.value || 'none'}`, dialogColor === c.value && 'td-swatch--active']"
+						:class="[
+							`td-swatch--${c.value || 'none'}`,
+							dialogColor === c.value && 'td-swatch--active',
+						]"
 						v-tooltip.top="c.label"
 						@click="dialogColor = c.value">
-						<i v-if="dialogColor === c.value" class="pi pi-check" style="font-size: 0.5rem"></i>
+						<i
+							v-if="dialogColor === c.value"
+							class="pi pi-check"
+							style="font-size: 0.5rem"></i>
 					</button>
 				</div>
 				<div class="td-dialog-actions">
@@ -193,7 +234,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from "vue";
+import {
+	ref,
+	computed,
+	onMounted,
+	nextTick,
+	watch,
+	onBeforeUnmount,
+} from "vue";
 import { storeToRefs } from "pinia";
 import { useTodosStore } from "@/stores/todos";
 import { useSound } from "@/utils/useSound";
@@ -309,7 +357,9 @@ function toggleCompletion(item: any) {
 		playCheck();
 		showCompliment();
 		bouncingCheckId.value = item.id;
-		setTimeout(() => { bouncingCheckId.value = null; }, 400);
+		setTimeout(() => {
+			bouncingCheckId.value = null;
+		}, 400);
 	} else {
 		playUncheck();
 	}
@@ -327,7 +377,10 @@ const currentEditId = ref<string | null>(null);
 const dialogInput = ref<HTMLInputElement | null>(null);
 const descriptionInput = ref<HTMLTextAreaElement | null>(null);
 
-const todoColors: { value: import("@/stores/todos").TodoColor; label: string }[] = [
+const todoColors: {
+	value: import("@/stores/todos").TodoColor;
+	label: string;
+}[] = [
 	{ value: "", label: "None" },
 	{ value: "red", label: "Red" },
 	{ value: "orange", label: "Orange" },
@@ -382,20 +435,65 @@ function focusDescription() {
 }
 
 // ========================
+// INLINE CONFIRM DELETE ALL
+// ========================
+const isConfirmingDelete = ref(false);
+const confirmContainerRef = ref<HTMLElement | null>(null);
+
+function openConfirm() {
+	isConfirmingDelete.value = true;
+	nextTick(() => {
+		document.addEventListener("mousedown", handleClickOutside);
+	});
+}
+
+function closeConfirm() {
+	isConfirmingDelete.value = false;
+	document.removeEventListener("mousedown", handleClickOutside);
+}
+
+function handleClickOutside(event: MouseEvent) {
+	if (
+		confirmContainerRef.value &&
+		!confirmContainerRef.value.contains(event.target as Node)
+	) {
+		closeConfirm();
+	}
+}
+
+function executeDeleteAll() {
+	// Wywołujemy prawdziwą funkcję czyszczącą:
+	todosStore.clearCompletedTodos();
+	// Zamykamy tryb potwierdzania i sprzątamy event listener:
+	closeConfirm();
+}
+
+onBeforeUnmount(() => {
+	document.removeEventListener("mousedown", handleClickOutside);
+});
+
+// ========================
 // LOAD
 // ========================
 onMounted(() => {
 	todosStore.loadTodos();
 });
 </script>
-
 <style scoped>
 /* Bounce animacja kółka przy zaznaczaniu */
 @keyframes td-check-pop {
-	0%   { transform: scale(1); }
-	40%  { transform: scale(1.45); }
-	70%  { transform: scale(0.88); }
-	100% { transform: scale(1); }
+	0% {
+		transform: scale(1);
+	}
+	40% {
+		transform: scale(1.45);
+	}
+	70% {
+		transform: scale(0.88);
+	}
+	100% {
+		transform: scale(1);
+	}
 }
 .td-check-bounce {
 	animation: td-check-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -476,7 +574,9 @@ onMounted(() => {
 		var(--ring-color, var(--p-orange-400)) calc(var(--ring-pct) * 1%),
 		var(--p-orange-200, #fed7aa) calc(var(--ring-pct) * 1%)
 	);
-	transition: --ring-pct 0.5s ease, --ring-color 0.4s ease;
+	transition:
+		--ring-pct 0.5s ease,
+		--ring-color 0.4s ease;
 }
 .td-ring-inner {
 	position: absolute;
@@ -533,7 +633,6 @@ onMounted(() => {
 	transition: background 0.15s ease;
 }
 
-
 /* Colored label wrapper (text + desc icon only) */
 .td-item-label {
 	display: flex;
@@ -586,7 +685,9 @@ onMounted(() => {
 	color: var(--p-orange-400);
 	opacity: 0;
 	transform: scale(0);
-	transition: opacity 0.15s ease, transform 0.15s ease;
+	transition:
+		opacity 0.15s ease,
+		transform 0.15s ease;
 }
 
 /* Checkbox — checked */
@@ -721,7 +822,9 @@ onMounted(() => {
 	font-size: 0.68rem;
 	font-weight: 600;
 	cursor: pointer;
-	transition: background 0.15s ease, color 0.15s ease;
+	transition:
+		background 0.15s ease,
+		color 0.15s ease;
 	user-select: none;
 }
 .td-clear-pill:hover {
@@ -805,7 +908,6 @@ onMounted(() => {
 	opacity: 0.55;
 	background: transparent;
 }
-
 
 /* ====== EMPTY STATE ====== */
 .td-empty {
@@ -995,7 +1097,9 @@ onMounted(() => {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	transition: transform 0.15s ease, border-color 0.15s ease;
+	transition:
+		transform 0.15s ease,
+		border-color 0.15s ease;
 	color: white;
 }
 .td-color-swatch:hover {
@@ -1009,22 +1113,46 @@ onMounted(() => {
 .td-swatch--none.td-swatch--active {
 	border-color: var(--p-gray-400);
 }
-.td-swatch--red    { background: var(--p-red-400); }
-.td-swatch--orange { background: var(--p-orange-400); }
-.td-swatch--yellow { background: var(--p-yellow-400); }
-.td-swatch--green  { background: var(--p-green-400); }
-.td-swatch--blue   { background: var(--p-blue-400); }
-.td-swatch--purple { background: var(--p-purple-400); }
+.td-swatch--red {
+	background: var(--p-red-400);
+}
+.td-swatch--orange {
+	background: var(--p-orange-400);
+}
+.td-swatch--yellow {
+	background: var(--p-yellow-400);
+}
+.td-swatch--green {
+	background: var(--p-green-400);
+}
+.td-swatch--blue {
+	background: var(--p-blue-400);
+}
+.td-swatch--purple {
+	background: var(--p-purple-400);
+}
 .td-swatch--active {
 	border-color: white;
 	box-shadow: 0 0 0 2px currentColor;
 }
-.td-swatch--red.td-swatch--active    { box-shadow: 0 0 0 2px var(--p-red-400); }
-.td-swatch--orange.td-swatch--active { box-shadow: 0 0 0 2px var(--p-orange-400); }
-.td-swatch--yellow.td-swatch--active { box-shadow: 0 0 0 2px var(--p-yellow-400); }
-.td-swatch--green.td-swatch--active  { box-shadow: 0 0 0 2px var(--p-green-400); }
-.td-swatch--blue.td-swatch--active   { box-shadow: 0 0 0 2px var(--p-blue-400); }
-.td-swatch--purple.td-swatch--active { box-shadow: 0 0 0 2px var(--p-purple-400); }
+.td-swatch--red.td-swatch--active {
+	box-shadow: 0 0 0 2px var(--p-red-400);
+}
+.td-swatch--orange.td-swatch--active {
+	box-shadow: 0 0 0 2px var(--p-orange-400);
+}
+.td-swatch--yellow.td-swatch--active {
+	box-shadow: 0 0 0 2px var(--p-yellow-400);
+}
+.td-swatch--green.td-swatch--active {
+	box-shadow: 0 0 0 2px var(--p-green-400);
+}
+.td-swatch--blue.td-swatch--active {
+	box-shadow: 0 0 0 2px var(--p-blue-400);
+}
+.td-swatch--purple.td-swatch--active {
+	box-shadow: 0 0 0 2px var(--p-purple-400);
+}
 
 :where(.my-app-dark, .my-app-dark *) .td-swatch--none {
 	background: var(--p-gray-600);
@@ -1032,17 +1160,53 @@ onMounted(() => {
 }
 
 /* ====== COLORED TODO ITEMS ====== */
-.td-item--red    { background: color-mix(in srgb, var(--p-red-100) 60%, transparent);    border-color: color-mix(in srgb, var(--p-red-200) 70%, transparent); }
-.td-item--orange { background: color-mix(in srgb, var(--p-orange-100) 60%, transparent); border-color: color-mix(in srgb, var(--p-orange-200) 70%, transparent); }
-.td-item--yellow { background: color-mix(in srgb, var(--p-yellow-100) 60%, transparent); border-color: color-mix(in srgb, var(--p-yellow-200) 70%, transparent); }
-.td-item--green  { background: color-mix(in srgb, var(--p-green-100) 60%, transparent);  border-color: color-mix(in srgb, var(--p-green-200) 70%, transparent); }
-.td-item--blue   { background: color-mix(in srgb, var(--p-blue-100) 60%, transparent);   border-color: color-mix(in srgb, var(--p-blue-200) 70%, transparent); }
-.td-item--purple { background: color-mix(in srgb, var(--p-purple-100) 60%, transparent); border-color: color-mix(in srgb, var(--p-purple-200) 70%, transparent); }
+.td-item--red {
+	background: color-mix(in srgb, var(--p-red-100) 60%, transparent);
+	border-color: color-mix(in srgb, var(--p-red-200) 70%, transparent);
+}
+.td-item--orange {
+	background: color-mix(in srgb, var(--p-orange-100) 60%, transparent);
+	border-color: color-mix(in srgb, var(--p-orange-200) 70%, transparent);
+}
+.td-item--yellow {
+	background: color-mix(in srgb, var(--p-yellow-100) 60%, transparent);
+	border-color: color-mix(in srgb, var(--p-yellow-200) 70%, transparent);
+}
+.td-item--green {
+	background: color-mix(in srgb, var(--p-green-100) 60%, transparent);
+	border-color: color-mix(in srgb, var(--p-green-200) 70%, transparent);
+}
+.td-item--blue {
+	background: color-mix(in srgb, var(--p-blue-100) 60%, transparent);
+	border-color: color-mix(in srgb, var(--p-blue-200) 70%, transparent);
+}
+.td-item--purple {
+	background: color-mix(in srgb, var(--p-purple-100) 60%, transparent);
+	border-color: color-mix(in srgb, var(--p-purple-200) 70%, transparent);
+}
 
-:where(.my-app-dark, .my-app-dark *) .td-item--red    { background: color-mix(in srgb, var(--p-red-900) 40%, transparent);    border-color: color-mix(in srgb, var(--p-red-700) 50%, transparent); }
-:where(.my-app-dark, .my-app-dark *) .td-item--orange { background: color-mix(in srgb, var(--p-orange-900) 40%, transparent); border-color: color-mix(in srgb, var(--p-orange-700) 50%, transparent); }
-:where(.my-app-dark, .my-app-dark *) .td-item--yellow { background: color-mix(in srgb, var(--p-yellow-900) 40%, transparent); border-color: color-mix(in srgb, var(--p-yellow-700) 50%, transparent); }
-:where(.my-app-dark, .my-app-dark *) .td-item--green  { background: color-mix(in srgb, var(--p-green-900) 40%, transparent);  border-color: color-mix(in srgb, var(--p-green-700) 50%, transparent); }
-:where(.my-app-dark, .my-app-dark *) .td-item--blue   { background: color-mix(in srgb, var(--p-blue-900) 40%, transparent);   border-color: color-mix(in srgb, var(--p-blue-700) 50%, transparent); }
-:where(.my-app-dark, .my-app-dark *) .td-item--purple { background: color-mix(in srgb, var(--p-purple-900) 40%, transparent); border-color: color-mix(in srgb, var(--p-purple-700) 50%, transparent); }
+:where(.my-app-dark, .my-app-dark *) .td-item--red {
+	background: color-mix(in srgb, var(--p-red-900) 40%, transparent);
+	border-color: color-mix(in srgb, var(--p-red-700) 50%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .td-item--orange {
+	background: color-mix(in srgb, var(--p-orange-900) 40%, transparent);
+	border-color: color-mix(in srgb, var(--p-orange-700) 50%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .td-item--yellow {
+	background: color-mix(in srgb, var(--p-yellow-900) 40%, transparent);
+	border-color: color-mix(in srgb, var(--p-yellow-700) 50%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .td-item--green {
+	background: color-mix(in srgb, var(--p-green-900) 40%, transparent);
+	border-color: color-mix(in srgb, var(--p-green-700) 50%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .td-item--blue {
+	background: color-mix(in srgb, var(--p-blue-900) 40%, transparent);
+	border-color: color-mix(in srgb, var(--p-blue-700) 50%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .td-item--purple {
+	background: color-mix(in srgb, var(--p-purple-900) 40%, transparent);
+	border-color: color-mix(in srgb, var(--p-purple-700) 50%, transparent);
+}
 </style>
