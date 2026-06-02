@@ -247,11 +247,14 @@ import { useTodosStore } from "@/stores/todos";
 import { useSound } from "@/utils/useSound";
 import { useConfetti } from "@/utils/useConfetti";
 import { useCompliment } from "@/utils/useCompliment";
+import { usePreferencesStore } from "@/stores/userPreferences"; // <-- Dodany import preferencji
 import Dialog from "primevue/dialog";
-import draggable from "vuedraggable"; // <-- Dodany import dla Drag & Drop
+import draggable from "vuedraggable";
 
 defineProps<{ isActive: boolean }>();
+
 const todosStore = useTodosStore();
+const preferencesStore = usePreferencesStore(); // <-- Inicjalizacja store'a preferencji
 
 // Pobieramy posortowane zadania ze sklepu (store)
 const { sortedTodos } = storeToRefs(todosStore);
@@ -356,10 +359,14 @@ function toggleCompletion(item: any) {
 	if (!item.completed) {
 		playCheck();
 		showCompliment();
-		bouncingCheckId.value = item.id;
-		setTimeout(() => {
-			bouncingCheckId.value = null;
-		}, 400);
+
+		// Uruchamiamy animację ikonki TYLKO, gdy animacje są włączone
+		if (preferencesStore.animationsEnabled) {
+			bouncingCheckId.value = item.id;
+			setTimeout(() => {
+				bouncingCheckId.value = null;
+			}, 400);
+		}
 	} else {
 		playUncheck();
 	}
