@@ -229,10 +229,13 @@ import { toDateKey } from "@/utils/timeUtils";
 import { useSound } from "@/utils/useSound";
 import { useConfetti } from "@/utils/useConfetti";
 import { useCompliment } from "@/utils/useCompliment";
+import { usePreferencesStore } from "@/stores/userPreferences"; // <-- 1. Import naszego sklepu
 
 import { Habbit, Goal } from "@/libs/types";
 
 const habbitsStore = useHabbitsStore();
+const preferencesStore = usePreferencesStore(); // <-- 2. Inicjalizacja sklepu
+
 const {
 	allHabbitsList,
 	selectedDayHabbits,
@@ -332,10 +335,13 @@ watch(
 	() => selectedDayHabbits.value.length,
 	(newVal, oldVal) => {
 		if (newVal > (oldVal ?? 0)) {
-			countBump.value = true;
-			setTimeout(() => {
-				countBump.value = false;
-			}, 420);
+			// 3. Blokada animacji pulsującego licznika, gdy animacje są wyłączone
+			if (preferencesStore.animationsEnabled) {
+				countBump.value = true;
+				setTimeout(() => {
+					countBump.value = false;
+				}, 420);
+			}
 		}
 	},
 );
@@ -351,22 +357,25 @@ function injectGoalFlyStyles() {
 	const style = document.createElement("style");
 	style.id = "goal-fly-styles";
 	style.textContent = `
-		@keyframes goal-fly {
-			0%   { opacity: 1; transform: translateY(0) scale(1); }
-			100% { opacity: 0; transform: translateY(-110px) scale(1.8); }
-		}
-		.goal-fly-emoji {
-			position: fixed;
-			pointer-events: none;
-			z-index: 9999;
-			font-size: 1.9rem;
-			animation: goal-fly 0.85s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-		}
-	`;
+        @keyframes goal-fly {
+            0%   { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-110px) scale(1.8); }
+        }
+        .goal-fly-emoji {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            font-size: 1.9rem;
+            animation: goal-fly 0.85s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+    `;
 	document.head.appendChild(style);
 }
 
 function flyGoalEmoji() {
+	// 4. Blokada: Jeśli animacje są wyłączone, przerywamy funkcję od razu!
+	if (!preferencesStore.animationsEnabled) return;
+
 	injectGoalFlyStyles();
 	const emojis = ["🎯", "✨", "⭐", "🌟", "💫"];
 	const emoji = emojis[Math.floor(Math.random() * emojis.length)];
@@ -384,6 +393,7 @@ watch(completedGoals, (newVal, oldVal) => {
 		flyGoalEmoji();
 	}
 });
+
 const addDialogMode = ref("");
 const selectedTaskToDelete = ref<Habbit | null>(null);
 const selectedGoalToDelete = ref<Habbit | null>(null);

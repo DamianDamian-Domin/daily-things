@@ -11,27 +11,110 @@
 		</button>
 	</nav>
 
-	<!-- Profile dialog -->
 	<ProfileDialog v-model="showProfile" />
+
+	<Sidebar
+		v-model:visible="showPreferences"
+		position="bottom"
+		class="h-auto rounded-t-2xl pb-4">
+		<template #header>
+			<div class="flex items-center gap-2">
+				<i class="pi pi-cog text-xl"></i>
+				<span class="font-bold text-lg">App Preferences</span>
+			</div>
+		</template>
+
+		<div class="flex flex-col gap-6 py-2 px-2">
+			<div class="flex items-center justify-between">
+				<div class="flex items-center gap-4">
+					<div
+						class="w-10 h-10 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center">
+						<i
+							:class="
+								preferencesStore.isDarkMode
+									? 'pi pi-moon text-indigo-400'
+									: 'pi pi-sun text-orange-400'
+							"></i>
+					</div>
+					<div>
+						<h4 class="font-semibold m-0 text-surface-900 dark:text-surface-0">
+							Dark Mode
+						</h4>
+						<p class="text-sm text-surface-500 m-0">Change app appearance</p>
+					</div>
+				</div>
+				<ToggleSwitch v-model="preferencesStore.isDarkMode" />
+			</div>
+
+			<div class="flex items-center justify-between">
+				<div class="flex items-center gap-4">
+					<div
+						class="w-10 h-10 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center">
+						<i
+							:class="
+								preferencesStore.soundEnabled
+									? 'pi pi-volume-up text-green-500'
+									: 'pi pi-volume-off text-surface-400'
+							"></i>
+					</div>
+					<div>
+						<h4 class="font-semibold m-0 text-surface-900 dark:text-surface-0">
+							Sound Effects
+						</h4>
+						<p class="text-sm text-surface-500 m-0">Play UI sounds</p>
+					</div>
+				</div>
+				<ToggleSwitch v-model="preferencesStore.soundEnabled" />
+			</div>
+
+			<div class="flex items-center justify-between">
+				<div class="flex items-center gap-4">
+					<div
+						class="w-10 h-10 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center">
+						<i
+							:class="
+								preferencesStore.animationsEnabled
+									? 'pi pi-sparkles text-yellow-500'
+									: 'pi pi-stop-circle text-surface-400'
+							"></i>
+					</div>
+					<div>
+						<h4 class="font-semibold m-0 text-surface-900 dark:text-surface-0">
+							Animations
+						</h4>
+						<p class="text-sm text-surface-500 m-0">
+							Confetti and visual effects
+						</p>
+					</div>
+				</div>
+				<ToggleSwitch v-model="preferencesStore.animationsEnabled" />
+			</div>
+		</div>
+	</Sidebar>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useCarouselStore } from "@/stores/useCarouselStore";
-import { useCommonStore } from "@/stores/common";
 import { useAuthStore } from "@/stores/auth";
 import { useHabbitsStore } from "@/stores/habbits";
+
+// 1. Zastępujemy commonStore naszym nowym preferencesStore
+import { usePreferencesStore } from "@/stores/userPreferences";
+
 import ProfileDialog from "@/components/navbar/ProfileDialog.vue";
+// Importy komponentów PrimeVue (jeśli masz je zarejestrowane globalnie, te dwie linijki mogą nie być konieczne)
+import Sidebar from "primevue/sidebar";
+import ToggleSwitch from "primevue/toggleswitch"; // Lub "primevue/inputswitch" w starszym PrimeVue
 
 const carouselStore = useCarouselStore();
-const commonStore = useCommonStore();
-const { isDarkMode } = storeToRefs(commonStore);
+const preferencesStore = usePreferencesStore();
 const authStore = useAuthStore();
 const habbitsStore = useHabbitsStore();
-const { dailyGoalsList, userHabbitsList } = storeToRefs(habbitsStore);
 
 const showProfile = ref(false);
+const showPreferences = ref(false); // Steruje wysuwaniem panelu z dołu
 
 // Zakładki karuzelowe mapowane na ID karty
 const cardTabs = ["textAdd", "manage", "stats"] as const;
@@ -43,11 +126,12 @@ const activeTab = computed(() => {
 });
 
 const tabs = [
-	{ id: "theme",   label: "Theme",   icon: "pi-moon",        type: "action" },
-	{ id: "textAdd", label: "To-do",   icon: "pi-list-check",  type: "card" },
-	{ id: "manage",  label: "Habits",  icon: "pi-star",        type: "card" },
-	{ id: "stats",   label: "Stats",   icon: "pi-chart-bar",   type: "card" },
-	{ id: "profile", label: "Profile", icon: "pi-user",        type: "action" },
+	// 2. Zmieniamy Theme na Settings i ikonę na pi-cog
+	{ id: "settings", label: "Settings", icon: "pi-cog", type: "action" },
+	{ id: "textAdd", label: "To-do", icon: "pi-list-check", type: "card" },
+	{ id: "manage", label: "Habits", icon: "pi-star", type: "card" },
+	{ id: "stats", label: "Stats", icon: "pi-chart-bar", type: "card" },
+	{ id: "profile", label: "Profile", icon: "pi-user", type: "action" },
 ] as const;
 
 function onTab(tab: (typeof tabs)[number]) {
@@ -55,15 +139,9 @@ function onTab(tab: (typeof tabs)[number]) {
 		carouselStore.setActiveCard(tab.id as any);
 	} else if (tab.id === "profile") {
 		showProfile.value = true;
-	} else if (tab.id === "theme") {
-		isDarkMode.value = !isDarkMode.value;
-		if (isDarkMode.value) {
-			document.documentElement.classList.add("my-app-dark");
-			localStorage.setItem("theme", "dark");
-		} else {
-			document.documentElement.classList.remove("my-app-dark");
-			localStorage.setItem("theme", "light");
-		}
+	} else if (tab.id === "settings") {
+		// 3. Po kliknięciu w zębatkę, otwieramy panel boczny z dołu
+		showPreferences.value = true;
 	}
 }
 </script>
@@ -97,7 +175,9 @@ function onTab(tab: (typeof tabs)[number]) {
 	background: transparent;
 	cursor: pointer;
 	border-radius: 0.75rem;
-	transition: background 0.18s ease, transform 0.15s ease;
+	transition:
+		background 0.18s ease,
+		transform 0.15s ease;
 	position: relative;
 }
 
@@ -108,7 +188,9 @@ function onTab(tab: (typeof tabs)[number]) {
 .tab-icon {
 	font-size: 1.2rem;
 	color: var(--p-gray-400);
-	transition: color 0.18s ease, transform 0.2s ease;
+	transition:
+		color 0.18s ease,
+		transform 0.2s ease;
 }
 
 :where(.my-app-dark, .my-app-dark *) .tab-icon {

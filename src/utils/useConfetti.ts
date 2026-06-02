@@ -1,3 +1,5 @@
+import { usePreferencesStore } from "@/stores/userPreferences";
+
 // Konfetti z czystego CSS/JS — zero zewnętrznych paczek
 
 const COLORS = [
@@ -18,33 +20,39 @@ function injectStyles() {
 	const style = document.createElement("style");
 	style.id = "confetti-styles";
 	style.textContent = `
-		@keyframes confetti-fall {
-			0%   { transform: translateY(-20px) rotate(0deg) scale(1); opacity: 1; }
-			80%  { opacity: 1; }
-			100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
-		}
-		@keyframes confetti-sway {
-			0%   { margin-left: 0; }
-			25%  { margin-left: 60px; }
-			75%  { margin-left: -60px; }
-			100% { margin-left: 0; }
-		}
-		.confetti-particle {
-			position: fixed;
-			top: 0;
-			pointer-events: none;
-			z-index: 9999;
-			animation: confetti-fall linear forwards, confetti-sway ease-in-out infinite;
-		}
-		.confetti-particle.square  { border-radius: 2px; }
-		.confetti-particle.circle  { border-radius: 50%; }
-		.confetti-particle.strip   { border-radius: 2px; width: 4px !important; }
-	`;
+        @keyframes confetti-fall {
+            0%   { transform: translateY(-20px) rotate(0deg) scale(1); opacity: 1; }
+            80%  { opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg) scale(0.5); opacity: 0; }
+        }
+        @keyframes confetti-sway {
+            0%   { margin-left: 0; }
+            25%  { margin-left: 60px; }
+            75%  { margin-left: -60px; }
+            100% { margin-left: 0; }
+        }
+        .confetti-particle {
+            position: fixed;
+            top: 0;
+            pointer-events: none;
+            z-index: 9999;
+            animation: confetti-fall linear forwards, confetti-sway ease-in-out infinite;
+        }
+        .confetti-particle.square  { border-radius: 2px; }
+        .confetti-particle.circle  { border-radius: 50%; }
+        .confetti-particle.strip   { border-radius: 2px; width: 4px !important; }
+    `;
 	document.head.appendChild(style);
 }
 
 export function useConfetti() {
+	// Podłączamy nasz nowy store z preferencjami
+	const preferencesStore = usePreferencesStore();
+
 	function launch(count = 120) {
+		// Blokada: jeśli animacje są wyłączone w ustawieniach, nic nie robimy
+		if (!preferencesStore.animationsEnabled) return;
+
 		injectStyles();
 
 		for (let i = 0; i < count; i++) {
@@ -59,13 +67,13 @@ export function useConfetti() {
 
 			el.className = `confetti-particle ${shape}`;
 			el.style.cssText = `
-				left: ${left}vw;
-				width: ${size}px;
-				height: ${size}px;
-				background: ${color};
-				animation-duration: ${duration}s, ${swayDuration}s;
-				animation-delay: ${delay}s, ${delay}s;
-			`;
+                left: ${left}vw;
+                width: ${size}px;
+                height: ${size}px;
+                background: ${color};
+                animation-duration: ${duration}s, ${swayDuration}s;
+                animation-delay: ${delay}s, ${delay}s;
+            `;
 
 			document.body.appendChild(el);
 
