@@ -6,8 +6,8 @@
 			:key="card.id"
 			class="dot"
 			:class="{ active: card.id === carouselStore.activeCardId }"
-			:aria-label="`Go to card ${index + 1}`"
-			@click="carouselStore.setActiveCard(card.id)" />
+			:aria-label="`Przejdź do karty ${index + 1}`"
+			@click="onDotClick(card.id)" />
 	</div>
 
 	<!-- DESKTOP: 3-card layout -->
@@ -32,8 +32,7 @@
 		class="mobile-carousel"
 		@pointerdown="onPointerDown"
 		@pointerup="onPointerUp"
-		@touchstart.passive="onTouchStart"
-		@touchend.passive="onTouchEnd">
+		@pointercancel="onPointerCancel">
 		<TransitionGroup :name="slideDirection" tag="div" class="mobile-track">
 			<div
 				:key="carouselStore.activeCardId"
@@ -61,6 +60,12 @@ import StatsCard from "../components/home_view/StatsCard.vue";
 import HabbitsCard from "@/components/home_view/HabbitsCard.vue";
 
 const carouselStore = useCarouselStore();
+const TRANSITION_DURATION_MS = 420;
+const SWIPE_THRESHOLD = 48;
+const SWIPE_DIRECTION_RATIO = 1.15;
+
+const isAnimating = ref(false);
+const slideDirection = ref<"slide-left" | "slide-right">("slide-left");
 
 const cardComponentMap = {
 	manage: HabbitsCard,
@@ -79,31 +84,90 @@ const visibleCards = computed<VisibleCarouselCard[]>(() => {
 	);
 });
 
+function withAnimationLock(action: () => void) {
+	if (isAnimating.value) return;
+	isAnimating.value = true;
+	action();
+	window.setTimeout(() => {
+		isAnimating.value = false;
+	}, TRANSITION_DURATION_MS);
+}
+
+function goNextWithAnimation() {
+	if (!carouselStore.rightCard) return;
+	slideDirection.value = "slide-left";
+	withAnimationLock(() => carouselStore.goNext());
+}
+
+function goPrevWithAnimation() {
+	if (!carouselStore.leftCard) return;
+	slideDirection.value = "slide-right";
+	withAnimationLock(() => carouselStore.goPrev());
+}
+
+function onDotClick(targetId: CarouselCardConfig["id"]) {
+	if (targetId === carouselStore.activeCardId) return;
+	const currentIndex = carouselStore.cards.findIndex(
+		(card) => card.id === carouselStore.activeCardId,
+	);
+	const targetIndex = carouselStore.cards.findIndex((card) => card.id === targetId);
+	if (targetIndex === -1 || currentIndex === -1) return;
+
+	slideDirection.value = targetIndex > currentIndex ? "slide-left" : "slide-right";
+	withAnimationLock(() => carouselStore.setActiveCard(targetId));
+}
+
 function onCardClick(role: "left" | "active" | "right") {
-	if (role === "left") { slideDirection.value = "slide-right"; carouselStore.goPrev(); }
-	if (role === "right") { slideDirection.value = "slide-left"; carouselStore.goNext(); }
+	if (role === "left") goPrevWithAnimation();
+	if (role === "right") goNextWithAnimation();
 }
 
 // Swipe / pointer
 let startX = 0;
-let startTouchX = 0;
-const SWIPE_THRESHOLD = 40;
-const slideDirection = ref<"slide-left" | "slide-right">("slide-left");
+let startY = 0;
+let canSwipe = false;
 
-function onPointerDown(e: PointerEvent) { startX = e.clientX; }
-function onPointerUp(e: PointerEvent) {
-	const delta = e.clientX - startX;
-	if (Math.abs(delta) < SWIPE_THRESHOLD) return;
-	if (delta < 0) { slideDirection.value = "slide-left"; carouselStore.goNext(); }
-	else { slideDirection.value = "slide-right"; carouselStore.goPrev(); }
+function isSwipeBlockedTarget(target: EventTarget | null) {
+	if (!(target instanceof Element)) return false;
+	return Boolean(
+		target.closest(
+			"button, input, textarea, select, label, a, [role='button'], [role='switch'], .p-button, .p-inputtext, .td-list, .td-add-row, .td-dialog, .p-dialog",
+		),
+	);
 }
 
-function onTouchStart(e: TouchEvent) { startTouchX = e.touches[0].clientX; }
-function onTouchEnd(e: TouchEvent) {
-	const delta = e.changedTouches[0].clientX - startTouchX;
-	if (Math.abs(delta) < SWIPE_THRESHOLD) return;
-	if (delta < 0) { slideDirection.value = "slide-left"; carouselStore.goNext(); }
-	else { slideDirection.value = "slide-right"; carouselStore.goPrev(); }
+function onPointerDown(e: PointerEvent) {
+	canSwipe = !isSwipeBlockedTarget(e.target);
+	if (!canSwipe) {
+		startX = 0;
+		startY = 0;
+		return;
+	}
+	startX = e.clientX;
+	startY = e.clientY;
+}
+
+function onPointerUp(e: PointerEvent) {
+	if (!canSwipe) return;
+	if (!Number.isFinite(startX) || !Number.isFinite(startY)) return;
+
+	const deltaX = e.clientX - startX;
+	const deltaY = e.clientY - startY;
+	const absX = Math.abs(deltaX);
+	const absY = Math.abs(deltaY);
+
+	if (absX < SWIPE_THRESHOLD) return;
+	if (absX < absY * SWIPE_DIRECTION_RATIO) return;
+
+	if (deltaX < 0) goNextWithAnimation();
+	else goPrevWithAnimation();
+	canSwipe = false;
+}
+
+function onPointerCancel() {
+	startX = 0;
+	startY = 0;
+	canSwipe = false;
 }
 </script>
 
@@ -149,6 +213,9 @@ function onTouchEnd(e: TouchEvent) {
 	align-items: center;
 	justify-content: center;
 	overflow: hidden;
+	--carousel-side-offset: clamp(180px, 22vw, 300px);
+	--carousel-side-scale: 0.92;
+	--carousel-side-opacity: 0.58;
 }
 .carousel-card {
 	position: absolute;
@@ -159,26 +226,33 @@ function onTouchEnd(e: TouchEvent) {
 	display: flex;
 	align-items: stretch;
 	justify-content: center;
-	will-change: transform, opacity, z-index;
+	will-change: transform, opacity;
+	backface-visibility: hidden;
+	transition:
+		transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+		opacity 320ms ease,
+		filter 320ms ease;
 }
-@keyframes slide-to-active {
-	0%   { transform: translate(-50%, -50%) scale(0.85); z-index: 2; opacity: 0.4; }
-	50%  { transform: translate(calc(-50% + 100px), -50%) scale(0.9); }
-	100% { transform: translate(-50%, -50%) scale(1); z-index: 3; opacity: 1; }
+.role-active {
+	transform: translate(-50%, -50%) scale(1);
+	opacity: 1;
+	filter: saturate(1);
+	z-index: 3;
 }
-@keyframes slide-to-left {
-	0%   { transform: translate(-50%, -50%) scale(1); z-index: 3; opacity: 1; }
-	50%  { transform: translate(calc(-50% - 350px), -50%) scale(0.9); }
-	100% { transform: translate(calc(-50% - 280px), -50%) scale(0.85); z-index: 2; opacity: 0.4; }
+.role-left {
+	transform: translate(calc(-50% - var(--carousel-side-offset)), -50%) scale(var(--carousel-side-scale));
+	opacity: var(--carousel-side-opacity);
+	filter: saturate(0.92);
+	z-index: 2;
+	cursor: pointer;
 }
-@keyframes slide-to-right {
-	0%   { transform: translate(-50%, -50%) scale(1); z-index: 3; opacity: 1; }
-	50%  { transform: translate(calc(-50% + 350px), -50%) scale(0.9); }
-	100% { transform: translate(calc(-50% + 280px), -50%) scale(0.85); z-index: 2; opacity: 0.4; }
+.role-right {
+	transform: translate(calc(-50% + var(--carousel-side-offset)), -50%) scale(var(--carousel-side-scale));
+	opacity: var(--carousel-side-opacity);
+	filter: saturate(0.92);
+	z-index: 2;
+	cursor: pointer;
 }
-.role-active { animation: slide-to-active 0.8s ease-out forwards; }
-.role-left   { animation: slide-to-left 0.8s ease-out forwards; cursor: pointer; }
-.role-right  { animation: slide-to-right 0.8s ease-out forwards; cursor: pointer; }
 
 /* ====== MOBILE CAROUSEL (hidden on desktop) ====== */
 .mobile-carousel {
@@ -186,11 +260,13 @@ function onTouchEnd(e: TouchEvent) {
 	position: relative;
 	width: 100%;
 	overflow-x: hidden;
+	touch-action: pan-y;
 }
 .mobile-track {
 	width: 100%;
 	height: 100%;
 	position: relative;
+	overflow: hidden;
 }
 .mobile-card {
 	width: 100%;
@@ -198,6 +274,8 @@ function onTouchEnd(e: TouchEvent) {
 	padding: 0 0.75rem 1rem;
 	display: flex;
 	flex-direction: column;
+	will-change: transform, opacity;
+	backface-visibility: hidden;
 }
 .mobile-card > * { width: 100%; flex: 1; min-height: 0; }
 
@@ -206,12 +284,30 @@ function onTouchEnd(e: TouchEvent) {
 .slide-left-leave-active,
 .slide-right-enter-active,
 .slide-right-leave-active {
-	transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.32s ease;
+	transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 280ms ease;
 }
-.slide-left-enter-from  { transform: translateX(100%); opacity: 0; }
-.slide-left-leave-to    { transform: translateX(-100%); opacity: 0; }
-.slide-right-enter-from { transform: translateX(-100%); opacity: 0; }
-.slide-right-leave-to   { transform: translateX(100%); opacity: 0; }
+.slide-left-enter-from  { transform: translate3d(30%, 0, 0); opacity: 0; }
+.slide-left-leave-to    { transform: translate3d(-30%, 0, 0); opacity: 0; }
+.slide-right-enter-from { transform: translate3d(-30%, 0, 0); opacity: 0; }
+.slide-right-leave-to   { transform: translate3d(30%, 0, 0); opacity: 0; }
+.slide-left-leave-active,
+.slide-right-leave-active {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.carousel-card,
+	.slide-left-enter-active,
+	.slide-left-leave-active,
+	.slide-right-enter-active,
+	.slide-right-leave-active,
+	.dot {
+		transition: none !important;
+		animation: none !important;
+	}
+}
 
 /* ====== RESPONSIVE SWITCH ====== */
 @media (max-width: 640px) {

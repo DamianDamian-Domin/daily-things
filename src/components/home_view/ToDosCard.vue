@@ -26,6 +26,9 @@
 					v-model="activeTodos"
 					item-key="id"
 					ghost-class="opacity-40"
+					:delay="130"
+					:delay-on-touch-only="true"
+					:touch-start-threshold="6"
 					:animation="150"
 					@end="handleDragEnd">
 					<template #item="{ element: item }">
@@ -35,6 +38,7 @@
 									'td-check',
 									{ 'td-check-bounce': bouncingCheckId === item.id },
 								]"
+								aria-label="Oznacz zadanie jako ukończone"
 								@click="toggleCompletion(item)">
 								<i class="pi pi-check td-check-inner"></i>
 							</button>
@@ -43,7 +47,12 @@
 								:class="item.color ? 'td-item--' + item.color : ''">
 								<span
 									class="td-item-text"
-									@click="openEditDialog(item)">
+									role="button"
+									tabindex="0"
+									aria-label="Edytuj zadanie"
+									@click="openEditDialog(item)"
+									@keydown.enter.prevent="openEditDialog(item)"
+									@keydown.space.prevent="openEditDialog(item)">
 									{{ item.text }}
 								</span>
 								<i
@@ -66,6 +75,7 @@
 						v-model="inlineText"
 						type="text"
 						class="td-add-input"
+						aria-label="Dodaj nowe zadanie"
 						placeholder="Add a task..."
 						@keydown.enter.prevent="submitInline"
 						@keydown.escape="cancelInline" />
@@ -140,7 +150,12 @@
 
 								<span
 									class="td-item-text td-text-done line-through"
-									@click="openEditDialog(item)">
+									role="button"
+									tabindex="0"
+									aria-label="Edytuj ukończone zadanie"
+									@click="openEditDialog(item)"
+									@keydown.enter.prevent="openEditDialog(item)"
+									@keydown.space.prevent="openEditDialog(item)">
 									{{ item.text }}
 								</span>
 
@@ -450,16 +465,16 @@ const confirmContainerRef = ref<HTMLElement | null>(null);
 function openConfirm() {
 	isConfirmingDelete.value = true;
 	nextTick(() => {
-		document.addEventListener("mousedown", handleClickOutside);
+		document.addEventListener("pointerdown", handleClickOutside);
 	});
 }
 
 function closeConfirm() {
 	isConfirmingDelete.value = false;
-	document.removeEventListener("mousedown", handleClickOutside);
+	document.removeEventListener("pointerdown", handleClickOutside);
 }
 
-function handleClickOutside(event: MouseEvent) {
+function handleClickOutside(event: PointerEvent) {
 	if (
 		confirmContainerRef.value &&
 		!confirmContainerRef.value.contains(event.target as Node)
@@ -476,7 +491,7 @@ function executeDeleteAll() {
 }
 
 onBeforeUnmount(() => {
-	document.removeEventListener("mousedown", handleClickOutside);
+	document.removeEventListener("pointerdown", handleClickOutside);
 });
 
 // ========================
@@ -665,6 +680,23 @@ onMounted(() => {
 	cursor: pointer;
 	transition: all 0.2s ease;
 	padding: 0;
+}
+
+@media (max-width: 640px) {
+	.td-item {
+		padding: 0.62rem 0.55rem;
+	}
+	.td-check {
+		width: 1.7rem;
+		height: 1.7rem;
+	}
+	.td-add-icon-wrap {
+		width: 1.7rem;
+		height: 1.7rem;
+	}
+	.td-add-input {
+		min-height: 1.9rem;
+	}
 }
 .td-check:hover {
 	border-color: var(--p-orange-400);
