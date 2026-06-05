@@ -31,6 +31,7 @@
 	<div
 		class="mobile-carousel"
 		@pointerdown="onPointerDown"
+		@pointermove="onPointerMove"
 		@pointerup="onPointerUp"
 		@pointercancel="onPointerCancel">
 		<TransitionGroup :name="slideDirection" tag="div" class="mobile-track">
@@ -62,8 +63,8 @@ import ProfileCard from "@/components/home_view/ProfileCard.vue";
 
 const carouselStore = useCarouselStore();
 const TRANSITION_DURATION_MS = 420;
-const SWIPE_THRESHOLD = 48;
-const SWIPE_DIRECTION_RATIO = 1.15;
+const SWIPE_THRESHOLD = 34;
+const SWIPE_DIRECTION_RATIO = 1.05;
 
 const isAnimating = ref(false);
 const slideDirection = ref<"slide-left" | "slide-right">("slide-left");
@@ -127,49 +128,91 @@ function onCardClick(role: "left" | "active" | "right") {
 // Swipe / pointer
 let startX = 0;
 let startY = 0;
+let lastX = 0;
+let lastY = 0;
 let canSwipe = false;
+let activePointerId: number | null = null;
+
+function resetSwipeState() {
+	startX = 0;
+	startY = 0;
+	lastX = 0;
+	lastY = 0;
+	canSwipe = false;
+	activePointerId = null;
+}
 
 function isSwipeBlockedTarget(target: EventTarget | null) {
 	if (!(target instanceof Element)) return false;
 	return Boolean(
 		target.closest(
-			"button, input, textarea, select, label, a, [role='button'], [role='switch'], .p-button, .p-inputtext, .td-list, .td-add-row, .td-dialog, .p-dialog",
+			"button, a, input, textarea, select, label, [contenteditable='true'], [role='button'], [role='switch'], .p-button, .p-inputtext, .td-dialog, .p-dialog, .hi-root, .hi-btn, .tasks-area, .hc-goals-section",
 		),
 	);
 }
 
 function onPointerDown(e: PointerEvent) {
-	canSwipe = !isSwipeBlockedTarget(e.target);
-	if (!canSwipe) {
-		startX = 0;
-		startY = 0;
+	if (isAnimating.value) {
+		resetSwipeState();
 		return;
 	}
+	canSwipe = !isSwipeBlockedTarget(e.target);
+	if (!canSwipe) {
+		resetSwipeState();
+		return;
+	}
+	activePointerId = e.pointerId;
 	startX = e.clientX;
 	startY = e.clientY;
+	lastX = e.clientX;
+	lastY = e.clientY;
+
+	const container = e.currentTarget as HTMLElement | null;
+	if (container?.setPointerCapture) {
+		try {
+			container.setPointerCapture(e.pointerId);
+		} catch {
+			// Some browsers may throw if pointer is already captured.
+		}
+	}
+}
+
+function onPointerMove(e: PointerEvent) {
+	if (!canSwipe) return;
+	if (activePointerId !== null && e.pointerId !== activePointerId) return;
+	lastX = e.clientX;
+	lastY = e.clientY;
 }
 
 function onPointerUp(e: PointerEvent) {
+	if (activePointerId !== null && e.pointerId !== activePointerId) return;
 	if (!canSwipe) return;
 	if (!Number.isFinite(startX) || !Number.isFinite(startY)) return;
 
-	const deltaX = e.clientX - startX;
-	const deltaY = e.clientY - startY;
+	const endX = Number.isFinite(lastX) ? lastX : e.clientX;
+	const endY = Number.isFinite(lastY) ? lastY : e.clientY;
+
+	const deltaX = endX - startX;
+	const deltaY = endY - startY;
 	const absX = Math.abs(deltaX);
 	const absY = Math.abs(deltaY);
 
-	if (absX < SWIPE_THRESHOLD) return;
-	if (absX < absY * SWIPE_DIRECTION_RATIO) return;
+	if (absX < SWIPE_THRESHOLD) {
+		resetSwipeState();
+		return;
+	}
+	if (absX < absY * SWIPE_DIRECTION_RATIO) {
+		resetSwipeState();
+		return;
+	}
 
 	if (deltaX < 0) goNextWithAnimation();
 	else goPrevWithAnimation();
-	canSwipe = false;
+	resetSwipeState();
 }
 
 function onPointerCancel() {
-	startX = 0;
-	startY = 0;
-	canSwipe = false;
+	resetSwipeState();
 }
 </script>
 
