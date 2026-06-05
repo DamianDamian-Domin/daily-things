@@ -58,6 +58,7 @@ import { useCarouselStore } from "@/stores/useCarouselStore";
 import ToDosCard from "../components/home_view/ToDosCard.vue";
 import StatsCard from "../components/home_view/StatsCard.vue";
 import HabbitsCard from "@/components/home_view/HabbitsCard.vue";
+import ProfileCard from "@/components/home_view/ProfileCard.vue";
 
 const carouselStore = useCarouselStore();
 const TRANSITION_DURATION_MS = 420;
@@ -71,6 +72,7 @@ const cardComponentMap = {
 	manage: HabbitsCard,
 	textAdd: ToDosCard,
 	stats: StatsCard,
+	profile: ProfileCard,
 } as const;
 
 const visibleCards = computed<VisibleCarouselCard[]>(() => {

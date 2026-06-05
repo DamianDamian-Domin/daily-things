@@ -23,13 +23,9 @@ export interface Goal {
 	display_name: string;
 }
 
-type CarouselCardId = "manage" | "textAdd" | "stats";
+type CarouselCardId = "manage" | "textAdd" | "stats" | "profile";
 
 export interface CarouselCardConfig {
 	id: CarouselCardId;
-	order: number;
-}
-export interface CarouselCardConfig {
-	id: "manage" | "textAdd" | "stats";
 	order: number;
 }

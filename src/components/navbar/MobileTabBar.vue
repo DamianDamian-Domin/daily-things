@@ -11,8 +11,6 @@
 		</button>
 	</nav>
 
-	<ProfileDialog v-model="showProfile" />
-
 	<Sidebar
 		v-model:visible="showPreferences"
 		position="bottom"
@@ -97,32 +95,26 @@
 import { ref, computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useCarouselStore } from "@/stores/useCarouselStore";
-import { useAuthStore } from "@/stores/auth";
-import { useHabbitsStore } from "@/stores/habbits";
 
 // 1. Zastępujemy commonStore naszym nowym preferencesStore
 import { usePreferencesStore } from "@/stores/userPreferences";
 
-import ProfileDialog from "@/components/navbar/ProfileDialog.vue";
 // Importy komponentów PrimeVue (jeśli masz je zarejestrowane globalnie, te dwie linijki mogą nie być konieczne)
 import Sidebar from "primevue/sidebar";
 import ToggleSwitch from "primevue/toggleswitch"; // Lub "primevue/inputswitch" w starszym PrimeVue
 
 const carouselStore = useCarouselStore();
 const preferencesStore = usePreferencesStore();
-const authStore = useAuthStore();
-const habbitsStore = useHabbitsStore();
 
-const showProfile = ref(false);
 const showPreferences = ref(false); // Steruje wysuwaniem panelu z dołu
 
 // Zakładki karuzelowe mapowane na ID karty
-const cardTabs = ["textAdd", "manage", "stats"] as const;
+const cardTabs = ["textAdd", "manage", "stats", "profile"] as const;
 
 const activeTab = computed(() => {
 	const id = carouselStore.activeCardId;
 	if (cardTabs.includes(id as any)) return id;
-	return "profile";
+	return "manage";
 });
 
 const tabs = [
@@ -131,14 +123,12 @@ const tabs = [
 	{ id: "textAdd", label: "To-do", icon: "pi-list-check", type: "card" },
 	{ id: "manage", label: "Habits", icon: "pi-star", type: "card" },
 	{ id: "stats", label: "Stats", icon: "pi-chart-bar", type: "card" },
-	{ id: "profile", label: "Profile", icon: "pi-user", type: "action" },
+	{ id: "profile", label: "Profile", icon: "pi-user", type: "card" },
 ] as const;
 
 function onTab(tab: (typeof tabs)[number]) {
 	if (tab.type === "card") {
 		carouselStore.setActiveCard(tab.id as any);
-	} else if (tab.id === "profile") {
-		showProfile.value = true;
 	} else if (tab.id === "settings") {
 		// 3. Po kliknięciu w zębatkę, otwieramy panel boczny z dołu
 		showPreferences.value = true;
