@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="td-card card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] sm:max-h-[50rem]">
+		class="td-card card-a sm:w-[480px] surface-content w-full h-full min-h-0 sm:min-h-[30rem] max-h-full sm:max-h-[50rem]">
 		<div
 			class="td-inner"
 			:class="!isActive && 'pointer-events-none'">
@@ -540,19 +540,22 @@ onMounted(() => {
 	min-height: 0;
 	overflow: hidden;
 }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: landscape) and (max-width: 1024px) and (hover: none) and (pointer: coarse) {
 	.td-card {
-		height: auto !important;
-		max-height: none !important;
-		overflow: visible;
+		height: 100%;
+		min-height: 0;
+		max-height: 100%;
+		overflow: hidden;
 	}
 	.td-inner {
-		overflow: visible;
-		min-height: unset;
+		overflow: hidden;
+		min-height: 0;
 	}
 	.td-list {
-		overflow-y: visible;
-		min-height: unset;
+		overflow-y: auto;
+		min-height: 0;
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior: contain;
 	}
 }
 
@@ -634,10 +637,10 @@ onMounted(() => {
 	flex-direction: column;
 	gap: 0.15rem;
 }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: landscape) and (max-width: 1024px) and (hover: none) and (pointer: coarse) {
 	.td-list {
-		overflow-y: visible;
-		min-height: unset;
+		overflow-y: auto;
+		min-height: 0;
 	}
 }
 :where(.my-app-dark, .my-app-dark *) .td-list {
@@ -682,7 +685,7 @@ onMounted(() => {
 	padding: 0;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: landscape) and (max-width: 1024px) and (hover: none) and (pointer: coarse) {
 	.td-item {
 		padding: 0.62rem 0.55rem;
 	}

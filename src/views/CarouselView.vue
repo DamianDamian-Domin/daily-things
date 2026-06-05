@@ -310,7 +310,7 @@ function onPointerCancel() {
 }
 
 /* ====== RESPONSIVE SWITCH ====== */
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: landscape) and (max-width: 1024px) and (hover: none) and (pointer: coarse) {
 	.desktop-carousel { display: none; }
 	.mobile-carousel  { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 	.mobile-track { flex: 1; min-height: 0; }
