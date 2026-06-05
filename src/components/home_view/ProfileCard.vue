@@ -422,7 +422,7 @@ const onChangePassword = async () => {
 	text-overflow: ellipsis;
 }
 :where(.my-app-dark, .my-app-dark *) .profile-email {
-	color: var(--p-gray-500);
+	color: var(--p-gray-300);
 }
 .profile-divider {
 	height: 1px;
@@ -464,7 +464,11 @@ const onChangePassword = async () => {
 	font-family: "Lora", serif;
 }
 :where(.my-app-dark, .my-app-dark *) .profile-label {
-	color: var(--p-gray-400);
+	color: var(--p-gray-300);
+}
+
+:where(.my-app-dark, .my-app-dark *) .profile-rule {
+	color: var(--p-gray-300);
 }
 .profile-password-rules {
 	display: flex;
@@ -519,7 +523,11 @@ const onChangePassword = async () => {
 	font-family: "Lora", serif;
 }
 :where(.my-app-dark, .my-app-dark *) .profile-info-label {
-	color: var(--p-gray-500);
+	color: var(--p-gray-300);
+}
+
+:where(.my-app-dark, .my-app-dark *) .profile-info-value {
+	color: var(--p-gray-100);
 }
 .profile-info-value {
 	font-size: 0.8rem;

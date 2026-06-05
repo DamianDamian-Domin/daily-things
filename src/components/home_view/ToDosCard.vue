@@ -782,7 +782,7 @@ onMounted(() => {
 	color: var(--p-gray-700) !important;
 }
 :where(.my-app-dark, .my-app-dark *) .td-text-done {
-	color: var(--p-gray-200);
+	color: var(--p-gray-100) !important;
 }
 
 /* Description icon */
@@ -947,8 +947,12 @@ onMounted(() => {
 
 /* Done item — dimmed */
 .td-item-done {
-	opacity: 0.55;
+	opacity: 0.82;
 	background: transparent;
+}
+
+:where(.my-app-dark, .my-app-dark *) .td-item-done {
+	opacity: 0.92;
 }
 
 /* ====== EMPTY STATE ====== */

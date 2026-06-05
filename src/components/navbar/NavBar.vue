@@ -112,7 +112,7 @@
 									class="font-semibold m-0 text-surface-900 dark:text-surface-0">
 									Dark Mode
 								</h4>
-								<p class="text-sm text-surface-500 m-0">
+								<p class="text-sm text-c m-0">
 									Change app appearance
 								</p>
 							</div>
@@ -128,7 +128,7 @@
 									:class="
 										preferencesStore.soundEnabled
 											? 'pi pi-volume-up text-green-500'
-											: 'pi pi-volume-off text-surface-400'
+											: 'pi pi-volume-off text-surface-500 dark:text-surface-300'
 									"></i>
 							</div>
 							<div>
@@ -136,7 +136,7 @@
 									class="font-semibold m-0 text-surface-900 dark:text-surface-0">
 									Sound Effects
 								</h4>
-								<p class="text-sm text-surface-500 m-0">Play UI sounds</p>
+								<p class="text-sm text-c m-0">Play UI sounds</p>
 							</div>
 						</div>
 						<ToggleSwitch v-model="preferencesStore.soundEnabled" />
@@ -150,7 +150,7 @@
 									:class="
 										preferencesStore.animationsEnabled
 											? 'pi pi-sparkles text-yellow-500'
-											: 'pi pi-stop-circle text-surface-400'
+											: 'pi pi-stop-circle text-surface-500 dark:text-surface-300'
 									"></i>
 							</div>
 							<div>
@@ -158,7 +158,7 @@
 									class="font-semibold m-0 text-surface-900 dark:text-surface-0">
 									Animations
 								</h4>
-								<p class="text-sm text-surface-500 m-0">
+								<p class="text-sm text-c m-0">
 									Confetti and visual effects
 								</p>
 							</div>
