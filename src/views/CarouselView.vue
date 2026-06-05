@@ -1,48 +1,48 @@
 <template>
-	<!-- DOTS -->
-	<div class="carousel-dots">
-		<button
-			v-for="(card, index) in carouselStore.cards"
-			:key="card.id"
-			class="dot"
-			:class="{ active: card.id === carouselStore.activeCardId }"
-			:aria-label="`Przejdź do karty ${index + 1}`"
-			@click="onDotClick(card.id)" />
-	</div>
-
-	<!-- DESKTOP: 3-card layout -->
-	<div
-		class="carousel-view desktop-carousel"
-		@pointerdown="onPointerDown"
-		@pointerup="onPointerUp">
-		<div
-			v-for="item in visibleCards"
-			:key="item.card.id"
-			class="carousel-card"
-			:class="`role-${item.role}`"
-			@click="onCardClick(item.role)">
-			<component
-				:is="cardComponentMap[item.card.id]"
-				:isActive="item.role === 'active'" />
+	<div class="carousel-root">
+		<!-- DOTS -->
+		<div class="carousel-dots">
+			<button
+				v-for="(card, index) in carouselStore.cards"
+				:key="card.id"
+				class="dot"
+				:class="{ active: card.id === carouselStore.activeCardId }"
+				:aria-label="`Przejdź do karty ${index + 1}`"
+				@click="onDotClick(card.id)" />
 		</div>
-	</div>
 
-	<!-- MOBILE: full-width single card with swipe -->
-	<div
-		class="mobile-carousel"
-		@pointerdown="onPointerDown"
-		@pointermove="onPointerMove"
-		@pointerup="onPointerUp"
-		@pointercancel="onPointerCancel">
-		<TransitionGroup :name="slideDirection" tag="div" class="mobile-track">
+		<!-- DESKTOP: 3-card layout -->
+		<div
+			class="carousel-view desktop-carousel">
 			<div
-				:key="carouselStore.activeCardId"
-				class="mobile-card">
+				v-for="item in visibleCards"
+				:key="item.card.id"
+				class="carousel-card"
+				:class="`role-${item.role}`"
+				@click="onCardClick(item.role)">
 				<component
-					:is="cardComponentMap[carouselStore.activeCard!.id]"
-					:isActive="true" />
+					:is="cardComponentMap[item.card.id]"
+					:isActive="item.role === 'active'" />
 			</div>
-		</TransitionGroup>
+		</div>
+
+		<!-- MOBILE: full-width single card with swipe -->
+		<div
+			class="mobile-carousel"
+			@pointerdown="onPointerDown"
+			@pointermove="onPointerMove"
+			@pointerup="onPointerUp"
+			@pointercancel="onPointerCancel">
+			<TransitionGroup :name="slideDirection" tag="div" class="mobile-track">
+				<div
+					:key="carouselStore.activeCardId"
+					class="mobile-card">
+					<component
+						:is="cardComponentMap[carouselStore.activeCard!.id]"
+						:isActive="true" />
+				</div>
+			</TransitionGroup>
+		</div>
 	</div>
 </template>
 
@@ -217,6 +217,12 @@ function onPointerCancel() {
 </script>
 
 <style scoped>
+.carousel-root {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+}
+
 /* ====== SHARED DOTS ====== */
 .carousel-dots {
 	display: flex;

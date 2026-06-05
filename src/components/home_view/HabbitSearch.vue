@@ -65,12 +65,12 @@
 					v-for="habit in recentlyFiltered"
 					:key="habit.name"
 					class="hs-item-wrap"
-					:class="{ added: isAdded(habit.name) }"
-					@click="onHabitClick(habit)">
+					:class="{ added: isAdded(habit.name) }">
 					<HabbitItem
 						:data="goalMode && !isAdded(habit.name) ? { ...habit, severity: 'empty' } : habit"
 						:showLabel="true"
-						:showTooltip="true" />
+						:showTooltip="true"
+						@click="onHabitClick(habit)" />
 					<!-- Check overlay for added items -->
 					<Transition name="hs-check">
 						<div v-if="isAdded(habit.name)" class="hs-check-overlay">
@@ -107,12 +107,12 @@
 							v-for="habit in habits"
 							:key="habit.name"
 							class="hs-item-wrap"
-							:class="{ added: isAdded(habit.name) }"
-							@click="onHabitClick(habit)">
+							:class="{ added: isAdded(habit.name) }">
 							<HabbitItem
 								:data="goalMode && !isAdded(habit.name) ? { ...habit, severity: 'empty' } : habit"
 								:showLabel="true"
-								:showTooltip="true" />
+								:showTooltip="true"
+								@click="onHabitClick(habit)" />
 							<Transition name="hs-check">
 								<div v-if="isAdded(habit.name)" class="hs-check-overlay">
 									<i class="pi pi-check"></i>

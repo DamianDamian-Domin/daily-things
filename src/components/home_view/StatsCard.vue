@@ -181,19 +181,6 @@
 				ref="scrollContainer"
 				class="sc-scroll">
 				<!-- Goals completed tile -->
-				<div class="sc-medal-tile">
-					<span class="sc-medal-tile-emoji">🏅</span>
-					<div class="sc-medal-tile-text">
-						<span class="sc-medal-tile-count">
-							{{ goalsCompletedCount }}
-							<span style="font-size: 0.6em; opacity: 0.7"
-								>/ {{ totalDaysInPeriod }}</span
-							>
-						</span>
-						<span class="sc-medal-tile-label">{{ perfectDaysLabel }}</span>
-					</div>
-				</div>
-				<!-- Sub-toggle: Habits / Categories -->
 				<div class="sc-sub-toggle">
 					<button
 						class="sc-sub-btn"
@@ -208,6 +195,19 @@
 						Categories
 					</button>
 				</div>
+				<div class="sc-medal-tile">
+					<span class="sc-medal-tile-emoji">🏅</span>
+					<div class="sc-medal-tile-text">
+						<span class="sc-medal-tile-count">
+							{{ goalsCompletedCount }}
+							<span style="font-size: 0.6em; opacity: 0.7"
+								>/ {{ totalDaysInPeriod }}</span
+							>
+						</span>
+						<span class="sc-medal-tile-label">{{ perfectDaysLabel }}</span>
+					</div>
+				</div>
+				<!-- Sub-toggle: Habits / Categories -->
 
 				<!-- By habit -->
 				<template v-if="chartMode === 'habits'">

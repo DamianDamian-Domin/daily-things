@@ -1,14 +1,20 @@
 <template>
 	<div
 		class="hi-root"
-		:class="{ 'hi-labeled': props.showLabel }"
-		@click="handleClick"
+		:class="{ 'hi-labeled': props.showLabel, 'hi-disabled': props.loading }"
+		@touchstart.stop.prevent="handleTouchStart"
+		@pointerdown.stop="handlePointerDown"
+		@contextmenu.prevent
+		@click.stop="handleClickFallback"
 		v-tooltip.bottom="tooltipValue">
 		<div
 			class="hi-btn"
-			:class="[severityClass, { 'hi-add': isAddButton, 'hi-bounce': bouncing }]">
+			:class="[
+				severityClass,
+				{ 'hi-add': isAddButton, 'hi-bounce': bouncing, 'hi-loading': props.loading },
+			]">
 			<span class="material-icons material-symbols-outlined hi-icon">
-				{{ data.icon }}
+				{{ props.loading ? "progress_activity" : data.icon }}
 			</span>
 
 			<Transition name="hi-badge">
@@ -47,6 +53,7 @@ const props = defineProps<{
 	showCheckBadge?: boolean;
 	count?: number;
 	noCompliment?: boolean;
+	loading?: boolean;
 }>();
 const emit = defineEmits(["select", "click"]);
 
@@ -68,8 +75,29 @@ const tooltipValue = computed(() => {
 
 const { playHabitCheck } = useSound();
 const bouncing = ref(false);
+const lastActionAt = ref(0);
 
-function handleClick() {
+function handleTouchStart() {
+	if (props.loading) return;
+	lastActionAt.value = Date.now();
+	runAction();
+}
+
+function handlePointerDown(event: PointerEvent) {
+	if (props.loading) return;
+	if (event.pointerType === "touch") return;
+	if (event.pointerType === "mouse" && event.button !== 0) return;
+	lastActionAt.value = Date.now();
+	runAction();
+}
+
+function handleClickFallback() {
+	if (props.loading) return;
+	if (Date.now() - lastActionAt.value < 350) return;
+	runAction();
+}
+
+function runAction() {
 	if (!isAddButton.value) {
 		playHabitCheck();
 		bouncing.value = true;
@@ -102,9 +130,13 @@ function handleClick() {
 	cursor: pointer;
 	user-select: none;
 	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
 }
 .hi-root.hi-labeled {
 	width: 4rem;
+}
+.hi-root.hi-disabled {
+	pointer-events: none;
 }
 
 .hi-badge-text {
@@ -133,6 +165,18 @@ function handleClick() {
 .hi-btn:active {
 	transform: scale(0.92);
 	transition-duration: 0.1s;
+}
+
+.hi-loading {
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-orange-300) 45%, transparent);
+}
+.hi-loading .hi-icon {
+	animation: hi-spin 0.8s linear infinite;
+}
+
+@keyframes hi-spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
 }
 
 /* ===== Severity: SUCCESS (tracked habit) ===== */
