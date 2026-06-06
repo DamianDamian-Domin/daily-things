@@ -239,11 +239,14 @@ const onSettings = () => {
 	showPreferences.value = true;
 };
 
-const logOut = () => {
+const logOut = async () => {
+	// <--- Dodajemy 'async'
 	op.value.hide();
-	authStore.logout();
+	await authStore.logout(); // <--- Dodajemy 'await'
 	dailyGoalsList.value = [];
 	userHabbitsList.value = [];
+
+	router.push({ name: "login" }); // <--- Ta linijka załatwia przekierowanie
 };
 </script>
 
