@@ -4,12 +4,15 @@
 		<!-- NavBar — tylko desktop -->
 		<div class="hidden sm:block px-4 pt-2">
 			<NavBar v-if="showNavbar" />
-			<Divider v-if="showNavbar" class="w-3/4 self-center" />
+			<Divider
+				v-if="showNavbar"
+				class="w-3/4 self-center" />
 		</div>
 
 		<Loader></Loader>
 		<div class="flex-1 flex flex-col min-h-0 content-scroll">
 			<RouterView />
+			<GuestExpiredModal />
 		</div>
 
 		<!-- Mobile bottom tab bar — fixed -->
@@ -24,6 +27,7 @@ import { computed } from "vue";
 import { useRoute } from "vue-router";
 import { useLoaderStore } from "./stores/loader";
 import Loader from "./components/home_view/Loader.vue";
+import GuestExpiredModal from "./components/home_view/GuestExpiredModal.vue";
 
 import NavBar from "@/components/navbar/NavBar.vue";
 import MobileTabBar from "@/components/navbar/MobileTabBar.vue";
