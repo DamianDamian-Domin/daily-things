@@ -181,6 +181,9 @@ import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
 import { useHabbitsStore } from "@/stores/habbits";
 import { usePreferencesStore } from "@/stores/userPreferences";
+import { useRouter } from "vue-router";
+const router = useRouter();
+const isGuest = computed(() => user.value?.isAnonymous ?? false);
 
 const habbitsStore = useHabbitsStore();
 const { dailyGoalsList, userHabbitsList } = storeToRefs(habbitsStore);
@@ -196,13 +199,18 @@ const showPreferences = ref(false); // Steruje bocznym panelem ustawień
 
 // User data from Firebase Auth
 const userEmail = computed(() => user.value?.email ?? "");
-const userDisplayName = computed(
-	() => user.value?.displayName ?? userEmail.value.split("@")[0] ?? "",
-);
+const userDisplayName = computed(() => {
+	if (isGuest.value) {
+		return "Guest";
+	}
+	return user.value?.displayName || userEmail.value.split("@")[0] || "";
+});
 const userPhotoUrl = computed(() => user.value?.photoURL ?? "");
 
 // Initials — from displayName or email
 const userInitials = computed(() => {
+	if (isGuest.value) return "G"; // Ładna litera dla gościa zamiast znaku zapytania
+
 	const name = user.value?.displayName;
 	if (name) {
 		const parts = name.trim().split(/\s+/);
