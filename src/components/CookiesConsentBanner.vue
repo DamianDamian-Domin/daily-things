@@ -61,14 +61,20 @@
 					<Button
 						label="Essential only"
 						severity="secondary"
+						size="small"
+						class="consent-action-btn"
 						@click="acceptNecessaryOnly" />
 					<Button
 						label="Save preferences"
 						severity="secondary"
+						size="small"
+						class="consent-action-btn"
 						@click="saveCustomSettings" />
 					<Button
                         severity="success"
 						label="Accept all"
+						size="small"
+						class="consent-action-btn"
 						@click="acceptAll" />
 				</div>
 			</div>
@@ -124,5 +130,23 @@ function saveCustomSettings() {
 .consent-fade-leave-to {
 	opacity: 0;
 	transform: translateY(18px);
+}
+
+.consent-action-btn {
+	min-height: 2.15rem;
+}
+
+.consent-action-btn:deep(.p-button-label) {
+	font-size: 0.78rem;
+}
+
+@media (min-width: 640px) {
+	.consent-action-btn {
+		min-height: 2.35rem;
+	}
+
+	.consent-action-btn:deep(.p-button-label) {
+		font-size: 0.88rem;
+	}
 }
 </style>
