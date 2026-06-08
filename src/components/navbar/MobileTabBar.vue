@@ -110,14 +110,46 @@
 					@touchend.stop.prevent="triggerManageCookies"
 					@click.stop.prevent="triggerManageCookies" />
 			</div>
+
+			<div class="h-px w-full bg-surface-200 dark:bg-surface-700"></div>
+
+			<div class="flex flex-col gap-3">
+				<div class="flex items-center gap-4">
+					<div
+						class="w-10 h-10 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center">
+						<i class="pi pi-file-edit text-orange-500"></i>
+					</div>
+					<div>
+						<h4 class="font-semibold m-0 text-c">Legal</h4>
+						<p class="text-sm text-c m-0">Privacy and service terms</p>
+					</div>
+				</div>
+				<div class="grid w-full grid-cols-1 gap-2">
+					<Button
+						label="Privacy Policy"
+						size="small"
+						severity="secondary"
+						class="legal-action-btn"
+						@click="openLegalDocument('privacy')" />
+					<Button
+						label="Terms of Service"
+						size="small"
+						severity="secondary"
+						class="legal-action-btn"
+						@click="openLegalDocument('terms')" />
+				</div>
+			</div>
 		</div>
 	</Sidebar>
+
+	<LegalDocumentsDialog ref="legalDialogRef" />
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useCarouselStore } from "@/stores/useCarouselStore";
+import LegalDocumentsDialog from "@/components/legal/LegalDocumentsDialog.vue";
 
 // 1. Zastępujemy commonStore naszym nowym preferencesStore
 import { usePreferencesStore } from "@/stores/userPreferences";
@@ -131,6 +163,9 @@ import Button from "primevue/button";
 const carouselStore = useCarouselStore();
 const preferencesStore = usePreferencesStore();
 const cookieConsentStore = useCookieConsentStore();
+const legalDialogRef = ref<{
+	open: (document: "privacy" | "terms") => void;
+} | null>(null);
 
 const showPreferences = ref(false); // Steruje wysuwaniem panelu z dołu
 
@@ -178,6 +213,11 @@ function triggerManageCookies() {
 	if (now - lastManageTriggerAt.value < 250) return;
 	lastManageTriggerAt.value = now;
 	onManageCookies();
+}
+
+function openLegalDocument(document: "privacy" | "terms") {
+	showPreferences.value = false;
+	legalDialogRef.value?.open(document);
 }
 </script>
 
@@ -268,5 +308,9 @@ function triggerManageCookies() {
 
 :where(.my-app-dark, .my-app-dark *) .tab-btn.active::before {
 	background: var(--p-orange-500);
+}
+
+.legal-action-btn:deep(.p-button-label) {
+	white-space: nowrap;
 }
 </style>

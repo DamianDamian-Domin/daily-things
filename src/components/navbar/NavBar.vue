@@ -83,6 +83,7 @@
 			</Popover>
 
 			<ProfileDialog v-model="showProfile" />
+			<LegalDocumentsDialog ref="legalDialogRef" />
 
 			<Sidebar
 				v-model:visible="showPreferences"
@@ -193,6 +194,35 @@
 						</Button>
 						<!-- Używamy @pointerup i @touchend z .stop i .prevent, aby zapewnić responsywność na różnych urządzeniach -->
 					</div>
+
+					<div class="h-px w-full bg-surface-200 dark:bg-surface-700"></div>
+
+					<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+						<div class="flex items-center gap-4">
+							<div
+								class="w-10 h-10 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center">
+								<i class="pi pi-file-edit text-orange-500"></i>
+							</div>
+							<div>
+								<h4 class="font-semibold m-0 text-b">Legal</h4>
+								<p class="text-sm text-c m-0">Privacy and service terms</p>
+							</div>
+						</div>
+						<div class="grid w-full grid-cols-1 gap-2 sm:w-auto">
+							<Button
+								label="Privacy Policy"
+								size="small"
+								severity="secondary"
+								class="legal-action-btn"
+								@click="openLegalDocument('privacy')" />
+							<Button
+								label="Terms of Service"
+								size="small"
+								severity="secondary"
+								class="legal-action-btn"
+								@click="openLegalDocument('terms')" />
+						</div>
+					</div>
 				</div>
 			</Sidebar>
 		</div>
@@ -203,6 +233,7 @@
 import { ref, computed } from "vue";
 import Popover from "primevue/popover";
 import ProfileDialog from "@/components/navbar/ProfileDialog.vue";
+import LegalDocumentsDialog from "@/components/legal/LegalDocumentsDialog.vue";
 import Sidebar from "primevue/sidebar";
 import ToggleSwitch from "primevue/toggleswitch";
 import { storeToRefs } from "pinia";
@@ -220,6 +251,9 @@ const { user } = storeToRefs(authStore);
 
 const preferencesStore = usePreferencesStore();
 const cookieConsentStore = useCookieConsentStore();
+const legalDialogRef = ref<{
+	open: (document: "privacy" | "terms") => void;
+} | null>(null);
 
 const op = ref();
 const showProfile = ref(false);
@@ -289,6 +323,11 @@ const triggerManageCookies = () => {
 	onManageCookies();
 };
 
+const openLegalDocument = (document: "privacy" | "terms") => {
+	showPreferences.value = false;
+	legalDialogRef.value?.open(document);
+};
+
 const logOut = () => {
 	op.value.hide();
 	authStore.logout();
@@ -326,6 +365,10 @@ const logOut = () => {
 }
 :where(.my-app-dark, .my-app-dark *) .theme-toggle:hover {
 	background: color-mix(in srgb, var(--p-yellow-800) 40%, transparent);
+}
+
+.legal-action-btn:deep(.p-button-label) {
+	white-space: nowrap;
 }
 
 /* Avatar button in navbar */
