@@ -28,7 +28,7 @@
 				<div
 					v-if="showSettings"
 					class="mt-3 rounded-xl border border-orange-200/70 bg-white/70 p-3 dark:border-gray-600 dark:bg-gray-900/35">
-					<div class="flex items-start justify-between gap-4">
+					<div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
 						<div class="min-w-0">
 							<p class="text-sm font-semibold text-a">Essential cookies</p>
 							<p class="text-xs text-c">
@@ -39,6 +39,7 @@
 						<Tag
 							value="Always active"
 							severity="success"
+							class="self-start sm:self-auto shrink-0 whitespace-nowrap text-[11px] sm:text-xs"
 							rounded />
 					</div>
 
@@ -49,9 +50,9 @@
 								Helps us understand what can be improved in the app.
 							</p>
 						</div>
-						<Checkbox
+						<ToggleSwitch
 							v-model="formState.analyticsEnabled"
-							binary
+							class="shrink-0"
 							input-id="cookie-analytics" />
 					</div>
 				</div>
@@ -78,7 +79,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from "vue";
 import Button from "primevue/button";
-import Checkbox from "primevue/checkbox";
+import ToggleSwitch from "primevue/toggleswitch";
 import Tag from "primevue/tag";
 import { useCookieConsentStore } from "@/stores/cookieConsent";
 
