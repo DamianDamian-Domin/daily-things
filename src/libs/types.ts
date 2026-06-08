@@ -29,3 +29,20 @@ export interface CarouselCardConfig {
 	id: CarouselCardId;
 	order: number;
 }
+
+export type CookieConsentChoice =
+	| "accepted_all"
+	| "necessary_only"
+	| "custom";
+
+export interface CookieConsentPreferences {
+	necessary: true;
+	analytics: boolean;
+}
+
+export interface CookieConsentState {
+	choice: CookieConsentChoice;
+	preferences: CookieConsentPreferences;
+	decidedAt: string;
+	version: number;
+}

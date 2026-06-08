@@ -21,6 +21,8 @@
 			class="fixed bottom-0 left-0 right-0 z-50">
 			<MobileTabBar />
 		</div>
+
+		<CookiesConsentBanner :bottom-offset="cookieBannerOffset" />
 	</div>
 </template>
 
@@ -32,6 +34,7 @@ import Loader from "./components/home_view/Loader.vue";
 
 import NavBar from "@/components/navbar/NavBar.vue";
 import MobileTabBar from "@/components/navbar/MobileTabBar.vue";
+import CookiesConsentBanner from "@/components/CookiesConsentBanner.vue";
 import Divider from "primevue/divider";
 
 const route = useRoute();
@@ -59,5 +62,9 @@ onBeforeUnmount(() => {
 // ukryj navbar/tabbar na ekranach logowania
 const showNavbar = computed(() => {
 	return !["/login", "/register"].includes(route.path);
+});
+
+const cookieBannerOffset = computed(() => {
+	return showNavbar.value && isMobileLayout.value ? 68 : 0;
 });
 </script>

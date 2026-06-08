@@ -2,8 +2,10 @@
 	<div
 		class="hi-root"
 		:class="{ 'hi-labeled': props.showLabel, 'hi-disabled': props.loading }"
-		@touchstart.stop.prevent="handleTouchStart"
-		@pointerdown.stop="handlePointerDown"
+		@touchstart.passive="handleTouchStart"
+		@touchmove.passive="handleTouchMove"
+		@touchend.prevent="handleTouchEnd"
+		@touchcancel="handleTouchCancel"
 		@contextmenu.prevent
 		@click.stop="handleClickFallback"
 		v-tooltip.bottom="tooltipValue">
@@ -76,25 +78,58 @@ const tooltipValue = computed(() => {
 const { playHabitCheck } = useSound();
 const bouncing = ref(false);
 const lastActionAt = ref(0);
+const touchStartX = ref(0);
+const touchStartY = ref(0);
+const touchMoved = ref(false);
 
-function handleTouchStart() {
+const TAP_MOVE_THRESHOLD = 14;
+
+function handleTouchStart(event: TouchEvent) {
 	if (props.loading) return;
-	lastActionAt.value = Date.now();
-	runAction();
+	const touch = event.touches[0];
+	if (!touch) return;
+	touchStartX.value = touch.clientX;
+	touchStartY.value = touch.clientY;
+	touchMoved.value = false;
 }
 
-function handlePointerDown(event: PointerEvent) {
+function handleTouchMove(event: TouchEvent) {
+	if (props.loading || touchMoved.value) return;
+	const touch = event.touches[0];
+	if (!touch) return;
+	if (
+		Math.abs(touch.clientX - touchStartX.value) > TAP_MOVE_THRESHOLD ||
+		Math.abs(touch.clientY - touchStartY.value) > TAP_MOVE_THRESHOLD
+	) {
+		touchMoved.value = true;
+	}
+}
+
+function handleTouchEnd() {
 	if (props.loading) return;
-	if (event.pointerType === "touch") return;
-	if (event.pointerType === "mouse" && event.button !== 0) return;
+	if (touchMoved.value) {
+		touchMoved.value = false;
+		return;
+	}
 	lastActionAt.value = Date.now();
 	runAction();
+	resetTouchState();
+}
+
+function handleTouchCancel() {
+	resetTouchState();
 }
 
 function handleClickFallback() {
 	if (props.loading) return;
 	if (Date.now() - lastActionAt.value < 350) return;
 	runAction();
+}
+
+function resetTouchState() {
+	touchMoved.value = false;
+	touchStartX.value = 0;
+	touchStartY.value = 0;
 }
 
 function runAction() {

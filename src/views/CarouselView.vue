@@ -28,11 +28,7 @@
 
 		<!-- MOBILE: full-width single card with swipe -->
 		<div
-			class="mobile-carousel"
-			@pointerdown="onPointerDown"
-			@pointermove="onPointerMove"
-			@pointerup="onPointerUp"
-			@pointercancel="onPointerCancel">
+			class="mobile-carousel">
 			<TransitionGroup :name="slideDirection" tag="div" class="mobile-track">
 				<div
 					:key="carouselStore.activeCardId"
@@ -133,87 +129,6 @@ let lastY = 0;
 let canSwipe = false;
 let activePointerId: number | null = null;
 
-function resetSwipeState() {
-	startX = 0;
-	startY = 0;
-	lastX = 0;
-	lastY = 0;
-	canSwipe = false;
-	activePointerId = null;
-}
-
-function isSwipeBlockedTarget(target: EventTarget | null) {
-	if (!(target instanceof Element)) return false;
-	return Boolean(
-		target.closest(
-			"button, a, input, textarea, select, label, [contenteditable='true'], [role='button'], [role='switch'], .p-button, .p-inputtext, .td-dialog, .p-dialog, .hi-root, .hi-btn, .tasks-area, .hc-goals-section",
-		),
-	);
-}
-
-function onPointerDown(e: PointerEvent) {
-	if (isAnimating.value) {
-		resetSwipeState();
-		return;
-	}
-	canSwipe = !isSwipeBlockedTarget(e.target);
-	if (!canSwipe) {
-		resetSwipeState();
-		return;
-	}
-	activePointerId = e.pointerId;
-	startX = e.clientX;
-	startY = e.clientY;
-	lastX = e.clientX;
-	lastY = e.clientY;
-
-	const container = e.currentTarget as HTMLElement | null;
-	if (container?.setPointerCapture) {
-		try {
-			container.setPointerCapture(e.pointerId);
-		} catch {
-			// Some browsers may throw if pointer is already captured.
-		}
-	}
-}
-
-function onPointerMove(e: PointerEvent) {
-	if (!canSwipe) return;
-	if (activePointerId !== null && e.pointerId !== activePointerId) return;
-	lastX = e.clientX;
-	lastY = e.clientY;
-}
-
-function onPointerUp(e: PointerEvent) {
-	if (activePointerId !== null && e.pointerId !== activePointerId) return;
-	if (!canSwipe) return;
-	if (!Number.isFinite(startX) || !Number.isFinite(startY)) return;
-
-	const endX = Number.isFinite(lastX) ? lastX : e.clientX;
-	const endY = Number.isFinite(lastY) ? lastY : e.clientY;
-
-	const deltaX = endX - startX;
-	const deltaY = endY - startY;
-	const absX = Math.abs(deltaX);
-	const absY = Math.abs(deltaY);
-
-	if (absX < SWIPE_THRESHOLD) {
-		resetSwipeState();
-		return;
-	}
-	if (absX < absY * SWIPE_DIRECTION_RATIO) {
-		resetSwipeState();
-		return;
-	}
-
-	if (deltaX < 0) goNextWithAnimation();
-	else goPrevWithAnimation();
-	resetSwipeState();
-}
-
-function onPointerCancel() {
-	resetSwipeState();
-}
 </script>
 
 <style scoped>

@@ -87,6 +87,29 @@
 				</div>
 				<ToggleSwitch v-model="preferencesStore.animationsEnabled" />
 			</div>
+
+			<div class="h-px w-full bg-surface-200 dark:bg-surface-700"></div>
+
+			<div class="flex items-center justify-between gap-4">
+				<div class="flex items-center gap-4">
+					<div
+						class="w-10 h-10 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center">
+						<i class="pi pi-shield text-orange-500"></i>
+					</div>
+					<div>
+						<h4 class="font-semibold m-0 text-c">Cookie Preferences</h4>
+						<p class="text-sm text-c m-0">Review and update consent</p>
+					</div>
+				</div>
+				<Button
+					label="Manage"
+					severity="warn"
+					size="small"
+					class="rounded-lg"
+					@pointerup.stop="triggerManageCookies"
+					@touchend.stop.prevent="triggerManageCookies"
+					@click.stop.prevent="triggerManageCookies" />
+			</div>
 		</div>
 	</Sidebar>
 </template>
@@ -98,13 +121,16 @@ import { useCarouselStore } from "@/stores/useCarouselStore";
 
 // 1. Zastępujemy commonStore naszym nowym preferencesStore
 import { usePreferencesStore } from "@/stores/userPreferences";
+import { useCookieConsentStore } from "@/stores/cookieConsent";
 
 // Importy komponentów PrimeVue (jeśli masz je zarejestrowane globalnie, te dwie linijki mogą nie być konieczne)
 import Sidebar from "primevue/sidebar";
 import ToggleSwitch from "primevue/toggleswitch"; // Lub "primevue/inputswitch" w starszym PrimeVue
+import Button from "primevue/button";
 
 const carouselStore = useCarouselStore();
 const preferencesStore = usePreferencesStore();
+const cookieConsentStore = useCookieConsentStore();
 
 const showPreferences = ref(false); // Steruje wysuwaniem panelu z dołu
 
@@ -133,6 +159,25 @@ function onTab(tab: (typeof tabs)[number]) {
 		// 3. Po kliknięciu w zębatkę, otwieramy panel boczny z dołu
 		showPreferences.value = true;
 	}
+}
+
+function onManageCookies() {
+	if (typeof cookieConsentStore.reopenBanner === "function") {
+		cookieConsentStore.reopenBanner();
+	} else {
+		cookieConsentStore.consent = null;
+		localStorage.removeItem("cookieConsent.v1");
+	}
+	showPreferences.value = false;
+}
+
+const lastManageTriggerAt = ref(0);
+
+function triggerManageCookies() {
+	const now = Date.now();
+	if (now - lastManageTriggerAt.value < 250) return;
+	lastManageTriggerAt.value = now;
+	onManageCookies();
 }
 </script>
 

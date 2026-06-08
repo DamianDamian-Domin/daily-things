@@ -109,7 +109,7 @@
 							</div>
 							<div>
 								<h4
-									class="font-semibold m-0 text-surface-900 dark:text-surface-0">
+									class="font-semibold m-0 text-b">
 									Dark Mode
 								</h4>
 								<p class="text-sm text-c m-0">
@@ -133,7 +133,7 @@
 							</div>
 							<div>
 								<h4
-									class="font-semibold m-0 text-surface-900 dark:text-surface-0">
+									class="font-semibold m-0 text-b">
 									Sound Effects
 								</h4>
 								<p class="text-sm text-c m-0">Play UI sounds</p>
@@ -155,7 +155,7 @@
 							</div>
 							<div>
 								<h4
-									class="font-semibold m-0 text-surface-900 dark:text-surface-0">
+									class="font-semibold m-0 text-b">
 									Animations
 								</h4>
 								<p class="text-sm text-c m-0">
@@ -164,6 +164,34 @@
 							</div>
 						</div>
 						<ToggleSwitch v-model="preferencesStore.animationsEnabled" />
+					</div>
+
+					<div class="h-px w-full bg-surface-200 dark:bg-surface-700"></div>
+
+					<div class="flex items-center justify-between gap-4">
+						<div class="flex items-center gap-4">
+							<div
+								class="w-10 h-10 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center">
+								<i class="pi pi-shield text-orange-500"></i>
+							</div>
+							<div>
+								<h4
+									class="font-semibold m-0 text-b">
+									Cookie Preferences
+								</h4>
+								<p class="text-sm text-c m-0">Review and update consent</p>
+							</div>
+						</div>
+						<Button
+							severity="warn"
+							type="button"
+							class="px-2.5 py-1.5 text-xs rounded-lg"
+							@pointerup.stop="triggerManageCookies"
+							@touchend.stop.prevent="triggerManageCookies"
+							@click.stop.prevent="triggerManageCookies">
+							Manage
+						</Button>
+						<!-- Używamy @pointerup i @touchend z .stop i .prevent, aby zapewnić responsywność na różnych urządzeniach -->
 					</div>
 				</div>
 			</Sidebar>
@@ -181,6 +209,8 @@ import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
 import { useHabbitsStore } from "@/stores/habbits";
 import { usePreferencesStore } from "@/stores/userPreferences";
+import { useCookieConsentStore } from "@/stores/cookieConsent";
+import Button from "primevue/button";
 
 const habbitsStore = useHabbitsStore();
 const { dailyGoalsList, userHabbitsList } = storeToRefs(habbitsStore);
@@ -189,6 +219,7 @@ const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
 const preferencesStore = usePreferencesStore();
+const cookieConsentStore = useCookieConsentStore();
 
 const op = ref();
 const showProfile = ref(false);
@@ -237,6 +268,25 @@ const onProfile = () => {
 const onSettings = () => {
 	op.value.hide();
 	showPreferences.value = true;
+};
+
+const onManageCookies = () => {
+	if (typeof cookieConsentStore.reopenBanner === "function") {
+		cookieConsentStore.reopenBanner();
+	} else {
+		cookieConsentStore.consent = null;
+		localStorage.removeItem("cookieConsent.v1");
+	}
+	showPreferences.value = false;
+};
+
+const lastManageTriggerAt = ref(0);
+
+const triggerManageCookies = () => {
+	const now = Date.now();
+	if (now - lastManageTriggerAt.value < 250) return;
+	lastManageTriggerAt.value = now;
+	onManageCookies();
 };
 
 const logOut = () => {
