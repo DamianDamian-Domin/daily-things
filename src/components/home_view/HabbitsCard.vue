@@ -85,7 +85,9 @@
 					</p>
 				</div>
 
-				<div class="tasks-area mt-4">
+				<div
+					ref="tasksContainerRef"
+					class="tasks-area mt-4">
 					<div class="flex flex-row flex-wrap h-min gap-3">
 						<draggable
 							v-model="habbitsStore.groupedSelectedDayHabbits"
@@ -99,7 +101,9 @@
 									:data="getHabbitDisplayData(element)"
 									:count="element.count"
 									:showCheckBadge="false"
-									:showTooltip="!editMode"
+									:showTooltip="
+										!editMode && markedHabbitToDelete !== element.id
+									"
 									@click="() => toggleMarkHabbit(element)" />
 							</template>
 						</draggable>
@@ -235,7 +239,7 @@ import { Habbit, Goal } from "@/libs/types";
 
 const habbitsStore = useHabbitsStore();
 const preferencesStore = usePreferencesStore(); // <-- 2. Inicjalizacja sklepu
-
+const tasksContainerRef = ref<Node | null>(null);
 const {
 	allHabbitsList,
 	selectedDayHabbits,
@@ -534,8 +538,11 @@ function toggleMarkHabbit(habbit: Habbit) {
 }
 
 function handleHabbitClickOutside(event: MouseEvent) {
-	const container = document.querySelector(".tasks-area");
-	if (container && !container.contains(event.target as Node)) {
+	// Używamy referencji zamiast document.querySelector
+	if (
+		tasksContainerRef.value &&
+		!tasksContainerRef.value.contains(event.target as Node)
+	) {
 		markedHabbitToDelete.value = null;
 		document.removeEventListener("mousedown", handleHabbitClickOutside);
 	}

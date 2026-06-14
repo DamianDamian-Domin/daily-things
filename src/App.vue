@@ -7,12 +7,13 @@
 			v-if="showNavbar && !isMobileLayout"
 			class="px-4 pt-2">
 			<NavBar />
-			<Divider class="w-3/4 self-center" />
+			<Divider v-if="showNavbar" class="w-3/4 self-center" />
 		</div>
 
 		<Loader></Loader>
 		<div class="flex-1 flex flex-col min-h-0 content-scroll">
 			<RouterView />
+			<GuestExpiredModal />
 		</div>
 
 		<!-- Mobile bottom tab bar — fixed -->
@@ -31,6 +32,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { useLoaderStore } from "./stores/loader";
 import Loader from "./components/home_view/Loader.vue";
+import GuestExpiredModal from "./components/home_view/GuestExpiredModal.vue";
 
 import NavBar from "@/components/navbar/NavBar.vue";
 import MobileTabBar from "@/components/navbar/MobileTabBar.vue";
