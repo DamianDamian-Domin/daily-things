@@ -47,7 +47,7 @@
 		class="card-root"
 		:data-active="isActive">
 		<div
-			class="flex flex-col justify-between card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] sm:max-h-[50rem] sm:overflow-auto hc-inner"
+			class="flex flex-col justify-between card-a sm:w-[480px] surface-content w-full h-full min-h-0 sm:min-h-[30rem] max-h-full sm:max-h-[50rem] sm:overflow-auto hc-inner"
 			@click.capture="handleGlobalClick">
 			<div>
 				<div class="hc-greeting-area">
@@ -575,7 +575,7 @@ function getFullHabbitData(habbit: Habbit) {
 	display: flex;
 	flex-direction: column;
 }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: landscape) and (max-width: 1024px) and (hover: none) and (pointer: coarse) {
 	.card-root {
 		flex: 1;
 		min-height: 0;
@@ -584,9 +584,12 @@ function getFullHabbitData(habbit: Habbit) {
 	.hc-inner {
 		flex: 1;
 		min-height: 0;
-		height: 100% !important;
-		max-height: none !important;
+		width: 100% !important;
+		height: 100%;
+		max-height: 100%;
 		overflow-y: auto !important;
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior: contain;
 	}
 }
 .card-root[data-active="false"] {

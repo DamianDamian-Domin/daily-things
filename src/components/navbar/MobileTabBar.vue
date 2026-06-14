@@ -11,8 +11,6 @@
 		</button>
 	</nav>
 
-	<ProfileDialog v-model="showProfile" />
-
 	<Sidebar
 		v-model:visible="showPreferences"
 		position="bottom"
@@ -37,10 +35,10 @@
 							"></i>
 					</div>
 					<div>
-						<h4 class="font-semibold m-0 text-surface-900 dark:text-surface-0">
+						<h4 class="font-semibold m-0 text-c">
 							Dark Mode
 						</h4>
-						<p class="text-sm text-surface-500 m-0">Change app appearance</p>
+						<p class="text-sm text-c m-0">Change app appearance</p>
 					</div>
 				</div>
 				<ToggleSwitch v-model="preferencesStore.isDarkMode" />
@@ -54,14 +52,14 @@
 							:class="
 								preferencesStore.soundEnabled
 									? 'pi pi-volume-up text-green-500'
-									: 'pi pi-volume-off text-surface-400'
+									: 'pi pi-volume-off text-surface-500 dark:text-surface-300'
 							"></i>
 					</div>
 					<div>
-						<h4 class="font-semibold m-0 text-surface-900 dark:text-surface-0">
+						<h4 class="font-semibold m-0 text-c">
 							Sound Effects
 						</h4>
-						<p class="text-sm text-surface-500 m-0">Play UI sounds</p>
+						<p class="text-sm text-c m-0">Play UI sounds</p>
 					</div>
 				</div>
 				<ToggleSwitch v-model="preferencesStore.soundEnabled" />
@@ -75,54 +73,109 @@
 							:class="
 								preferencesStore.animationsEnabled
 									? 'pi pi-sparkles text-yellow-500'
-									: 'pi pi-stop-circle text-surface-400'
+									: 'pi pi-stop-circle text-surface-500 dark:text-surface-300'
 							"></i>
 					</div>
 					<div>
-						<h4 class="font-semibold m-0 text-surface-900 dark:text-surface-0">
+						<h4 class="font-semibold m-0 text-b">
 							Animations
 						</h4>
-						<p class="text-sm text-surface-500 m-0">
+						<p class="text-sm text-c m-0">
 							Confetti and visual effects
 						</p>
 					</div>
 				</div>
 				<ToggleSwitch v-model="preferencesStore.animationsEnabled" />
 			</div>
+
+			<div class="h-px w-full bg-surface-200 dark:bg-surface-700"></div>
+
+			<div class="flex items-center justify-between gap-4">
+				<div class="flex items-center gap-4">
+					<div
+						class="w-10 h-10 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center">
+						<i class="pi pi-shield text-orange-500"></i>
+					</div>
+					<div>
+						<h4 class="font-semibold m-0 text-c">Cookie Preferences</h4>
+						<p class="text-sm text-c m-0">Review and update consent</p>
+					</div>
+				</div>
+				<Button
+					label="Manage"
+					severity="warn"
+					size="small"
+					class="rounded-lg"
+					@pointerup.stop="triggerManageCookies"
+					@touchend.stop.prevent="triggerManageCookies"
+					@click.stop.prevent="triggerManageCookies" />
+			</div>
+
+			<div class="h-px w-full bg-surface-200 dark:bg-surface-700"></div>
+
+			<div class="flex flex-col gap-3">
+				<div class="flex items-center gap-4">
+					<div
+						class="w-10 h-10 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center">
+						<i class="pi pi-file-edit text-orange-500"></i>
+					</div>
+					<div>
+						<h4 class="font-semibold m-0 text-c">Legal</h4>
+						<p class="text-sm text-c m-0">Privacy and service terms</p>
+					</div>
+				</div>
+				<div class="grid w-full grid-cols-1 gap-2">
+					<Button
+						label="Privacy Policy"
+						size="small"
+						severity="secondary"
+						class="legal-action-btn"
+						@click="openLegalDocument('privacy')" />
+					<Button
+						label="Terms of Service"
+						size="small"
+						severity="secondary"
+						class="legal-action-btn"
+						@click="openLegalDocument('terms')" />
+				</div>
+			</div>
 		</div>
 	</Sidebar>
+
+	<LegalDocumentsDialog ref="legalDialogRef" />
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useCarouselStore } from "@/stores/useCarouselStore";
-import { useAuthStore } from "@/stores/auth";
-import { useHabbitsStore } from "@/stores/habbits";
+import LegalDocumentsDialog from "@/components/legal/LegalDocumentsDialog.vue";
 
 // 1. Zastępujemy commonStore naszym nowym preferencesStore
 import { usePreferencesStore } from "@/stores/userPreferences";
+import { useCookieConsentStore } from "@/stores/cookieConsent";
 
-import ProfileDialog from "@/components/navbar/ProfileDialog.vue";
 // Importy komponentów PrimeVue (jeśli masz je zarejestrowane globalnie, te dwie linijki mogą nie być konieczne)
 import Sidebar from "primevue/sidebar";
 import ToggleSwitch from "primevue/toggleswitch"; // Lub "primevue/inputswitch" w starszym PrimeVue
+import Button from "primevue/button";
 
 const carouselStore = useCarouselStore();
 const preferencesStore = usePreferencesStore();
-const authStore = useAuthStore();
-const habbitsStore = useHabbitsStore();
+const cookieConsentStore = useCookieConsentStore();
+const legalDialogRef = ref<{
+	open: (document: "privacy" | "terms") => void;
+} | null>(null);
 
-const showProfile = ref(false);
 const showPreferences = ref(false); // Steruje wysuwaniem panelu z dołu
 
 // Zakładki karuzelowe mapowane na ID karty
-const cardTabs = ["textAdd", "manage", "stats"] as const;
+const cardTabs = ["textAdd", "manage", "stats", "profile"] as const;
 
 const activeTab = computed(() => {
 	const id = carouselStore.activeCardId;
 	if (cardTabs.includes(id as any)) return id;
-	return "profile";
+	return "manage";
 });
 
 const tabs = [
@@ -131,18 +184,40 @@ const tabs = [
 	{ id: "textAdd", label: "To-do", icon: "pi-list-check", type: "card" },
 	{ id: "manage", label: "Habits", icon: "pi-star", type: "card" },
 	{ id: "stats", label: "Stats", icon: "pi-chart-bar", type: "card" },
-	{ id: "profile", label: "Profile", icon: "pi-user", type: "action" },
+	{ id: "profile", label: "Profile", icon: "pi-user", type: "card" },
 ] as const;
 
 function onTab(tab: (typeof tabs)[number]) {
 	if (tab.type === "card") {
 		carouselStore.setActiveCard(tab.id as any);
-	} else if (tab.id === "profile") {
-		showProfile.value = true;
 	} else if (tab.id === "settings") {
 		// 3. Po kliknięciu w zębatkę, otwieramy panel boczny z dołu
 		showPreferences.value = true;
 	}
+}
+
+function onManageCookies() {
+	if (typeof cookieConsentStore.reopenBanner === "function") {
+		cookieConsentStore.reopenBanner();
+	} else {
+		cookieConsentStore.consent = null;
+		localStorage.removeItem("cookieConsent.v1");
+	}
+	showPreferences.value = false;
+}
+
+const lastManageTriggerAt = ref(0);
+
+function triggerManageCookies() {
+	const now = Date.now();
+	if (now - lastManageTriggerAt.value < 250) return;
+	lastManageTriggerAt.value = now;
+	onManageCookies();
+}
+
+function openLegalDocument(document: "privacy" | "terms") {
+	showPreferences.value = false;
+	legalDialogRef.value?.open(document);
 }
 </script>
 
@@ -194,7 +269,7 @@ function onTab(tab: (typeof tabs)[number]) {
 }
 
 :where(.my-app-dark, .my-app-dark *) .tab-icon {
-	color: var(--p-gray-500);
+	color: var(--p-gray-300);
 }
 
 .tab-label {
@@ -205,7 +280,7 @@ function onTab(tab: (typeof tabs)[number]) {
 }
 
 :where(.my-app-dark, .my-app-dark *) .tab-label {
-	color: var(--p-gray-500);
+	color: var(--p-gray-300);
 }
 
 /* Aktywna zakładka */
@@ -233,5 +308,9 @@ function onTab(tab: (typeof tabs)[number]) {
 
 :where(.my-app-dark, .my-app-dark *) .tab-btn.active::before {
 	background: var(--p-orange-500);
+}
+
+.legal-action-btn:deep(.p-button-label) {
+	white-space: nowrap;
 }
 </style>

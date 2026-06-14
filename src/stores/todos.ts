@@ -29,14 +29,28 @@ export const useTodosStore = defineStore("todos", () => {
 	// =========================
 	// ALL TODOS (WITH SORTING)
 	// =========================
+	function getSortValue(todo: TodoItem) {
+		return todo.order !== undefined ? todo.order : todo.createdAt || 0;
+	}
+
+	function normalizeActiveOrders() {
+		const activeSorted = [...userTodosList.value]
+			.filter((t) => !t.completed)
+			.sort((a, b) => getSortValue(a) - getSortValue(b));
+
+		activeSorted.forEach((todo, index) => {
+			todo.order = index;
+		});
+	}
+
 	const sortedTodos = computed(() => {
 		return [...userTodosList.value].sort((a, b) => {
 			// Najpierw sortujemy aktywne vs ukończone
 			if (a.completed === b.completed) {
 				// Jeśli element ma przypisany 'order' z Drag&Drop, używamy go.
-				// Jeśli nie (np. nowe zadanie), dajemy duży minusowy wynik bazujący na czasie, by trafiło na samą górę.
-				const orderA = a.order !== undefined ? a.order : -(a.createdAt || 0);
-				const orderB = b.order !== undefined ? b.order : -(b.createdAt || 0);
+				// Jeśli nie, traktujemy createdAt jako fallback, aby nowsze trafiały na koniec.
+				const orderA = getSortValue(a);
+				const orderB = getSortValue(b);
 				return orderA - orderB;
 			}
 			return a.completed ? 1 : -1;
@@ -77,12 +91,19 @@ export const useTodosStore = defineStore("todos", () => {
 	async function addTodo(text: string, description: string = "") {
 		await handleAsyncAction(
 			async () => {
+				normalizeActiveOrders();
+
+				const maxActiveOrder = userTodosList.value
+					.filter((t) => !t.completed)
+					.reduce((max, t) => Math.max(max, t.order ?? -1), -1);
+
 				const newTodo: TodoItem = {
 					id: nanoid(),
 					text,
 					description,
 					completed: false,
 					createdAt: Date.now(),
+					order: maxActiveOrder + 1,
 				};
 
 				userTodosList.value.push(newTodo);

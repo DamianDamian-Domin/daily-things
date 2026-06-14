@@ -83,6 +83,7 @@
 			</Popover>
 
 			<ProfileDialog v-model="showProfile" />
+			<LegalDocumentsDialog ref="legalDialogRef" />
 
 			<Sidebar
 				v-model:visible="showPreferences"
@@ -109,10 +110,10 @@
 							</div>
 							<div>
 								<h4
-									class="font-semibold m-0 text-surface-900 dark:text-surface-0">
+									class="font-semibold m-0 text-b">
 									Dark Mode
 								</h4>
-								<p class="text-sm text-surface-500 m-0">
+								<p class="text-sm text-c m-0">
 									Change app appearance
 								</p>
 							</div>
@@ -128,15 +129,15 @@
 									:class="
 										preferencesStore.soundEnabled
 											? 'pi pi-volume-up text-green-500'
-											: 'pi pi-volume-off text-surface-400'
+											: 'pi pi-volume-off text-surface-500 dark:text-surface-300'
 									"></i>
 							</div>
 							<div>
 								<h4
-									class="font-semibold m-0 text-surface-900 dark:text-surface-0">
+									class="font-semibold m-0 text-b">
 									Sound Effects
 								</h4>
-								<p class="text-sm text-surface-500 m-0">Play UI sounds</p>
+								<p class="text-sm text-c m-0">Play UI sounds</p>
 							</div>
 						</div>
 						<ToggleSwitch v-model="preferencesStore.soundEnabled" />
@@ -150,20 +151,77 @@
 									:class="
 										preferencesStore.animationsEnabled
 											? 'pi pi-sparkles text-yellow-500'
-											: 'pi pi-stop-circle text-surface-400'
+											: 'pi pi-stop-circle text-surface-500 dark:text-surface-300'
 									"></i>
 							</div>
 							<div>
 								<h4
-									class="font-semibold m-0 text-surface-900 dark:text-surface-0">
+									class="font-semibold m-0 text-b">
 									Animations
 								</h4>
-								<p class="text-sm text-surface-500 m-0">
+								<p class="text-sm text-c m-0">
 									Confetti and visual effects
 								</p>
 							</div>
 						</div>
 						<ToggleSwitch v-model="preferencesStore.animationsEnabled" />
+					</div>
+
+					<div class="h-px w-full bg-surface-200 dark:bg-surface-700"></div>
+
+					<div class="flex items-center justify-between gap-4">
+						<div class="flex items-center gap-4">
+							<div
+								class="w-10 h-10 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center">
+								<i class="pi pi-shield text-orange-500"></i>
+							</div>
+							<div>
+								<h4
+									class="font-semibold m-0 text-b">
+									Cookie Preferences
+								</h4>
+								<p class="text-sm text-c m-0">Review and update consent</p>
+							</div>
+						</div>
+						<Button
+							severity="warn"
+							type="button"
+							class="px-2.5 py-1.5 text-xs rounded-lg"
+							@pointerup.stop="triggerManageCookies"
+							@touchend.stop.prevent="triggerManageCookies"
+							@click.stop.prevent="triggerManageCookies">
+							Manage
+						</Button>
+						<!-- Używamy @pointerup i @touchend z .stop i .prevent, aby zapewnić responsywność na różnych urządzeniach -->
+					</div>
+
+					<div class="h-px w-full bg-surface-200 dark:bg-surface-700"></div>
+
+					<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+						<div class="flex items-center gap-4">
+							<div
+								class="w-10 h-10 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center">
+								<i class="pi pi-file-edit text-orange-500"></i>
+							</div>
+							<div>
+								<h4 class="font-semibold m-0 text-b">Legal</h4>
+								<p class="text-sm text-c m-0">Privacy and service terms</p>
+							</div>
+						</div>
+						<div class="grid w-full grid-cols-1 gap-2 sm:w-auto">
+							<Button
+								label="Privacy Policy"
+								size="small"
+								severity="secondary"
+								class="legal-action-btn"
+								@click="openLegalDocument('privacy')" />
+							<Button
+								label="Terms of Service"
+								size="small"
+								severity="secondary"
+								class="legal-action-btn"
+								@click="openLegalDocument('terms')" />
+						</div>
 					</div>
 				</div>
 			</Sidebar>
@@ -175,12 +233,15 @@
 import { ref, computed } from "vue";
 import Popover from "primevue/popover";
 import ProfileDialog from "@/components/navbar/ProfileDialog.vue";
+import LegalDocumentsDialog from "@/components/legal/LegalDocumentsDialog.vue";
 import Sidebar from "primevue/sidebar";
 import ToggleSwitch from "primevue/toggleswitch";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
 import { useHabbitsStore } from "@/stores/habbits";
 import { usePreferencesStore } from "@/stores/userPreferences";
+import { useCookieConsentStore } from "@/stores/cookieConsent";
+import Button from "primevue/button";
 import { useRouter } from "vue-router";
 const router = useRouter();
 const isGuest = computed(() => user.value?.isAnonymous ?? false);
@@ -192,6 +253,10 @@ const authStore = useAuthStore();
 const { user } = storeToRefs(authStore);
 
 const preferencesStore = usePreferencesStore();
+const cookieConsentStore = useCookieConsentStore();
+const legalDialogRef = ref<{
+	open: (document: "privacy" | "terms") => void;
+} | null>(null);
 
 const op = ref();
 const showProfile = ref(false);
@@ -247,6 +312,30 @@ const onSettings = () => {
 	showPreferences.value = true;
 };
 
+const onManageCookies = () => {
+	if (typeof cookieConsentStore.reopenBanner === "function") {
+		cookieConsentStore.reopenBanner();
+	} else {
+		cookieConsentStore.consent = null;
+		localStorage.removeItem("cookieConsent.v1");
+	}
+	showPreferences.value = false;
+};
+
+const lastManageTriggerAt = ref(0);
+
+const triggerManageCookies = () => {
+	const now = Date.now();
+	if (now - lastManageTriggerAt.value < 250) return;
+	lastManageTriggerAt.value = now;
+	onManageCookies();
+};
+
+const openLegalDocument = (document: "privacy" | "terms") => {
+	showPreferences.value = false;
+	legalDialogRef.value?.open(document);
+};
+
 const logOut = async () => {
 	// <--- Dodajemy 'async'
 	op.value.hide();
@@ -287,6 +376,10 @@ const logOut = async () => {
 }
 :where(.my-app-dark, .my-app-dark *) .theme-toggle:hover {
 	background: color-mix(in srgb, var(--p-yellow-800) 40%, transparent);
+}
+
+.legal-action-btn:deep(.p-button-label) {
+	white-space: nowrap;
 }
 
 /* Avatar button in navbar */

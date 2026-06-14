@@ -17,6 +17,15 @@
 	}
 }
 
+/* Landscape phone fallback: keep app scrollable when width exceeds mobile breakpoint */
+@media (orientation: landscape) and (max-width: 1024px) and (hover: none) and (pointer: coarse) {
+	.content-scroll {
+		overflow-y: auto;
+		overflow-x: hidden;
+		padding-bottom: 68px;
+	}
+}
+
 /* === PrimeVue dark mode — warm, consistent colors === */
 .my-app-dark {
 	/* Dialog / overlay mask */

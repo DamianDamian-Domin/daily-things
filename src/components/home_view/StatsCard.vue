@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="sc-card card-a sm:w-[480px] surface-content w-full h-full min-h-[30rem] sm:max-h-[50rem] overflow-hidden">
+		class="sc-card card-a sm:w-[480px] surface-content w-full h-full min-h-0 sm:min-h-[30rem] max-h-full sm:max-h-[50rem] overflow-hidden">
 		<div
 			class="sc-inner"
 			:class="!isActive && 'pointer-events-none'">
@@ -181,19 +181,6 @@
 				ref="scrollContainer"
 				class="sc-scroll">
 				<!-- Goals completed tile -->
-				<div class="sc-medal-tile">
-					<span class="sc-medal-tile-emoji">🏅</span>
-					<div class="sc-medal-tile-text">
-						<span class="sc-medal-tile-count">
-							{{ goalsCompletedCount }}
-							<span style="font-size: 0.6em; opacity: 0.7"
-								>/ {{ totalDaysInPeriod }}</span
-							>
-						</span>
-						<span class="sc-medal-tile-label">{{ perfectDaysLabel }}</span>
-					</div>
-				</div>
-				<!-- Sub-toggle: Habits / Categories -->
 				<div class="sc-sub-toggle">
 					<button
 						class="sc-sub-btn"
@@ -208,6 +195,19 @@
 						Categories
 					</button>
 				</div>
+				<div class="sc-medal-tile">
+					<span class="sc-medal-tile-emoji">🏅</span>
+					<div class="sc-medal-tile-text">
+						<span class="sc-medal-tile-count">
+							{{ goalsCompletedCount }}
+							<span style="font-size: 0.6em; opacity: 0.7"
+								>/ {{ totalDaysInPeriod }}</span
+							>
+						</span>
+						<span class="sc-medal-tile-label">{{ perfectDaysLabel }}</span>
+					</div>
+				</div>
+				<!-- Sub-toggle: Habits / Categories -->
 
 				<!-- By habit -->
 				<template v-if="chartMode === 'habits'">
@@ -408,17 +408,26 @@ const dayNames = [
 // ========================
 // CALENDAR VIEW DATA
 // ========================
-const calendarDays = computed(() => {
+type CalendarGroup = {
+	name: string;
+	displayName: string;
+	icon: string;
+	count: number;
+};
+
+type CalendarDay = {
+	dateKey: string;
+	dayName: string;
+	dateLabel: string;
+	groups: CalendarGroup[];
+	cats: Array<{ name: string; count: number }>;
+	goalsCompleted: number;
+	goalsTotal: number;
+};
+
+const calendarDays = computed<CalendarDay[]>(() => {
 	const { start, end } = periodRange.value;
-	const result: Array<{
-		dateKey: string;
-		dayName: string;
-		dateLabel: string;
-		groups: Array<{ displayName: string; icon: string; count: number }>;
-		cats: Array<{ name: string; count: number }>;
-		goalsCompleted: number;
-		goalsTotal: number;
-	}> = [];
+	const result: CalendarDay[] = [];
 
 	const now = new Date();
 	const todayKey = toDateKey(now);
@@ -438,16 +447,14 @@ const calendarDays = computed(() => {
 		const entry = userHabbitsList.value.find((e) => e.date === key);
 		const habbits = entry?.habbits ?? [];
 
-		const grouped = new Map<
-			string,
-			{ displayName: string; icon: string; count: number }
-		>();
+		const grouped = new Map<string, CalendarGroup>();
 		for (const h of habbits) {
 			const existing = grouped.get(h.name);
 			if (existing) {
 				existing.count++;
 			} else {
 				grouped.set(h.name, {
+					name: h.name,
 					displayName: h.display_name || h.name,
 					icon: h.icon,
 					count: 1,
@@ -727,15 +734,22 @@ const categoryData = computed(() => {
 	min-height: 0;
 	overflow: hidden;
 }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: landscape) and (max-width: 1024px) and (hover: none) and (pointer: coarse) {
 	.sc-card {
-		height: auto !important;
-		max-height: none !important;
-		overflow: visible;
+		height: 100%;
+		min-height: 0;
+		max-height: 100%;
+		overflow: hidden;
 	}
 	.sc-inner {
-		overflow: visible;
-		min-height: unset;
+		overflow: hidden;
+		min-height: 0;
+	}
+	.sc-scroll {
+		overflow-y: auto;
+		min-height: 0;
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior: contain;
 	}
 }
 
@@ -897,14 +911,28 @@ const categoryData = computed(() => {
 	flex: 1;
 	min-height: 0;
 	overflow-y: auto;
-	scrollbar-width: none;
+	scrollbar-width: thin;
+	scrollbar-color: var(--p-orange-200) transparent;
 	display: flex;
 	flex-direction: column;
 	gap: 0.1rem;
 	padding-right: 0.25rem;
 }
 .sc-scroll::-webkit-scrollbar {
-	display: none;
+	width: 6px;
+}
+.sc-scroll::-webkit-scrollbar-thumb {
+	background: color-mix(in srgb, var(--p-orange-300) 90%, transparent);
+	border-radius: 999px;
+}
+.sc-scroll::-webkit-scrollbar-track {
+	background: transparent;
+}
+:where(.my-app-dark, .my-app-dark *) .sc-scroll {
+	scrollbar-color: var(--p-gray-500) transparent;
+}
+:where(.my-app-dark, .my-app-dark *) .sc-scroll::-webkit-scrollbar-thumb {
+	background: color-mix(in srgb, var(--p-gray-500) 85%, transparent);
 }
 
 /* ====== CALENDAR VIEW — DAY ROW ====== */

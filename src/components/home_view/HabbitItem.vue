@@ -1,14 +1,22 @@
 <template>
 	<div
 		class="hi-root"
-		:class="{ 'hi-labeled': props.showLabel }"
-		@click="handleClick"
+		:class="{ 'hi-labeled': props.showLabel, 'hi-disabled': props.loading }"
+		@touchstart.passive="handleTouchStart"
+		@touchmove.passive="handleTouchMove"
+		@touchend.prevent="handleTouchEnd"
+		@touchcancel="handleTouchCancel"
+		@contextmenu.prevent
+		@click.stop="handleClickFallback"
 		v-tooltip.bottom="tooltipValue">
 		<div
 			class="hi-btn"
-			:class="[severityClass, { 'hi-add': isAddButton, 'hi-bounce': bouncing }]">
+			:class="[
+				severityClass,
+				{ 'hi-add': isAddButton, 'hi-bounce': bouncing, 'hi-loading': props.loading },
+			]">
 			<span class="material-icons material-symbols-outlined hi-icon">
-				{{ data.icon }}
+				{{ props.loading ? "progress_activity" : data.icon }}
 			</span>
 
 			<Transition name="hi-badge">
@@ -47,6 +55,7 @@ const props = defineProps<{
 	showCheckBadge?: boolean;
 	count?: number;
 	noCompliment?: boolean;
+	loading?: boolean;
 }>();
 const emit = defineEmits(["select", "click"]);
 
@@ -68,8 +77,62 @@ const tooltipValue = computed(() => {
 
 const { playHabitCheck } = useSound();
 const bouncing = ref(false);
+const lastActionAt = ref(0);
+const touchStartX = ref(0);
+const touchStartY = ref(0);
+const touchMoved = ref(false);
 
-function handleClick() {
+const TAP_MOVE_THRESHOLD = 14;
+
+function handleTouchStart(event: TouchEvent) {
+	if (props.loading) return;
+	const touch = event.touches[0];
+	if (!touch) return;
+	touchStartX.value = touch.clientX;
+	touchStartY.value = touch.clientY;
+	touchMoved.value = false;
+}
+
+function handleTouchMove(event: TouchEvent) {
+	if (props.loading || touchMoved.value) return;
+	const touch = event.touches[0];
+	if (!touch) return;
+	if (
+		Math.abs(touch.clientX - touchStartX.value) > TAP_MOVE_THRESHOLD ||
+		Math.abs(touch.clientY - touchStartY.value) > TAP_MOVE_THRESHOLD
+	) {
+		touchMoved.value = true;
+	}
+}
+
+function handleTouchEnd() {
+	if (props.loading) return;
+	if (touchMoved.value) {
+		touchMoved.value = false;
+		return;
+	}
+	lastActionAt.value = Date.now();
+	runAction();
+	resetTouchState();
+}
+
+function handleTouchCancel() {
+	resetTouchState();
+}
+
+function handleClickFallback() {
+	if (props.loading) return;
+	if (Date.now() - lastActionAt.value < 350) return;
+	runAction();
+}
+
+function resetTouchState() {
+	touchMoved.value = false;
+	touchStartX.value = 0;
+	touchStartY.value = 0;
+}
+
+function runAction() {
 	if (!isAddButton.value) {
 		playHabitCheck();
 		bouncing.value = true;
@@ -102,9 +165,13 @@ function handleClick() {
 	cursor: pointer;
 	user-select: none;
 	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
 }
 .hi-root.hi-labeled {
 	width: 4rem;
+}
+.hi-root.hi-disabled {
+	pointer-events: none;
 }
 
 .hi-badge-text {
@@ -133,6 +200,18 @@ function handleClick() {
 .hi-btn:active {
 	transform: scale(0.92);
 	transition-duration: 0.1s;
+}
+
+.hi-loading {
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--p-orange-300) 45%, transparent);
+}
+.hi-loading .hi-icon {
+	animation: hi-spin 0.8s linear infinite;
+}
+
+@keyframes hi-spin {
+	from { transform: rotate(0deg); }
+	to { transform: rotate(360deg); }
 }
 
 /* ===== Severity: SUCCESS (tracked habit) ===== */

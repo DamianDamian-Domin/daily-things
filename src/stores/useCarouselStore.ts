@@ -7,6 +7,7 @@ export const useCarouselStore = defineStore("carouselStore", () => {
 		{ id: "textAdd", order: 1 },
 		{ id: "manage", order: 2 },
 		{ id: "stats", order: 3 },
+		{ id: "profile", order: 4 },
 	];
 
 	const activeIndex = ref(1); // domyślnie "manage" (środkowa)

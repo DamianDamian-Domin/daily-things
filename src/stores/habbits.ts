@@ -16,6 +16,8 @@ import { Goal, UserHabbits, Habbit } from "@/libs/types";
 import { nanoid } from "nanoid";
 import { useAuthStore } from "./auth";
 import { handleAsyncAction } from "@/stores/asyncActionHandler";
+import habbitListData from "@/assets/habbitList.json";
+import tagListData from "@/assets/tagList.json";
 
 export const useHabbitsStore = defineStore("habbits", () => {
 	const authStore = useAuthStore();
@@ -306,15 +308,11 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 	// Habbit functions
 	async function loadHabbitsFromFile() {
-		const response = await fetch("/src/assets/habbitList.json");
-		const data = await response.json();
-		allHabbitsList.value = data;
+		allHabbitsList.value = habbitListData as Habbit[];
 	}
 
 	async function loadTagCategories() {
-		const response = await fetch("/src/assets/tagList.json");
-		const data = await response.json();
-		tag_categories.value = data;
+		tag_categories.value = tagListData as Record<string, string[]>;
 	}
 
 	async function addHabbitToSelectedDay(habbit: Habbit) {
