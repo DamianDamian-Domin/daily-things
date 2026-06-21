@@ -1,6 +1,8 @@
 <template>
 	<div
-		class="min-h-screen flex items-center justify-center surface-ground relative overflow-hidden">
+		v-if="authStore.isAuthDialogOpen"
+		class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 sm:p-8 overflow-hidden"
+		@click.self="handleGuestLogin">
 		<div class="absolute inset-0 pointer-events-none overflow-hidden">
 			<span
 				v-for="(habit, index) in fallingHabits"
@@ -18,7 +20,13 @@
 		</div>
 
 		<div
-			class="card-a surface-content w-full max-w-md flex flex-col items-center relative z-10 py-6 px-4 sm:px-8">
+			class="card-a surface-content w-full max-w-md flex flex-col items-center relative z-10 py-6 px-4 sm:px-8 shadow-2xl max-h-full overflow-y-auto rounded-2xl">
+			<button
+				@click="authStore.isAuthDialogOpen = false"
+				class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors text-c">
+				<i class="pi pi-times"></i>
+			</button>
+
 			<div class="logo-mask h-24 w-24">
 				<img
 					:src="logo"
@@ -74,13 +82,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import Button from "primevue/button";
 import logoFile from "@/assets/logo.png";
 import { useHabbitsStore } from "@/stores/habbits";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
-import { useRouter } from "vue-router";
 
 import LoginForm from "@/components/login_view/LoginForm.vue";
 import RegisterForm from "@/components/login_view/RegisterForm.vue";
@@ -89,11 +96,8 @@ const habbitsStore = useHabbitsStore();
 const { allHabbitsList } = storeToRefs(habbitsStore);
 const logo = logoFile;
 
-// --- NOWE: Inicjalizacja store i routera ---
 const authStore = useAuthStore();
-const router = useRouter();
 const isLoadingGuest = ref(false);
-// -------------------------------------------
 
 const form = ref("login");
 
@@ -101,23 +105,31 @@ const openRegisterForm = () => (form.value = "register");
 const openLoginForm = () => (form.value = "login");
 
 const handleGuestLogin = async () => {
-	await authStore.loginAsGuest();
-	router.push("/");
+	isLoadingGuest.value = true;
+	try {
+		await authStore.loginAsGuest();
+		authStore.isAuthDialogOpen = false;
+	} finally {
+		isLoadingGuest.value = false;
+	}
 };
 
 function getRandomHabbits(count: number) {
+	if (!allHabbitsList.value || allHabbitsList.value.length === 0) return [];
 	const shuffled = [...allHabbitsList.value].sort(() => 0.5 - Math.random());
 	return shuffled.slice(0, count);
 }
 
-const fallingHabits = getRandomHabbits(8).map((h) => ({
-	icon: h.icon,
-	left: Math.random() * 100, // starting position in %
-	duration: 5 + Math.random() * 6, // fall duration
-	delay: Math.random() * 5, // animation delay
-	size: 20 + Math.random() * 30, // icon size in px
-	angle: -30 + Math.random() * 60, // rotation angle
-}));
+const fallingHabits = computed(() => {
+	return getRandomHabbits(8).map((h) => ({
+		icon: h.icon,
+		left: Math.random() * 100,
+		duration: 5 + Math.random() * 6,
+		delay: Math.random() * 5,
+		size: 20 + Math.random() * 30,
+		angle: -30 + Math.random() * 60,
+	}));
+});
 </script>
 
 <style scoped>
@@ -126,11 +138,9 @@ const fallingHabits = getRandomHabbits(8).map((h) => ({
 		transform: translateY(-100%) rotate(0deg);
 		opacity: 0;
 	}
-
 	10% {
 		opacity: 1;
 	}
-
 	100% {
 		transform: translateY(120vh) rotate(360deg);
 		opacity: 0;

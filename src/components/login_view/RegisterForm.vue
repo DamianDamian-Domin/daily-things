@@ -290,6 +290,7 @@ const onRegister = async () => {
 	try {
 		await authStore.register(email.value, password.value);
 		visible.value = true;
+		authStore.isAuthDialogOpen = false;
 	} catch (e) {
 		console.error("Failed to register", e);
 	}
