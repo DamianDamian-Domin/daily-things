@@ -20,6 +20,7 @@ export const useAuthStore = defineStore("auth", () => {
 	const user = ref<User | null>(null);
 	const loading = ref(true);
 	const error = ref<string | null>(null); // Przydatne do rzucania błędami w UI
+	const isAuthDialogOpen = ref(false);
 
 	// ==========================================
 	// 2. GETTERY (Computed)
@@ -176,5 +177,6 @@ export const useAuthStore = defineStore("auth", () => {
 		register,
 		logout,
 		loginAsGuest,
+		isAuthDialogOpen,
 	};
 });

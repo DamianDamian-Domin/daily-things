@@ -74,10 +74,20 @@
 					<div class="popover-divider"></div>
 
 					<button
+						v-if="!isGuest"
 						class="popover-item popover-item-logout"
 						@click="logOut()">
 						<i class="pi pi-sign-out popover-item-icon"></i>
 						<span>Sign out</span>
+					</button>
+					<button
+						v-else
+						class="popover-item"
+						@click="openAuth">
+						<i class="pi pi-sign-in popover-item-icon text-orange-500"></i>
+						<span class="text-orange-500 font-semibold"
+							>Sign in / Register</span
+						>
 					</button>
 				</div>
 			</Popover>
@@ -109,13 +119,8 @@
 									"></i>
 							</div>
 							<div>
-								<h4
-									class="font-semibold m-0 text-b">
-									Dark Mode
-								</h4>
-								<p class="text-sm text-c m-0">
-									Change app appearance
-								</p>
+								<h4 class="font-semibold m-0 text-b">Dark Mode</h4>
+								<p class="text-sm text-c m-0">Change app appearance</p>
 							</div>
 						</div>
 						<ToggleSwitch v-model="preferencesStore.isDarkMode" />
@@ -133,10 +138,7 @@
 									"></i>
 							</div>
 							<div>
-								<h4
-									class="font-semibold m-0 text-b">
-									Sound Effects
-								</h4>
+								<h4 class="font-semibold m-0 text-b">Sound Effects</h4>
 								<p class="text-sm text-c m-0">Play UI sounds</p>
 							</div>
 						</div>
@@ -155,13 +157,8 @@
 									"></i>
 							</div>
 							<div>
-								<h4
-									class="font-semibold m-0 text-b">
-									Animations
-								</h4>
-								<p class="text-sm text-c m-0">
-									Confetti and visual effects
-								</p>
+								<h4 class="font-semibold m-0 text-b">Animations</h4>
+								<p class="text-sm text-c m-0">Confetti and visual effects</p>
 							</div>
 						</div>
 						<ToggleSwitch v-model="preferencesStore.animationsEnabled" />
@@ -176,10 +173,7 @@
 								<i class="pi pi-shield text-orange-500"></i>
 							</div>
 							<div>
-								<h4
-									class="font-semibold m-0 text-b">
-									Cookie Preferences
-								</h4>
+								<h4 class="font-semibold m-0 text-b">Cookie Preferences</h4>
 								<p class="text-sm text-c m-0">Review and update consent</p>
 							</div>
 						</div>
@@ -197,7 +191,8 @@
 
 					<div class="h-px w-full bg-surface-200 dark:bg-surface-700"></div>
 
-					<div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+					<div
+						class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
 						<div class="flex items-center gap-4">
 							<div
 								class="w-10 h-10 rounded-full bg-surface-100 dark:bg-surface-800 flex items-center justify-center">
@@ -312,6 +307,11 @@ const onSettings = () => {
 	showPreferences.value = true;
 };
 
+const openAuth = () => {
+	op.value.hide();
+	authStore.isAuthDialogOpen = true;
+};
+
 const onManageCookies = () => {
 	if (typeof cookieConsentStore.reopenBanner === "function") {
 		cookieConsentStore.reopenBanner();
@@ -337,13 +337,9 @@ const openLegalDocument = (document: "privacy" | "terms") => {
 };
 
 const logOut = async () => {
-	// <--- Dodajemy 'async'
 	op.value.hide();
-	await authStore.logout(); // <--- Dodajemy 'await'
-	dailyGoalsList.value = [];
-	userHabbitsList.value = [];
-
-	router.push({ name: "login" }); // <--- Ta linijka załatwia przekierowanie
+	await authStore.logout();
+	authStore.isAuthDialogOpen = true;
 };
 </script>
 

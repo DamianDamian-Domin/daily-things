@@ -658,6 +658,13 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	loadHabbitsFromFile();
 	loadTagCategories();
 
+	function clearData() {
+		userHabbitsList.value = [];
+		dailyGoalsList.value = [];
+		recentHabbits.value = [];
+		refDate.value = new Date(); // Resetujemy datę kalendarza do "dzisiaj"
+	}
+
 	return {
 		refDate,
 		dateFormated,
@@ -692,5 +699,6 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		hasHabbitsOnDate,
 		loadHabbitsForMonth,
 		goalsStreak, // Wyeksportowany w pełni sprawny streak celów!
+		clearData,
 	};
 });

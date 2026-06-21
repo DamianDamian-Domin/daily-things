@@ -7,7 +7,14 @@ import { nanoid } from "nanoid";
 import { useAuthStore } from "./auth";
 import { handleAsyncAction } from "@/stores/asyncActionHandler";
 
-export type TodoColor = "" | "red" | "orange" | "yellow" | "green" | "blue" | "purple";
+export type TodoColor =
+	| ""
+	| "red"
+	| "orange"
+	| "yellow"
+	| "green"
+	| "blue"
+	| "purple";
 
 export interface TodoItem {
 	id: string;
@@ -196,7 +203,10 @@ export const useTodosStore = defineStore("todos", () => {
 	// =========================
 	// UPDATE TODO COLOR
 	// =========================
-	async function updateTodoColor(todoId: string, color: import("./todos").TodoColor) {
+	async function updateTodoColor(
+		todoId: string,
+		color: import("./todos").TodoColor,
+	) {
 		const todo = userTodosList.value.find((t) => t.id === todoId);
 		if (!todo) return;
 		todo.color = color;
@@ -223,6 +233,13 @@ export const useTodosStore = defineStore("todos", () => {
 		);
 	}
 
+	// =========================
+	// CLEAR DATA (LOGOUT)
+	// =========================
+	function clearData() {
+		userTodosList.value = [];
+	}
+
 	return {
 		userTodosList,
 		sortedTodos,
@@ -234,5 +251,6 @@ export const useTodosStore = defineStore("todos", () => {
 		toggleTodo,
 		clearCompletedTodos,
 		updateTodoColor,
+		clearData,
 	};
 });
