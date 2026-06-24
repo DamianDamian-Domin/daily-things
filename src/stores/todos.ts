@@ -115,6 +115,9 @@ export const useTodosStore = defineStore("todos", () => {
 
 				userTodosList.value.push(newTodo);
 
+				if (authStore.isGuest) {
+					authStore.showGuestNotification = true;
+				}
 				const userDocRef = doc(db, "users", userUid.value!!);
 				await updateDoc(userDocRef, { todos: userTodosList.value });
 			},

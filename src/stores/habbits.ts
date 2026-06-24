@@ -360,7 +360,13 @@ export const useHabbitsStore = defineStore("habbits", () => {
 							goalsSnapshot: [...snapshotToSave],
 						});
 					}
+
 					addToRecentHabbits(habbit.name);
+
+					// !!! TO JEST NASZ KLUCZOWY DODATEK !!!
+					if (authStore.isGuest) {
+						authStore.showGuestNotification = true;
+					}
 				} catch (error) {
 					console.error("Error adding habbit to Firestore:", error);
 				}

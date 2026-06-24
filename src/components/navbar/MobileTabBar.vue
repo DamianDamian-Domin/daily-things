@@ -6,6 +6,14 @@
 			class="tab-btn"
 			:class="{ active: activeTab === tab.id }"
 			@click="onTab(tab)">
+			<span
+				v-if="
+					tab.id === 'profile' &&
+					authStore.isGuest &&
+					authStore.showGuestNotification
+				"
+				class="absolute top-1.5 right-[25%] w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-white dark:border-gray-900 z-10"></span>
+
 			<i :class="['pi', tab.icon, 'tab-icon']"></i>
 			<span class="tab-label">{{ tab.label }}</span>
 		</button>
@@ -35,9 +43,7 @@
 							"></i>
 					</div>
 					<div>
-						<h4 class="font-semibold m-0 text-c">
-							Dark Mode
-						</h4>
+						<h4 class="font-semibold m-0 text-c">Dark Mode</h4>
 						<p class="text-sm text-c m-0">Change app appearance</p>
 					</div>
 				</div>
@@ -56,9 +62,7 @@
 							"></i>
 					</div>
 					<div>
-						<h4 class="font-semibold m-0 text-c">
-							Sound Effects
-						</h4>
+						<h4 class="font-semibold m-0 text-c">Sound Effects</h4>
 						<p class="text-sm text-c m-0">Play UI sounds</p>
 					</div>
 				</div>
@@ -77,12 +81,8 @@
 							"></i>
 					</div>
 					<div>
-						<h4 class="font-semibold m-0 text-b">
-							Animations
-						</h4>
-						<p class="text-sm text-c m-0">
-							Confetti and visual effects
-						</p>
+						<h4 class="font-semibold m-0 text-b">Animations</h4>
+						<p class="text-sm text-c m-0">Confetti and visual effects</p>
 					</div>
 				</div>
 				<ToggleSwitch v-model="preferencesStore.animationsEnabled" />
@@ -150,6 +150,7 @@ import { ref, computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 import LegalDocumentsDialog from "@/components/legal/LegalDocumentsDialog.vue";
+import { useAuthStore } from "@/stores/auth";
 
 // 1. Zastępujemy commonStore naszym nowym preferencesStore
 import { usePreferencesStore } from "@/stores/userPreferences";
@@ -160,6 +161,7 @@ import Sidebar from "primevue/sidebar";
 import ToggleSwitch from "primevue/toggleswitch"; // Lub "primevue/inputswitch" w starszym PrimeVue
 import Button from "primevue/button";
 
+const authStore = useAuthStore();
 const carouselStore = useCarouselStore();
 const preferencesStore = usePreferencesStore();
 const cookieConsentStore = useCookieConsentStore();

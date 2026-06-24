@@ -216,9 +216,12 @@
 						border: 1px solid var(--p-orange-200);
 					">
 					<i class="pi pi-clock"></i>
-					<span
-						>Left free days: <strong>{{ daysLeft }}</strong></span
-					>
+					<span class="font-medium">
+						Your guest account will expire in
+						<span class="font-bold text-orange-600 dark:text-orange-300"
+							>{{ authStore.guestDaysRemaining }} days</span
+						>.
+					</span>
 				</div>
 				<p
 					style="
@@ -255,31 +258,11 @@ import RegisterForm from "@/components/login_view/RegisterForm.vue";
 const visible = defineModel<boolean>({ default: false });
 
 const authStore = useAuthStore();
-const { user, hasPasswordProvider } = storeToRefs(authStore);
+const { user, hasPasswordProvider, guestDaysRemaining } =
+	storeToRefs(authStore);
 
 // Sprawdzamy, czy użytkownik jest gościem
 const isGuest = computed(() => user.value?.isAnonymous ?? false);
-
-const daysLeft = computed(() => {
-	const creationTime = user.value?.metadata.creationTime;
-
-	if (!isGuest.value || !creationTime) return 0;
-
-	const createdDate = new Date(creationTime);
-	const now = new Date();
-
-	// Różnica w czasie (w milisekundach)
-	const diffTime = now.getTime() - createdDate.getTime();
-
-	// Przeliczenie na pełne dni
-	const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-	// Od 7 dni odejmujemy te, które już minęły
-	const remaining = 7 - diffDays;
-
-	// Upewniamy się, że nie zejdzie poniżej 0
-	return remaining > 0 ? remaining : 0;
-});
 
 // === User data ===
 const userEmail = computed(() => user.value?.email ?? "");
