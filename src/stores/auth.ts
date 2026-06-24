@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import {
 	signInWithEmailAndPassword,
 	createUserWithEmailAndPassword,
@@ -11,7 +11,8 @@ import {
 	User,
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "@/firebase"; // Upewnij się, że ścieżka do Twojego pliku configu jest poprawna
+import { auth, db } from "@/firebase";
+import { toDateKey } from "@/utils/timeUtils";
 
 export const useAuthStore = defineStore("auth", () => {
 	// ==========================================
@@ -21,6 +22,21 @@ export const useAuthStore = defineStore("auth", () => {
 	const loading = ref(true);
 	const error = ref<string | null>(null); // Przydatne do rzucania błędami w UI
 	const isAuthDialogOpen = ref(false);
+	const isGuestInfoModalOpen = ref(false);
+	const showGuestNotification = ref(
+		localStorage.getItem("guestNotification") === "true",
+	);
+
+	// Automatycznie zapisujemy do localStorage lub CZYŚCIMY, gdy flaga zgaśnie
+	watch(showGuestNotification, (newValue) => {
+		if (newValue) {
+			localStorage.setItem("guestNotification", "true");
+		} else {
+			// Gdy użytkownik się zaloguje/zarejestruje i flaga zmieni się na false,
+			// fizycznie usuwamy ślad z przeglądarki!
+			localStorage.removeItem("guestNotification");
+		}
+	});
 
 	// ==========================================
 	// 2. GETTERY (Computed)
@@ -36,30 +52,36 @@ export const useAuthStore = defineStore("auth", () => {
 	const isGuest = computed(() => user.value?.isAnonymous ?? false);
 
 	// Sprawdzamy czy minęło 7 dni dla gościa
+	// isGuestExpired też staje się funkcją
 	const isGuestExpired = computed(() => {
+		return guestDaysRemaining.value <= 6;
+		// return guestDaysRemaining.value === 0;
+	});
+
+	// Zwraca ilość dni jako zwykła funkcja, aby czas zawsze był "świeży"
+	const guestDaysRemaining = computed(() => {
 		if (
 			!user.value ||
 			!user.value.isAnonymous ||
 			!user.value.metadata.creationTime
-		)
-			return false;
+		) {
+			return 7;
+		}
 
-		const creationTime = new Date(user.value.metadata.creationTime).getTime();
-		const now = Date.now();
-		const daysSinceCreation = (now - creationTime) / (1000 * 60 * 60 * 24);
+		const creationKey = toDateKey(new Date(user.value.metadata.creationTime));
+		// Używamy po prostu zwykłego now Date() - bez żadnych triggerów
+		const todayKey = toDateKey(new Date());
 
-		return daysSinceCreation >= 7;
+		const creationTime = new Date(creationKey).getTime();
+		const todayTime = new Date(todayKey).getTime();
+
+		const daysSinceCreation = Math.round(
+			(todayTime - creationTime) / (1000 * 60 * 60 * 24),
+		);
+		const remaining = 7 - daysSinceCreation;
+
+		return remaining > 0 ? remaining : 0;
 	});
-
-	// const isGuestExpired = computed(() => {
-	// 	// Zamiast zwracać "null", jeśli nie ma usera, twardo zwracamy false
-	// 	if (!user.value || !user.value.isAnonymous) {
-	// 		return false;
-	// 	}
-
-	// 	// Jeśli dotarliśmy tutaj, to user istnieje i jest gościem
-	// 	return true;
-	// });
 
 	// ==========================================
 	// 3. AKCJE (Actions)
@@ -105,6 +127,7 @@ export const useAuthStore = defineStore("auth", () => {
 		error.value = null;
 		try {
 			await signInWithEmailAndPassword(auth, email, password);
+			showGuestNotification.value = false;
 		} catch (err: any) {
 			error.value = err.message;
 			throw err;
@@ -130,6 +153,7 @@ export const useAuthStore = defineStore("auth", () => {
 					},
 					{ merge: true },
 				);
+				showGuestNotification.value = false;
 			} else {
 				// Zwykła rejestracja (jeśli ktoś po prostu zakłada konto z wylogowanego ekranu)
 				const userCredential = await createUserWithEmailAndPassword(
@@ -146,6 +170,7 @@ export const useAuthStore = defineStore("auth", () => {
 					},
 					{ merge: true },
 				);
+				showGuestNotification.value = false;
 			}
 		} catch (err: any) {
 			error.value = err.message;
@@ -178,5 +203,8 @@ export const useAuthStore = defineStore("auth", () => {
 		logout,
 		loginAsGuest,
 		isAuthDialogOpen,
+		showGuestNotification,
+		guestDaysRemaining,
+		isGuestInfoModalOpen,
 	};
 });

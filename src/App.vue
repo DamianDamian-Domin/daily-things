@@ -24,7 +24,7 @@
 		</div>
 
 		<CookiesConsentBanner :bottom-offset="cookieBannerOffset" />
-
+		<GuestInfoDialog />
 		<AuthDialog />
 	</div>
 </template>
@@ -43,6 +43,7 @@ import NavBar from "@/components/navbar/NavBar.vue";
 import MobileTabBar from "@/components/navbar/MobileTabBar.vue";
 import CookiesConsentBanner from "@/components/CookiesConsentBanner.vue";
 import AuthDialog from "@/components/login_view/AuthDialog.vue";
+import GuestInfoDialog from "@/components/navbar/GuestInfoDialog.vue";
 import Divider from "primevue/divider";
 import { watch } from "vue";
 

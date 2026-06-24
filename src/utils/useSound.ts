@@ -85,5 +85,19 @@ export function useSound() {
 		playTone(784, 0.4, "sine", 0.1, melody.length * 0.12);
 	}
 
-	return { playCheck, playUncheck, playAdd, playHabitCheck, playVictory };
+	function playNotification() {
+		if (!preferencesStore.soundEnabled) return;
+
+		// 1046 Hz (C6), czas 0.4s, niska głośność (0.06) żeby nie irytować
+		playTone(1046, 0.4, "sine", 0.06);
+	}
+
+	return {
+		playCheck,
+		playUncheck,
+		playAdd,
+		playHabitCheck,
+		playVictory,
+		playNotification,
+	};
 }

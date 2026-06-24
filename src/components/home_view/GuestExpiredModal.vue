@@ -1,9 +1,9 @@
 <template>
 	<Dialog
-		v-model:visible="showModal"
+		:visible="authStore.isGuestExpired && !authStore.isAuthDialogOpen"
 		modal
-		:dismissableMask="false"
 		:closable="false"
+		:dismissableMask="false"
 		:closeOnEscape="false"
 		:show-header="false"
 		class="hs-dialog w-[clamp(22rem,85vw,42rem)]">
@@ -12,55 +12,39 @@
 				class="hs-dialog-hero-bg"
 				aria-hidden="true"></div>
 			<span class="hs-dialog-emoji">⏳</span>
-			<h3 class="hs-dialog-title">Koniec okresu próbnego!</h3>
-			<p class="hs-dialog-subtitle">Czas zachować swoje dane</p>
+			<h3 class="hs-dialog-title">End of trial period!</h3>
+			<p class="hs-dialog-subtitle">Time to save your data</p>
 		</div>
 
 		<div
 			class="hs-dialog-body flex flex-col items-center justify-center text-center">
 			<p
 				class="text-[0.95rem] leading-relaxed text-gray-600 dark:text-gray-400 mt-2 mb-2">
-				Minęło 7 dni od uruchomienia aplikacji jako gość. Załóż darmowe konto,
-				aby odblokować pełen dostęp i nie stracić swojej dotychczasowej historii
-				celów i nawyków.
+				7 days have passed since you started using the app as a guest. Create a
+				free account, to unlock full access and avoid losing your current
+				history of goals and habits.
 			</p>
 		</div>
 
 		<div class="hs-dialog-footer !justify-center">
 			<button
 				class="hs-done-btn w-full sm:w-3/4"
-				@click="goToRegister">
-				Przejdź do logowania
+				@click="openAuthModal">
+				Go to login
 			</button>
 		</div>
 	</Dialog>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
 import { useAuthStore } from "@/stores/auth";
-import { useRouter, useRoute } from "vue-router";
 import Dialog from "primevue/dialog";
 
 const authStore = useAuthStore();
-const router = useRouter();
-const route = useRoute(); // <-- Dodajemy użycie aktualnej ścieżki
 
-const showModal = ref(false);
-
-// Wyświetlamy modal TYLKO wtedy, gdy:
-// 1. Czas gościa wygasł
-// 2. NIE jesteśmy na stronie logowania (żeby go nie blokować)
-watch(
-	() => authStore.isGuestExpired && route.name !== "login",
-	(shouldShow) => {
-		showModal.value = shouldShow;
-	},
-	{ immediate: true },
-);
-
-const goToRegister = () => {
-	router.push({ name: "login" });
+// Funkcja otwiera formularz logowania/rejestracji w formie modalu
+const openAuthModal = () => {
+	authStore.isAuthDialogOpen = true;
 };
 </script>
 
