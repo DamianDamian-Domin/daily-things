@@ -22,7 +22,9 @@
 			<MobileTabBar />
 		</div>
 
-		<CookiesConsentBanner :bottom-offset="cookieBannerOffset" />
+		<CookiesConsentBanner
+			v-if="!isLoginRoute"
+			:bottom-offset="cookieBannerOffset" />
 		<GuestInfoDialog />
 		<AuthDialog />
 	</div>
@@ -30,7 +32,7 @@
 
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useLoaderStore } from "./stores/loader";
 import { useAuthStore } from "@/stores/auth";
 import { useHabbitsStore } from "@/stores/habbits";
@@ -44,8 +46,10 @@ import AuthDialog from "@/components/login_view/AuthDialog.vue";
 import GuestInfoDialog from "@/components/navbar/GuestInfoDialog.vue";
 import Divider from "primevue/divider";
 import { watch } from "vue";
+import { isNativePlatform } from "@/utils/platform";
 
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
 const habbitsStore = useHabbitsStore();
 const todosStore = useTodosStore();
@@ -80,9 +84,8 @@ onBeforeUnmount(() => {
 });
 
 // Zmieniono na true, ponieważ nie chowamy już navbara na dedykowanej stronie logowania
-const showNavbar = computed(() => {
-	return true;
-});
+const isLoginRoute = computed(() => route.name === "login");
+const showNavbar = computed(() => !isLoginRoute.value);
 
 const cookieBannerOffset = computed(() => {
 	return showNavbar.value && isMobileLayout.value ? 68 : 0;
@@ -93,12 +96,18 @@ watch(
 	() => authStore.userUid,
 	async (newUid) => {
 		if (newUid) {
+			if (isNativePlatform && isLoginRoute.value) {
+				await router.replace({ name: "home" });
+			}
 			// Ktoś się zalogował (lub wszedł jako gość) -> Pobieramy wszystkie dane
 			await todosStore.loadTodos();
 			await habbitsStore.loadDailyGoals();
 			await habbitsStore.loadRecentHabbits();
 			await habbitsStore.loadHabbitsForDate(new Date());
 		} else {
+			if (isNativePlatform && !isLoginRoute.value) {
+				await router.replace({ name: "login" });
+			}
 			// Ktoś się wylogował -> Czyścimy stan aplikacji
 			todosStore.clearData();
 			habbitsStore.clearData();

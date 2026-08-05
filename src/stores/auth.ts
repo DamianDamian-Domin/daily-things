@@ -1,6 +1,5 @@
 import { defineStore } from "pinia";
 import { ref, computed, watch } from "vue";
-import { Capacitor } from "@capacitor/core";
 import {
 	signInWithEmailAndPassword,
 	createUserWithEmailAndPassword,
@@ -16,6 +15,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/firebase";
+import { isWebPlatform } from "@/utils/platform";
 
 export const useAuthStore = defineStore("auth", () => {
 	// ==========================================
@@ -29,9 +29,6 @@ export const useAuthStore = defineStore("auth", () => {
 	const showGuestNotification = ref(
 		localStorage.getItem("guestNotification") === "true",
 	);
-
-	// Flaga do Capacitora, żeby wiedzieć, na czym jesteśmy
-	const isNative = Capacitor.isNativePlatform();
 
 	// Automatycznie zapisujemy do localStorage lub CZYŚCIMY, gdy flaga zgaśnie
 	watch(showGuestNotification, (newValue) => {
@@ -56,20 +53,20 @@ export const useAuthStore = defineStore("auth", () => {
 
 	// Ta funkcja wywoła systemowy dialog "Czy na pewno chcesz opuścić stronę?"
 	const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-		if (!isNative && isGuest.value) {
+		if (isWebPlatform && isGuest.value) {
 			e.preventDefault();
 			e.returnValue = ""; // Wymagane przez większość nowoczesnych przeglądarek
 		}
 	};
 
 	const setupUnloadListener = () => {
-		if (!isNative) {
+		if (isWebPlatform) {
 			window.addEventListener("beforeunload", handleBeforeUnload);
 		}
 	};
 
 	const removeUnloadListener = () => {
-		if (!isNative) {
+		if (isWebPlatform) {
 			window.removeEventListener("beforeunload", handleBeforeUnload);
 		}
 	};
@@ -95,7 +92,7 @@ export const useAuthStore = defineStore("auth", () => {
 				loading.value = false;
 
 				// Jeśli startujemy apkę i ktoś ma od razu flagę isGuest, odpal nasłuchiwacz
-				if (currentUser?.isAnonymous && !isNative) {
+				if (currentUser?.isAnonymous && isWebPlatform) {
 					setupUnloadListener();
 				}
 
@@ -109,7 +106,7 @@ export const useAuthStore = defineStore("auth", () => {
 		error.value = null;
 		try {
 			// 1. Zmieniamy persystencję NA CHWILĘ na sesyjną (tylko na Webie)
-			if (!isNative) {
+			if (isWebPlatform) {
 				await setPersistence(auth, browserSessionPersistence);
 			}
 
@@ -136,7 +133,7 @@ export const useAuthStore = defineStore("auth", () => {
 		error.value = null;
 		try {
 			// Przywracamy domyślną "trwałą" persystencję przed zalogowaniem na konto stałe
-			if (!isNative) {
+			if (isWebPlatform) {
 				await setPersistence(auth, browserLocalPersistence);
 			}
 			await signInWithEmailAndPassword(auth, email, password);
@@ -155,7 +152,7 @@ export const useAuthStore = defineStore("auth", () => {
 				const credential = EmailAuthProvider.credential(email, password);
 
 				// Przed zlinkowaniem kont, przywracamy trwałą sesję, żeby nie wylogowało nowo zarejestrowanego usera po wyjściu z przeglądarki
-				if (!isNative) {
+				if (isWebPlatform) {
 					await setPersistence(auth, browserLocalPersistence);
 				}
 
@@ -172,7 +169,7 @@ export const useAuthStore = defineStore("auth", () => {
 				showGuestNotification.value = false;
 			} else {
 				// Zwykła rejestracja
-				if (!isNative) {
+				if (isWebPlatform) {
 					await setPersistence(auth, browserLocalPersistence);
 				}
 				const userCredential = await createUserWithEmailAndPassword(

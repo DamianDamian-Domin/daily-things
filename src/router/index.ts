@@ -1,7 +1,8 @@
 import { createRouter, createWebHistory } from "vue-router";
-import { Capacitor } from "@capacitor/core";
 import { useAuthStore } from "@/stores/auth";
+import { isNativePlatform } from "@/utils/platform";
 import HomeView from "@/views/HomeView.vue";
+import LoginView from "@/views/LoginView.vue";
 
 const router = createRouter({
 	history: createWebHistory(import.meta.env.BASE_URL),
@@ -11,34 +12,43 @@ const router = createRouter({
 			name: "home",
 			component: HomeView,
 		},
+		{
+			path: "/login",
+			name: "login",
+			component: LoginView,
+		},
 	],
 });
 
-router.beforeEach(async () => {
+router.beforeEach(async (to) => {
 	const authStore = useAuthStore();
-	const isNative = Capacitor.isNativePlatform();
 
-	// 1. Upewniamy się, że stan autoryzacji Firebase został załadowany.
-	// authStore.loading to stan, który ustawia się na false w initAuth(),
-	// gdy onAuthStateChanged odpali się po raz pierwszy.
 	if (authStore.loading) {
 		await authStore.initAuth();
 	}
 
-	// 2. Logika wymuszonego okna logowania.
-	// Jeżeli użytkownik nie jest zalogowany (brak sesji)...
-	if (!authStore.isAuthenticated) {
-		// ... a platforma to mobile, otwórz dialog i NIE wpuszczaj do aplikacji (jeśli byłyby tu inne podstrony, można wymusić zatrzymanie nawigacji wracając np. na '/login').
-		// Z racji braku pełnych widoków logowania, otwieramy modal.
-		if (isNative) {
-			authStore.isAuthDialogOpen = true;
-		}
-		// ... na Webie nie zmuszamy do logowania z marszu – modal można odpalić,
-		// ale użytkownik ma wybór (guzik gościa lub zamknięcie dialogu).
-		else {
-			authStore.isAuthDialogOpen = true;
-		}
+	// Na webie użytkownik może zamknąć dialog lub kontynuować jako gość.
+	if (!isNativePlatform) {
+		return true;
 	}
+
+	// W aplikacji natywnej nieautoryzowany użytkownik nie może wejść do widoku
+	// aplikacji. Trasa /login renderuje wyłącznie pełnoekranowy AuthDialog.
+	if (!authStore.isAuthenticated && to.name !== "login") {
+		authStore.isAuthDialogOpen = true;
+		return { name: "login", replace: true };
+	}
+
+	if (authStore.isAuthenticated && to.name === "login") {
+		authStore.isAuthDialogOpen = false;
+		return { name: "home", replace: true };
+	}
+
+	if (!authStore.isAuthenticated) {
+		authStore.isAuthDialogOpen = true;
+	}
+
+	return true;
 });
 
 export default router;
