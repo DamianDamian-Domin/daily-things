@@ -82,7 +82,7 @@
 						label="Continue as Guest"
 						icon="pi pi-user"
 						outlined
-						class="w-full max-w-[200px]"
+						class="w-[200px] shrink-0"
 						:loading="isLoadingGuest"
 						@click="handleGuestLogin" />
 				</div>
@@ -100,6 +100,7 @@ import { useHabbitsStore } from "@/stores/habbits";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
 import { isNativePlatform, isWebPlatform } from "@/utils/platform";
+import { useLoaderStore } from "@/stores/loader";
 
 import LoginForm from "@/components/login_view/LoginForm.vue";
 import RegisterForm from "@/components/login_view/RegisterForm.vue";
@@ -109,6 +110,7 @@ const { allHabbitsList } = storeToRefs(habbitsStore);
 const logo = logoFile;
 
 const authStore = useAuthStore();
+const loaderStore = useLoaderStore();
 const isLoadingGuest = ref(false);
 
 const form = ref("login");
@@ -124,12 +126,16 @@ const onBackgroundClick = () => {
 };
 
 const handleGuestLogin = async () => {
+	if (isLoadingGuest.value) return;
+
 	isLoadingGuest.value = true;
+	loaderStore.startLoading();
 	try {
 		await authStore.loginAsGuest();
 		authStore.isAuthDialogOpen = false;
 	} finally {
 		isLoadingGuest.value = false;
+		loaderStore.stopLoading();
 	}
 };
 

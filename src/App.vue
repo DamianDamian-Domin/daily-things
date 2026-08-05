@@ -33,7 +33,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useLoaderStore } from "./stores/loader";
 import { useAuthStore } from "@/stores/auth";
 import { useHabbitsStore } from "@/stores/habbits";
 import { useTodosStore } from "@/stores/todos";
