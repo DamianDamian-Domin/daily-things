@@ -8,18 +8,15 @@
 		:closable="false">
 		<div class="flex flex-col gap-4 text-surface-700 dark:text-surface-300">
 			<p class="m-0 leading-relaxed">
-				You are currently using a temporary guest account. Create a free account
-				to permanently save your habits and access them safely on any device.
+				You are using a temporary guest session. Create a free account to save
+				your habits permanently and access them safely on any device.
 			</p>
 
 			<div
 				class="flex items-center gap-3 p-3 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 rounded-xl border border-orange-200 dark:border-orange-800/50">
-				<i class="pi pi-clock text-xl"></i>
+				<i class="pi pi-exclamation-triangle text-xl"></i>
 				<span class="font-medium">
-					Your guest account will expire in
-					<span class="font-bold text-orange-600 dark:text-orange-300"
-						>{{ authStore.guestDaysRemaining }} days</span
-					>.
+					Your guest session ends when you close this browser tab.
 				</span>
 			</div>
 		</div>

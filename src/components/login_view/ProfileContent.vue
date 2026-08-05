@@ -209,12 +209,7 @@
 						border: 1px solid var(--p-orange-200);
 					">
 					<i class="pi pi-clock"></i>
-					<span class="font-medium">
-						Your guest account will expire in
-						<span class="font-bold text-orange-600 dark:text-orange-300"
-							>{{ authStore.guestDaysRemaining }} days</span
-						>.
-					</span>
+					<span class="font-medium">Temporary guest session</span>
 				</div>
 				<p
 					style="
@@ -223,9 +218,8 @@
 						margin-bottom: 1.5rem;
 						line-height: 1.4;
 					">
-					You're currently testing the app as a guest. Create a full account to
-					change your name and password, and protect your history and daily
-					goals from deletion after 7 days.
+					You're currently using the app as a guest. Create a full account before
+					closing this browser tab to keep your history and daily goals.
 				</p>
 				<RegisterForm
 					:isUpgradeMode="true"
@@ -248,15 +242,14 @@ const props = defineProps<{
 }>();
 
 const authStore = useAuthStore();
-const { user, hasPasswordProvider, guestDaysRemaining } =
-	storeToRefs(authStore);
+const { user, hasPasswordProvider } = storeToRefs(authStore);
 
 const isGuest = computed(() => user.value?.isAnonymous ?? false);
 
 const userEmail = computed(() => user.value?.email ?? "");
 
 const userDisplayName = computed(() => {
-	if (isGuest.value) return "Guest (Trial)";
+	if (isGuest.value) return "Guest";
 	return user.value?.displayName ?? userEmail.value.split("@")[0] ?? "";
 });
 

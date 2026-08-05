@@ -14,7 +14,6 @@
 		<Loader></Loader>
 		<div class="flex-1 flex flex-col min-h-0 content-scroll">
 			<RouterView />
-			<GuestExpiredModal />
 		</div>
 
 		<div
@@ -38,7 +37,6 @@ import { useHabbitsStore } from "@/stores/habbits";
 import { useTodosStore } from "@/stores/todos";
 
 import Loader from "./components/home_view/Loader.vue";
-import GuestExpiredModal from "./components/home_view/GuestExpiredModal.vue";
 import NavBar from "@/components/navbar/NavBar.vue";
 import MobileTabBar from "@/components/navbar/MobileTabBar.vue";
 import CookiesConsentBanner from "@/components/CookiesConsentBanner.vue";

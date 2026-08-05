@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { ref, computed, watch } from "vue";
+import { Capacitor } from "@capacitor/core";
 import {
 	signInWithEmailAndPassword,
 	createUserWithEmailAndPassword,
@@ -8,11 +9,13 @@ import {
 	onAuthStateChanged,
 	linkWithCredential,
 	EmailAuthProvider,
+	setPersistence,
+	browserSessionPersistence,
+	browserLocalPersistence,
 	User,
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/firebase";
-import { toDateKey } from "@/utils/timeUtils";
 
 export const useAuthStore = defineStore("auth", () => {
 	// ==========================================
@@ -20,20 +23,21 @@ export const useAuthStore = defineStore("auth", () => {
 	// ==========================================
 	const user = ref<User | null>(null);
 	const loading = ref(true);
-	const error = ref<string | null>(null); // Przydatne do rzucania błędami w UI
+	const error = ref<string | null>(null);
 	const isAuthDialogOpen = ref(false);
 	const isGuestInfoModalOpen = ref(false);
 	const showGuestNotification = ref(
 		localStorage.getItem("guestNotification") === "true",
 	);
 
+	// Flaga do Capacitora, żeby wiedzieć, na czym jesteśmy
+	const isNative = Capacitor.isNativePlatform();
+
 	// Automatycznie zapisujemy do localStorage lub CZYŚCIMY, gdy flaga zgaśnie
 	watch(showGuestNotification, (newValue) => {
 		if (newValue) {
 			localStorage.setItem("guestNotification", "true");
 		} else {
-			// Gdy użytkownik się zaloguje/zarejestruje i flaga zmieni się na false,
-			// fizycznie usuwamy ślad z przeglądarki!
 			localStorage.removeItem("guestNotification");
 		}
 	});
@@ -42,58 +46,59 @@ export const useAuthStore = defineStore("auth", () => {
 	// 2. GETTERY (Computed)
 	// ==========================================
 
-	// Czy ktokolwiek jest zalogowany (gość lub normalny user)
 	const isAuthenticated = computed(() => user.value !== null);
-
-	// Zwraca samo UID użytkownika (naprawia błąd w habbits.ts i todos.ts)
 	const userUid = computed(() => user.value?.uid || null);
-
-	// Czy to jest konto anonimowe (gość)
 	const isGuest = computed(() => user.value?.isAnonymous ?? false);
 
-	// Sprawdzamy czy minęło 7 dni dla gościa
-	// isGuestExpired też staje się funkcją
-	const isGuestExpired = computed(() => {
-		return guestDaysRemaining.value <= 6;
-		// return guestDaysRemaining.value === 0;
-	});
+	// ==========================================
+	// POMOCNICZE: Blokowanie wyjścia dla Gościa (Web)
+	// ==========================================
 
-	// Zwraca ilość dni jako zwykła funkcja, aby czas zawsze był "świeży"
-	const guestDaysRemaining = computed(() => {
-		if (
-			!user.value ||
-			!user.value.isAnonymous ||
-			!user.value.metadata.creationTime
-		) {
-			return 7;
+	// Ta funkcja wywoła systemowy dialog "Czy na pewno chcesz opuścić stronę?"
+	const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+		if (!isNative && isGuest.value) {
+			e.preventDefault();
+			e.returnValue = ""; // Wymagane przez większość nowoczesnych przeglądarek
 		}
+	};
 
-		const creationKey = toDateKey(new Date(user.value.metadata.creationTime));
-		// Używamy po prostu zwykłego now Date() - bez żadnych triggerów
-		const todayKey = toDateKey(new Date());
+	const setupUnloadListener = () => {
+		if (!isNative) {
+			window.addEventListener("beforeunload", handleBeforeUnload);
+		}
+	};
 
-		const creationTime = new Date(creationKey).getTime();
-		const todayTime = new Date(todayKey).getTime();
+	const removeUnloadListener = () => {
+		if (!isNative) {
+			window.removeEventListener("beforeunload", handleBeforeUnload);
+		}
+	};
 
-		const daysSinceCreation = Math.round(
-			(todayTime - creationTime) / (1000 * 60 * 60 * 24),
-		);
-		const remaining = 7 - daysSinceCreation;
-
-		return remaining > 0 ? remaining : 0;
+	// Obserwator: Zakładamy lub zdejmujemy listener w zależności od statusu gościa
+	watch(isGuest, (nowyStatusGoscia) => {
+		if (nowyStatusGoscia) {
+			setupUnloadListener();
+		} else {
+			removeUnloadListener();
+		}
 	});
 
 	// ==========================================
 	// 3. AKCJE (Actions)
 	// ==========================================
 
-	// Nasłuchiwanie na zmiany stanu logowania (odpalasz to np. w App.vue)
 	const initAuth = () => {
 		return new Promise<void>((resolve) => {
 			onAuthStateChanged(auth, (currentUser) => {
 				user.value = currentUser;
-				userUid.value = currentUser ? currentUser.uid : null; // <--- TWARDE PRZYPISANIE
+				userUid.value = currentUser ? currentUser.uid : null;
 				loading.value = false;
+
+				// Jeśli startujemy apkę i ktoś ma od razu flagę isGuest, odpal nasłuchiwacz
+				if (currentUser?.isAnonymous && !isNative) {
+					setupUnloadListener();
+				}
+
 				resolve();
 			});
 		});
@@ -103,10 +108,14 @@ export const useAuthStore = defineStore("auth", () => {
 	const loginAsGuest = async () => {
 		error.value = null;
 		try {
+			// 1. Zmieniamy persystencję NA CHWILĘ na sesyjną (tylko na Webie)
+			if (!isNative) {
+				await setPersistence(auth, browserSessionPersistence);
+			}
+
 			const userCredential = await signInAnonymously(auth);
 			const uid = userCredential.user.uid;
 
-			// Tworzymy dokument usera w bazie z datą startu (potrzebne do reguł 7 dni)
 			await setDoc(
 				doc(db, "users", uid),
 				{
@@ -126,6 +135,10 @@ export const useAuthStore = defineStore("auth", () => {
 	const login = async (email: string, password: string) => {
 		error.value = null;
 		try {
+			// Przywracamy domyślną "trwałą" persystencję przed zalogowaniem na konto stałe
+			if (!isNative) {
+				await setPersistence(auth, browserLocalPersistence);
+			}
 			await signInWithEmailAndPassword(auth, email, password);
 			showGuestNotification.value = false;
 		} catch (err: any) {
@@ -138,24 +151,30 @@ export const useAuthStore = defineStore("auth", () => {
 	const register = async (email: string, password: string) => {
 		error.value = null;
 		try {
-			// Jeśli użytkownik obecnie jest gościem, podpinamy mu maila do jego obecnego UID
 			if (user.value && user.value.isAnonymous) {
 				const credential = EmailAuthProvider.credential(email, password);
+
+				// Przed zlinkowaniem kont, przywracamy trwałą sesję, żeby nie wylogowało nowo zarejestrowanego usera po wyjściu z przeglądarki
+				if (!isNative) {
+					await setPersistence(auth, browserLocalPersistence);
+				}
+
 				await linkWithCredential(user.value, credential);
 
-				// Aktualizujemy w bazie, że to już jest pełnoprawny user
 				await setDoc(
 					doc(db, "users", user.value.uid),
 					{
 						isAnonymous: false,
 						email: email,
-						// Jeśli masz inne pola typu imię, dodaj je tutaj
 					},
 					{ merge: true },
 				);
 				showGuestNotification.value = false;
 			} else {
-				// Zwykła rejestracja (jeśli ktoś po prostu zakłada konto z wylogowanego ekranu)
+				// Zwykła rejestracja
+				if (!isNative) {
+					await setPersistence(auth, browserLocalPersistence);
+				}
 				const userCredential = await createUserWithEmailAndPassword(
 					auth,
 					email,
@@ -183,6 +202,7 @@ export const useAuthStore = defineStore("auth", () => {
 		error.value = null;
 		try {
 			await signOut(auth);
+			removeUnloadListener(); // Dla pewności czyszczę
 		} catch (err: any) {
 			error.value = err.message;
 			throw err;
@@ -196,7 +216,6 @@ export const useAuthStore = defineStore("auth", () => {
 		error,
 		isAuthenticated,
 		isGuest,
-		isGuestExpired,
 		initAuth,
 		login,
 		register,
@@ -204,7 +223,6 @@ export const useAuthStore = defineStore("auth", () => {
 		loginAsGuest,
 		isAuthDialogOpen,
 		showGuestNotification,
-		guestDaysRemaining,
 		isGuestInfoModalOpen,
 	};
 });
