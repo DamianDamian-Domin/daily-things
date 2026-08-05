@@ -8,7 +8,7 @@
 			<NavBar />
 			<Divider
 				v-if="showNavbar"
-				class="w-3/4 self-center" />
+				class="w-full" />
 		</div>
 
 		<Loader></Loader>
