@@ -3,43 +3,68 @@
 		v-model:visible="showHabbitDialog"
 		modal
 		dismissableMask
-		:closable="true"
+		:closable="false"
 		:show-header="false"
-		class="hs-dialog w-[clamp(22rem,85vw,42rem)]">
-		<div class="hs-dialog-hero">
-			<div
-				class="hs-dialog-hero-bg"
-				aria-hidden="true"></div>
-			<span class="hs-dialog-emoji">{{
-				addDialogMode === "habbit" ? "🌱" : "🎯"
-			}}</span>
-			<h3 class="hs-dialog-title">{{ headerText }}</h3>
-			<p class="hs-dialog-subtitle">
-				{{
-					addDialogMode === "habbit"
-						? "Find and pick habits to track today"
-						: "Choose a goal you want to achieve"
-				}}
-			</p>
-		</div>
-		<div class="hs-dialog-body">
-			<HabbitSearch
-				:addedNames="addedInSession"
-				:goalMode="addDialogMode === 'goal'"
-				@select="handleHabbitSelect" />
-		</div>
-		<div class="hs-dialog-footer">
-			<Transition name="hs-badge">
-				<span
+		:pt="{ mask: { class: 'hs-dialog-mask' } }"
+		class="hs-dialog w-[clamp(22rem,92vw,44rem)]">
+		<div
+			class="hs-dialog-shell"
+			:data-mode="addDialogMode">
+			<header class="hs-dialog-header">
+				<div
+					class="hs-dialog-emoji"
+					:class="'mode-' + addDialogMode"
+					aria-hidden="true">
+					{{ addDialogMode === "habbit" ? "🌱" : "🎯" }}
+				</div>
+				<div class="hs-dialog-header-text">
+					<h3 class="hs-dialog-title">{{ headerText }}</h3>
+					<p class="hs-dialog-subtitle">
+						{{
+							addDialogMode === "habbit"
+								? "Pick what you did today"
+								: "Choose goals you want to hit"
+						}}
+					</p>
+				</div>
+				<button
+					class="hs-dialog-close"
+					aria-label="Close"
+					@click="showHabbitDialog = false">
+					<i class="pi pi-times"></i>
+				</button>
+			</header>
+
+			<div class="hs-dialog-body">
+				<HabbitSearch
+					:addedNames="addedInSession"
+					:goalMode="addDialogMode === 'goal'"
+					@select="handleHabbitSelect" />
+			</div>
+
+			<Transition name="hs-cta">
+				<div
 					v-if="addedInSession.length > 0"
-					class="hs-added-badge">
-					{{ addedInSession.length }} added ✓
-				</span>
+					class="hs-cta-dock">
+					<div class="hs-cta-pill">
+						<span class="hs-cta-count">{{ addedInSession.length }}</span>
+						<span class="hs-cta-label">
+							{{ addedInSession.length === 1 ? "habit added" : "habits added" }}
+						</span>
+						<button
+							class="hs-cta-done"
+							@click="showHabbitDialog = false">
+							Done
+						</button>
+					</div>
+				</div>
 			</Transition>
+
 			<button
-				class="hs-done-btn"
+				v-if="addedInSession.length === 0"
+				class="hs-dialog-plain-close"
 				@click="showHabbitDialog = false">
-				Done
+				Close
 			</button>
 		</div>
 	</Dialog>
@@ -598,95 +623,107 @@ function getFullHabbitData(habbit: Habbit) {
 	opacity: 0.7;
 }
 
-/* ====== Habit Search Dialog ====== */
+/* ==========================================================================
+   Habit Search Dialog — cozy redesign
+   ========================================================================== */
 
-/* Float the close button over the hero */
-:deep(.hs-dialog .p-dialog-header) {
-	position: absolute !important;
-	top: 0;
-	right: 0;
-	left: auto;
-	z-index: 10;
-	background: transparent !important;
-	border: none !important;
-	padding: 0.6rem 0.7rem !important;
+/* Softer, warmer backdrop with more presence */
+:deep(.hs-dialog-mask) {
+	background: color-mix(in srgb, #3a2216 32%, transparent) !important;
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
 }
-
-/* Frosted-glass close button */
-:deep(.hs-dialog .p-dialog-header-actions .p-button) {
-	background: rgba(255, 255, 255, 0.6) !important;
-	backdrop-filter: blur(8px);
-	-webkit-backdrop-filter: blur(8px);
-	border-radius: 0.6rem !important;
-	width: 2rem !important;
-	height: 2rem !important;
-	color: var(--p-gray-500) !important;
-	border: 1px solid rgba(255, 255, 255, 0.3) !important;
-	transition: all 0.2s ease !important;
-}
-:deep(.hs-dialog .p-dialog-header-actions .p-button:hover) {
-	background: rgba(255, 255, 255, 0.85) !important;
-	color: var(--p-gray-700) !important;
-	transform: scale(1.06);
-}
-:where(.my-app-dark, .my-app-dark *)
-	:deep(.hs-dialog .p-dialog-header-actions .p-button) {
-	background: rgba(0, 0, 0, 0.35) !important;
-	border-color: rgba(255, 255, 255, 0.08) !important;
-	color: var(--p-gray-400) !important;
-}
-:where(.my-app-dark, .my-app-dark *)
-	:deep(.hs-dialog .p-dialog-header-actions .p-button:hover) {
+:where(.my-app-dark, .my-app-dark *) :deep(.hs-dialog-mask) {
 	background: rgba(0, 0, 0, 0.55) !important;
-	color: var(--p-gray-200) !important;
 }
 
-/* Remove default dialog content padding */
+/* Remove PrimeVue's default header + content padding */
+:deep(.hs-dialog .p-dialog-header) {
+	display: none !important;
+}
 :deep(.hs-dialog .p-dialog-content) {
 	padding: 0 !important;
+	background: transparent !important;
 }
 
-/* Warm rounded dialog */
+/* Dialog root — warm cream shell with warm layered shadow */
 :deep(.hs-dialog.p-dialog) {
-	border-radius: 1.25rem !important;
-	overflow: hidden;
+	border-radius: 1.5rem !important;
+	overflow: hidden !important;
+	border: none !important;
+	outline: none !important;
+	background: color-mix(in srgb, var(--p-orange-50) 65%, white) !important;
+	box-shadow:
+		0 2px 6px rgba(251, 146, 60, 0.08),
+		0 12px 32px -8px rgba(120, 53, 15, 0.18),
+		0 32px 80px -20px rgba(251, 146, 60, 0.3) !important;
+}
+:where(.my-app-dark, .my-app-dark *) :deep(.hs-dialog.p-dialog) {
+	background: var(--p-gray-800) !important;
+	box-shadow:
+		0 12px 32px -8px rgba(0, 0, 0, 0.5),
+		0 32px 80px -20px rgba(0, 0, 0, 0.6) !important;
 }
 
-/* Dialog hero header */
-.hs-dialog-hero {
+/* Vertical flex shell — positioning context for floating CTA */
+.hs-dialog-shell {
 	position: relative;
 	display: flex;
 	flex-direction: column;
+	max-height: 85vh;
+	background: transparent;
+}
+
+/* ==========================================================================
+   HEADER — flat row. Emoji chip carries mode identity via tint.
+   ========================================================================== */
+.hs-dialog-header {
+	display: flex;
 	align-items: center;
-	padding: 2rem 1.5rem 1.1rem;
-	overflow: hidden;
-	text-align: center;
-}
-.hs-dialog-hero-bg {
-	position: absolute;
-	inset: 0;
-	background: linear-gradient(
-		180deg,
-		color-mix(in srgb, var(--p-orange-100) 50%, transparent) 0%,
-		transparent 100%
-	);
-	z-index: 0;
-}
-:where(.my-app-dark, .my-app-dark *) .hs-dialog-hero-bg {
-	background: linear-gradient(
-		180deg,
-		color-mix(in srgb, var(--p-orange-900) 20%, transparent) 0%,
-		transparent 100%
-	);
-}
-.hs-dialog-hero > *:not(.hs-dialog-hero-bg) {
-	position: relative;
-	z-index: 1;
+	gap: 0.85rem;
+	padding: 1.1rem 1.25rem 0.7rem;
+	flex-shrink: 0;
 }
 .hs-dialog-emoji {
-	font-size: 2rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.6rem;
+	height: 2.6rem;
+	border-radius: 0.9rem;
+	font-size: 1.4rem;
 	line-height: 1;
-	margin-bottom: 0.45rem;
+	flex-shrink: 0;
+	background: color-mix(in srgb, var(--p-green-100) 70%, white);
+	box-shadow:
+		0 2px 8px color-mix(in srgb, var(--p-green-300) 30%, transparent),
+		inset 0 0 0 1px rgba(255, 255, 255, 0.85);
+}
+.hs-dialog-emoji.mode-goal {
+	background: color-mix(in srgb, var(--p-yellow-100) 80%, white);
+	box-shadow:
+		0 2px 8px color-mix(in srgb, var(--p-yellow-300) 40%, transparent),
+		inset 0 0 0 1px rgba(255, 255, 255, 0.85);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-dialog-emoji {
+	background: color-mix(in srgb, var(--p-green-900) 55%, transparent);
+	box-shadow:
+		0 2px 8px rgba(0, 0, 0, 0.35),
+		inset 0 0 0 1px color-mix(in srgb, var(--p-green-600) 40%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-dialog-emoji.mode-goal {
+	background: color-mix(in srgb, var(--p-yellow-900) 60%, transparent);
+	box-shadow:
+		0 2px 8px rgba(0, 0, 0, 0.35),
+		inset 0 0 0 1px color-mix(in srgb, var(--p-yellow-600) 40%, transparent);
+}
+
+.hs-dialog-header-text {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
 }
 .hs-dialog-title {
 	font-family: "Lora", serif;
@@ -694,99 +731,257 @@ function getFullHabbitData(habbit: Habbit) {
 	font-weight: 700;
 	color: var(--p-gray-800);
 	margin: 0;
+	line-height: 1.2;
+	letter-spacing: -0.01em;
 }
 :where(.my-app-dark, .my-app-dark *) .hs-dialog-title {
-	color: var(--p-gray-100);
+	color: var(--p-gray-50);
 }
 .hs-dialog-subtitle {
-	font-size: 0.8rem;
-	color: var(--p-gray-400);
-	margin-top: 0.2rem;
+	font-family: "Lora", serif;
+	font-size: 0.82rem;
+	font-style: italic;
+	color: var(--p-gray-500);
+	margin: 0;
+	line-height: 1.3;
 }
 :where(.my-app-dark, .my-app-dark *) .hs-dialog-subtitle {
-	color: var(--p-gray-500);
+	color: var(--p-gray-400);
 }
 
-/* Dialog body */
-.hs-dialog-body {
-	padding: 0.75rem 1.25rem 1.35rem;
-	max-height: 55vh;
-	overflow-y: auto;
-	scrollbar-width: thin;
-	scrollbar-color: var(--p-orange-200) transparent;
-}
-:where(.my-app-dark, .my-app-dark *) .hs-dialog-body {
-	scrollbar-color: var(--p-gray-600) transparent;
-}
-
-/* Dialog footer — sticky done button */
-.hs-dialog-footer {
+/* Close button — minimal ghost, rotates on hover */
+.hs-dialog-close {
 	display: flex;
 	align-items: center;
-	justify-content: flex-end;
-	gap: 0.75rem;
-	padding: 0.85rem 1.25rem;
-	border-top: 1px solid var(--p-orange-100);
-	background: color-mix(in srgb, var(--p-orange-50) 50%, white);
+	justify-content: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	border-radius: 50%;
+	border: none;
+	background: transparent;
+	color: var(--p-gray-400);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	flex-shrink: 0;
+	-webkit-tap-highlight-color: transparent;
 }
-:where(.my-app-dark, .my-app-dark *) .hs-dialog-footer {
-	border-top-color: var(--p-gray-700);
-	background: color-mix(in srgb, var(--p-gray-800) 80%, transparent);
+.hs-dialog-close:hover {
+	background: color-mix(in srgb, var(--p-orange-100) 70%, transparent);
+	color: var(--p-orange-700);
+	transform: rotate(90deg);
+}
+.hs-dialog-close:active {
+	transform: rotate(90deg) scale(0.9);
+}
+.hs-dialog-close i {
+	font-size: 0.85rem;
+}
+:where(.my-app-dark, .my-app-dark *) .hs-dialog-close {
+	color: var(--p-gray-400);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-dialog-close:hover {
+	background: color-mix(in srgb, var(--p-orange-900) 40%, transparent);
+	color: var(--p-orange-300);
 }
 
-.hs-added-badge {
-	font-size: 0.72rem;
-	font-weight: 600;
-	color: var(--p-green-600);
-	background: color-mix(in srgb, var(--p-green-100) 60%, transparent);
-	padding: 0.25rem 0.65rem;
+/* ==========================================================================
+   BODY — HabbitSearch fills this, no visible boundary
+   ========================================================================== */
+.hs-dialog-body {
+	flex: 1;
+	min-height: 0;
+	padding: 0.4rem 1.25rem 1.25rem;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+/* ==========================================================================
+   BOTTOM CTA DOCK — floating pill that pops when items added
+   ========================================================================== */
+.hs-cta-dock {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 1rem;
+	display: flex;
+	justify-content: center;
+	pointer-events: none;
+	z-index: 10;
+	padding: 0 1rem;
+}
+.hs-cta-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.65rem;
+	padding: 0.4rem 0.5rem 0.4rem 1rem;
+	background: white;
 	border-radius: 9999px;
-	user-select: none;
+	box-shadow:
+		0 4px 12px rgba(120, 53, 15, 0.18),
+		0 12px 28px -6px rgba(251, 146, 60, 0.35);
+	pointer-events: auto;
+	max-width: 95%;
 }
-:where(.my-app-dark, .my-app-dark *) .hs-added-badge {
-	color: var(--p-green-400);
-	background: color-mix(in srgb, var(--p-green-900) 30%, transparent);
+:where(.my-app-dark, .my-app-dark *) .hs-cta-pill {
+	background: var(--p-gray-700);
+	box-shadow:
+		0 4px 12px rgba(0, 0, 0, 0.35),
+		0 12px 28px -6px rgba(0, 0, 0, 0.5);
 }
 
-.hs-done-btn {
-	padding: 0.45rem 1.5rem;
-	border-radius: 0.65rem;
+.hs-cta-count {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 1.6rem;
+	height: 1.6rem;
+	padding: 0 0.45rem;
+	border-radius: 9999px;
+	background: color-mix(in srgb, var(--p-green-100) 80%, white);
+	color: var(--p-green-700);
+	font-family: "Lora", serif;
+	font-size: 0.85rem;
+	font-weight: 700;
+	line-height: 1;
+	font-variant-numeric: tabular-nums;
+}
+:where(.my-app-dark, .my-app-dark *) .hs-cta-count {
+	background: color-mix(in srgb, var(--p-green-900) 60%, transparent);
+	color: var(--p-green-300);
+}
+
+.hs-cta-label {
+	font-family: "Lora", serif;
+	font-size: 0.82rem;
+	color: var(--p-gray-600);
+	line-height: 1;
+	white-space: nowrap;
+}
+:where(.my-app-dark, .my-app-dark *) .hs-cta-label {
+	color: var(--p-gray-300);
+}
+
+.hs-cta-done {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.55rem 1.35rem;
+	border-radius: 9999px;
 	border: none;
 	background: var(--p-orange-500);
 	color: white;
 	font-family: "Lora", serif;
-	font-size: 0.82rem;
+	font-size: 0.85rem;
 	font-weight: 600;
 	cursor: pointer;
+	line-height: 1;
 	transition: all 0.2s ease;
+	-webkit-tap-highlight-color: transparent;
+	box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.08);
 }
-.hs-done-btn:hover {
+.hs-cta-done:hover {
 	background: var(--p-orange-600);
 	transform: translateY(-1px);
-	box-shadow: 0 3px 10px
-		color-mix(in srgb, var(--p-orange-500) 30%, transparent);
 }
-:where(.my-app-dark, .my-app-dark *) .hs-done-btn {
-	background: var(--p-orange-600);
+.hs-cta-done:active {
+	transform: translateY(0) scale(0.97);
 }
-:where(.my-app-dark, .my-app-dark *) .hs-done-btn:hover {
+:where(.my-app-dark, .my-app-dark *) .hs-cta-done {
 	background: var(--p-orange-500);
 }
+:where(.my-app-dark, .my-app-dark *) .hs-cta-done:hover {
+	background: var(--p-orange-400);
+}
 
-/* Badge transition */
-.hs-badge-enter-active {
-	transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+/* Springy pop from bottom */
+.hs-cta-enter-active {
+	transition:
+		transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+		opacity 0.3s ease;
 }
-.hs-badge-leave-active {
+.hs-cta-leave-active {
+	transition:
+		transform 0.25s ease,
+		opacity 0.25s ease;
+}
+.hs-cta-enter-from {
+	opacity: 0;
+	transform: translateY(28px) scale(0.9);
+}
+.hs-cta-leave-to {
+	opacity: 0;
+	transform: translateY(20px) scale(0.9);
+}
+
+/* ==========================================================================
+   PLAIN CLOSE — subtle bottom-centered link when nothing added
+   ========================================================================== */
+.hs-dialog-plain-close {
+	align-self: center;
+	margin: 0 0 0.85rem;
+	padding: 0.4rem 1.1rem;
+	background: transparent;
+	border: none;
+	color: var(--p-gray-400);
+	font-family: "Lora", serif;
+	font-size: 0.82rem;
+	font-weight: 500;
+	cursor: pointer;
+	border-radius: 9999px;
 	transition: all 0.2s ease;
+	-webkit-tap-highlight-color: transparent;
 }
-.hs-badge-enter-from {
-	opacity: 0;
-	transform: scale(0.7);
+.hs-dialog-plain-close:hover {
+	background: color-mix(in srgb, var(--p-orange-100) 55%, transparent);
+	color: var(--p-orange-700);
 }
-.hs-badge-leave-to {
-	opacity: 0;
-	transform: scale(0.8);
+:where(.my-app-dark, .my-app-dark *) .hs-dialog-plain-close {
+	color: var(--p-gray-400);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-dialog-plain-close:hover {
+	background: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
+	color: var(--p-gray-100);
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 640px) {
+	:deep(.hs-dialog.p-dialog) {
+		border-radius: 1.35rem !important;
+	}
+	.hs-dialog-shell {
+		max-height: 92vh;
+	}
+	.hs-dialog-header {
+		padding: 0.9rem 1rem 0.5rem;
+		gap: 0.7rem;
+	}
+	.hs-dialog-emoji {
+		width: 2.3rem;
+		height: 2.3rem;
+		font-size: 1.25rem;
+	}
+	.hs-dialog-title {
+		font-size: 1.05rem;
+	}
+	.hs-dialog-subtitle {
+		font-size: 0.75rem;
+	}
+	.hs-dialog-body {
+		padding: 0.4rem 0.9rem 1rem;
+	}
+	.hs-cta-dock {
+		bottom: 0.85rem;
+	}
+	.hs-cta-pill {
+		padding: 0.35rem 0.45rem 0.35rem 0.85rem;
+		gap: 0.55rem;
+	}
+	.hs-cta-label {
+		font-size: 0.78rem;
+	}
 }
 
 /* ====== Greeting Area ====== */

@@ -1,135 +1,4950 @@
 [
-    {
-        "name": "drink_water",
-        "icon": "water_drop",
-        "severity": "success",
-        "tags": [
-            "health",
-            "hydration",
-            "daily"
-        ],
-        "display_name": "Drink Water",
-        "origin": "system"
-    },
-    {
-        "name": "healthy_breakfast",
-        "icon": "breakfast_dining",
-        "severity": "success",
-        "tags": [
-            "nutrition",
-            "food"
-        ],
-        "display_name": "Healthy Breakfast",
-        "origin": "system"
-    },
-    {
-        "name": "gym",
-        "icon": "fitness_center",
-        "severity": "success",
-        "tags": [
-            "fitness",
-            "strength"
-        ],
-        "display_name": "Gym",
-        "origin": "system"
-    },
-    {
-        "name": "running",
-        "icon": "directions_run",
-        "severity": "success",
-        "tags": [
-            "fitness",
-            "cardio"
-        ],
-        "display_name": "Running",
-        "origin": "system"
-    },
-    {
-        "name": "walking",
-        "icon": "directions_walk",
-        "severity": "success",
-        "tags": [
-            "fitness",
-            "walking"
-        ],
-        "display_name": "Walking",
-        "origin": "system"
-    },
-    {
-        "name": "meditation",
-        "icon": "self_improvement",
-        "severity": "success",
-        "tags": [
-            "mental_health",
-            "mindfulness"
-        ],
-        "display_name": "Meditation",
-        "origin": "system"
-    },
-    {
-        "name": "read_book",
-        "icon": "book",
-        "severity": "success",
-        "tags": [
-            "learning",
-            "reading"
-        ],
-        "display_name": "Read Book",
-        "origin": "system"
-    },
-    {
-        "name": "deep_work",
-        "icon": "psychology",
-        "severity": "success",
-        "tags": [
-            "productivity",
-            "focus"
-        ],
-        "display_name": "Deep Work",
-        "origin": "system"
-    },
-    {
-        "name": "laundry",
-        "icon": "local_laundry_service",
-        "severity": "success",
-        "tags": [
-            "home",
-            "cleaning"
-        ],
-        "display_name": "Laundry",
-        "origin": "system"
-    },
-    {
-        "name": "pay_bills",
-        "icon": "credit_card",
-        "severity": "success",
-        "tags": [
-            "finance",
-            "monthly"
-        ],
-        "display_name": "Pay Bills",
-        "origin": "system"
-    },
-    {
-        "name": "doomscrolling",
-        "icon": "smartphone",
-        "severity": "danger",
-        "tags": [
-            "bad_habit",
-            "social_media"
-        ],
-        "display_name": "Doomscrolling",
-        "origin": "system"
-    },
-    {
-        "name": "smoking",
-        "icon": "smoking_rooms",
-        "severity": "danger",
-        "tags": [
-            "bad_habit",
-            "health"
-        ],
-        "display_name": "Smoking",
-        "origin": "system"
-    }
+  {
+    "name": "Gym",
+    "icon": "fitness_center",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "fitness",
+      "health",
+      "routine"
+    ],
+    "display_name": "Gym",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Running",
+    "icon": "directions_run",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "cardio",
+      "health",
+      "endurance"
+    ],
+    "display_name": "Running",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Walking",
+    "icon": "directions_walk",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "health",
+      "routine",
+      "outdoors"
+    ],
+    "display_name": "Walk outside",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Cycling",
+    "icon": "pedal_bike",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "health",
+      "outdoors",
+      "movement"
+    ],
+    "display_name": "Cycling",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Swimming",
+    "icon": "pool",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "health",
+      "sport",
+      "fun"
+    ],
+    "display_name": "Swimming",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Yoga",
+    "icon": "self_improvement",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "flexibility",
+      "mindfulness",
+      "health"
+    ],
+    "display_name": "Yoga",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Hiking",
+    "icon": "hiking",
+    "severity": "success",
+    "tags": [
+      "outdoors",
+      "nature",
+      "fitness",
+      "relaxation"
+    ],
+    "display_name": "Hiking",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Stretching",
+    "icon": "sports_gymnastics",
+    "severity": "success",
+    "tags": [
+      "mobility",
+      "health",
+      "fitness",
+      "routine"
+    ],
+    "display_name": "Stretching",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Home workout",
+    "icon": "exercise",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "health",
+      "discipline",
+      "routine"
+    ],
+    "display_name": "Home workout",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Stair climbing",
+    "icon": "stairs",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "routine",
+      "cardio",
+      "discipline"
+    ],
+    "display_name": "Stair climb",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Dance",
+    "icon": "nightlife",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "fun",
+      "music",
+      "movement"
+    ],
+    "display_name": "Dance",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Pilates",
+    "icon": "self_improvement",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "core",
+      "flexibility",
+      "health"
+    ],
+    "display_name": "Pilates",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "CrossFit",
+    "icon": "fitness_center",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "strength",
+      "discipline",
+      "health"
+    ],
+    "display_name": "CrossFit",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Jump rope",
+    "icon": "fitness_center",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "cardio",
+      "fun",
+      "health"
+    ],
+    "display_name": "Jump rope",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Trail running",
+    "icon": "hiking",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "cardio",
+      "outdoors",
+      "nature"
+    ],
+    "display_name": "Trail run",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Weightlifting",
+    "icon": "exercise",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "strength",
+      "discipline",
+      "health"
+    ],
+    "display_name": "Weightlifting",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Calisthenics",
+    "icon": "sports_gymnastics",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "strength",
+      "bodyweight",
+      "discipline"
+    ],
+    "display_name": "Calisthenics",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Spin class",
+    "icon": "pedal_bike",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "cardio",
+      "indoor",
+      "health"
+    ],
+    "display_name": "Spin class",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Play soccer",
+    "icon": "sports_soccer",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "fitness",
+      "fun",
+      "teamwork"
+    ],
+    "display_name": "Soccer",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Play basketball",
+    "icon": "sports_basketball",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "fitness",
+      "teamwork",
+      "fun"
+    ],
+    "display_name": "Basketball",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Play tennis",
+    "icon": "sports_tennis",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "agility",
+      "health",
+      "fun"
+    ],
+    "display_name": "Tennis",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Golf",
+    "icon": "sports_golf",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "leisure",
+      "outdoors",
+      "fun"
+    ],
+    "display_name": "Golf",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Table tennis",
+    "icon": "sports_tennis",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "fun",
+      "agility",
+      "fitness"
+    ],
+    "display_name": "Table tennis",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Skiing",
+    "icon": "downhill_skiing",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "winter",
+      "outdoors",
+      "fitness"
+    ],
+    "display_name": "Skiing",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Martial arts",
+    "icon": "sports_mma",
+    "severity": "success",
+    "tags": [
+      "discipline",
+      "fitness",
+      "strength",
+      "focus"
+    ],
+    "display_name": "Martial arts",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Boxing training",
+    "icon": "sports_mma",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "fitness",
+      "strength",
+      "discipline"
+    ],
+    "display_name": "Boxing",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Rock climbing",
+    "icon": "landscape",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "strength",
+      "adventure",
+      "fitness"
+    ],
+    "display_name": "Climbing",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Skateboarding",
+    "icon": "skateboarding",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "fun",
+      "outdoors",
+      "balance"
+    ],
+    "display_name": "Skateboard",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Frisbee",
+    "icon": "sports",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "fun",
+      "outdoors",
+      "social"
+    ],
+    "display_name": "Frisbee",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Squash",
+    "icon": "sports_tennis",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "fitness",
+      "agility",
+      "indoor"
+    ],
+    "display_name": "Squash",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Padel",
+    "icon": "sports_tennis",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "fitness",
+      "agility",
+      "fun"
+    ],
+    "display_name": "Padel",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Paddleboarding",
+    "icon": "surfing",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "water",
+      "balance",
+      "outdoors"
+    ],
+    "display_name": "Paddleboard",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Kayaking",
+    "icon": "kayaking",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "water",
+      "outdoors",
+      "fitness"
+    ],
+    "display_name": "Kayaking",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Canoeing",
+    "icon": "kayaking",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "water",
+      "outdoors",
+      "fitness"
+    ],
+    "display_name": "Canoeing",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Surfing",
+    "icon": "surfing",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "water",
+      "outdoors",
+      "balance"
+    ],
+    "display_name": "Surfing",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Snowboarding",
+    "icon": "downhill_skiing",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "winter",
+      "outdoors",
+      "balance"
+    ],
+    "display_name": "Snowboard",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Ice skating",
+    "icon": "ice_skating",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "winter",
+      "balance",
+      "fun"
+    ],
+    "display_name": "Ice skating",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Rowing",
+    "icon": "rowing",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "water",
+      "fitness",
+      "strength"
+    ],
+    "display_name": "Rowing",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Sailing",
+    "icon": "sailing",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "water",
+      "outdoors",
+      "adventure"
+    ],
+    "display_name": "Sailing",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Badminton",
+    "icon": "sports_tennis",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "fitness",
+      "agility",
+      "fun"
+    ],
+    "display_name": "Badminton",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Volleyball",
+    "icon": "sports_volleyball",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "teamwork",
+      "fitness",
+      "fun"
+    ],
+    "display_name": "Volleyball",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Horseback riding",
+    "icon": "sports",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "outdoors",
+      "animals",
+      "balance"
+    ],
+    "display_name": "Horse riding",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Archery",
+    "icon": "sports",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "focus",
+      "precision",
+      "discipline"
+    ],
+    "display_name": "Archery",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Water polo",
+    "icon": "pool",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "water",
+      "teamwork",
+      "fitness"
+    ],
+    "display_name": "Water polo",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Roller skating",
+    "icon": "roller_skating",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "balance",
+      "fun",
+      "outdoors"
+    ],
+    "display_name": "Roller skate",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Mountain biking",
+    "icon": "pedal_bike",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "outdoors",
+      "fitness",
+      "adventure"
+    ],
+    "display_name": "MTB",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Ice hockey",
+    "icon": "sports_hockey",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "winter",
+      "teamwork",
+      "fitness"
+    ],
+    "display_name": "Ice hockey",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Field hockey",
+    "icon": "sports_hockey",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "teamwork",
+      "fitness",
+      "fun"
+    ],
+    "display_name": "Field hockey",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Cricket",
+    "icon": "sports_cricket",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "teamwork",
+      "fitness",
+      "fun"
+    ],
+    "display_name": "Cricket",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Rugby",
+    "icon": "sports_rugby",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "teamwork",
+      "strength",
+      "fitness"
+    ],
+    "display_name": "Rugby",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Baseball",
+    "icon": "sports_baseball",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "teamwork",
+      "fitness",
+      "fun"
+    ],
+    "display_name": "Baseball",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Scuba diving",
+    "icon": "scuba_diving",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "water",
+      "adventure",
+      "exploration"
+    ],
+    "display_name": "Scuba diving",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Snorkeling",
+    "icon": "snorkeling",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "water",
+      "adventure",
+      "nature"
+    ],
+    "display_name": "Snorkeling",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Cross-country skiing",
+    "icon": "downhill_skiing",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "winter",
+      "cardio",
+      "outdoors"
+    ],
+    "display_name": "XC skiing",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Gymnastics",
+    "icon": "sports_gymnastics",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "flexibility",
+      "strength",
+      "discipline"
+    ],
+    "display_name": "Gymnastics",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Fencing",
+    "icon": "sports_martial_arts",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "precision",
+      "discipline",
+      "focus"
+    ],
+    "display_name": "Fencing",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Bowling",
+    "icon": "sports_and_outdoors",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "fun",
+      "social",
+      "leisure"
+    ],
+    "display_name": "Bowling",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Darts",
+    "icon": "sports_and_outdoors",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "precision",
+      "fun",
+      "focus"
+    ],
+    "display_name": "Darts",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Parkour",
+    "icon": "directions_run",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "agility",
+      "adventure",
+      "strength"
+    ],
+    "display_name": "Parkour",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Kitesurfing",
+    "icon": "surfing",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "water",
+      "adventure",
+      "adrenaline"
+    ],
+    "display_name": "Kitesurfing",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Paragliding",
+    "icon": "paragliding",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "adventure",
+      "outdoors",
+      "adrenaline"
+    ],
+    "display_name": "Paragliding",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Handball",
+    "icon": "sports_handball",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "teamwork",
+      "fitness",
+      "fun"
+    ],
+    "display_name": "Handball",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Orienteering",
+    "icon": "explore",
+    "severity": "success",
+    "tags": [
+      "sport",
+      "outdoors",
+      "navigation",
+      "adventure"
+    ],
+    "display_name": "Orienteering",
+    "category": "Sports & Games",
+    "origin": "system"
+  },
+  {
+    "name": "Drink water",
+    "icon": "water_drop",
+    "severity": "success",
+    "tags": [
+      "health",
+      "hydration",
+      "routine",
+      "wellness"
+    ],
+    "display_name": "Drink water",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Healthy meal",
+    "icon": "local_dining",
+    "severity": "success",
+    "tags": [
+      "nutrition",
+      "health",
+      "food",
+      "meal"
+    ],
+    "display_name": "Healthy meal",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Meal prep",
+    "icon": "soup_kitchen",
+    "severity": "success",
+    "tags": [
+      "food",
+      "planning",
+      "health",
+      "routine"
+    ],
+    "display_name": "Meal prep",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Cook at home",
+    "icon": "skillet",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cooking",
+      "routine",
+      "responsibility"
+    ],
+    "display_name": "Cooking",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Try new recipe",
+    "icon": "restaurant_menu",
+    "severity": "success",
+    "tags": [
+      "food",
+      "creativity",
+      "fun",
+      "home"
+    ],
+    "display_name": "New recipe",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Take vitamins",
+    "icon": "health_and_safety",
+    "severity": "success",
+    "tags": [
+      "health",
+      "routine",
+      "self-care",
+      "vitamins"
+    ],
+    "display_name": "Vitamins",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Limit sugar",
+    "icon": "cookie",
+    "severity": "success",
+    "tags": [
+      "nutrition",
+      "discipline",
+      "health",
+      "routine"
+    ],
+    "display_name": "Limit sugar",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Mindful eating",
+    "icon": "restaurant",
+    "severity": "success",
+    "tags": [
+      "nutrition",
+      "mindfulness",
+      "health",
+      "focus"
+    ],
+    "display_name": "Mindful eating",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Avoid alcohol",
+    "icon": "no_drinks",
+    "severity": "success",
+    "tags": [
+      "health",
+      "discipline",
+      "routine",
+      "mental health"
+    ],
+    "display_name": "No alcohol",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Avoid smoking",
+    "icon": "smoke_free",
+    "severity": "success",
+    "tags": [
+      "health",
+      "discipline",
+      "wellness",
+      "routine"
+    ],
+    "display_name": "No smoking",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Drink tea or coffee",
+    "icon": "emoji_food_beverage",
+    "severity": "success",
+    "tags": [
+      "routine",
+      "relaxation",
+      "morning",
+      "beverage"
+    ],
+    "display_name": "Tea or coffee",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Pack lunch",
+    "icon": "lunch_dining",
+    "severity": "success",
+    "tags": [
+      "food",
+      "planning",
+      "routine",
+      "health"
+    ],
+    "display_name": "Pack lunch",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Plan meals for the week",
+    "icon": "event_note",
+    "severity": "success",
+    "tags": [
+      "food",
+      "planning",
+      "organization",
+      "routine"
+    ],
+    "display_name": "Meal plan",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Wash fruits and vegetables",
+    "icon": "nutrition",
+    "severity": "success",
+    "tags": [
+      "food",
+      "hygiene",
+      "health",
+      "routine"
+    ],
+    "display_name": "Wash produce",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Reduce food waste",
+    "icon": "compost",
+    "severity": "success",
+    "tags": [
+      "eco",
+      "food",
+      "responsibility",
+      "home"
+    ],
+    "display_name": "Reduce waste",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Bake something",
+    "icon": "bakery_dining",
+    "severity": "success",
+    "tags": [
+      "food",
+      "creativity",
+      "fun",
+      "home"
+    ],
+    "display_name": "Baking",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Wake up early",
+    "icon": "alarm",
+    "severity": "success",
+    "tags": [
+      "routine",
+      "discipline",
+      "morning",
+      "productivity"
+    ],
+    "display_name": "Wake early",
+    "category": "Sleep & Routines",
+    "origin": "system"
+  },
+  {
+    "name": "Go to bed early",
+    "icon": "hotel",
+    "severity": "success",
+    "tags": [
+      "sleep",
+      "rest",
+      "health",
+      "routine"
+    ],
+    "display_name": "Early sleep",
+    "category": "Sleep & Routines",
+    "origin": "system"
+  },
+  {
+    "name": "Morning routine",
+    "icon": "wb_sunny",
+    "severity": "success",
+    "tags": [
+      "routine",
+      "morning",
+      "discipline",
+      "focus"
+    ],
+    "display_name": "Morning routine",
+    "category": "Sleep & Routines",
+    "origin": "system"
+  },
+  {
+    "name": "Evening routine",
+    "icon": "bedtime",
+    "severity": "success",
+    "tags": [
+      "sleep",
+      "routine",
+      "calm",
+      "mental health"
+    ],
+    "display_name": "Evening routine",
+    "category": "Sleep & Routines",
+    "origin": "system"
+  },
+  {
+    "name": "No phone before bed",
+    "icon": "phonelink_erase",
+    "severity": "success",
+    "tags": [
+      "sleep",
+      "digital wellbeing",
+      "discipline",
+      "routine"
+    ],
+    "display_name": "No phone bed",
+    "category": "Sleep & Routines",
+    "origin": "system"
+  },
+  {
+    "name": "Nap or rest",
+    "icon": "bed",
+    "severity": "success",
+    "tags": [
+      "rest",
+      "energy",
+      "routine",
+      "health"
+    ],
+    "display_name": "Nap",
+    "category": "Sleep & Routines",
+    "origin": "system"
+  },
+  {
+    "name": "Get sunlight",
+    "icon": "light_mode",
+    "severity": "success",
+    "tags": [
+      "health",
+      "vitamin d",
+      "outdoors",
+      "mood"
+    ],
+    "display_name": "Sunlight",
+    "category": "Sleep & Routines",
+    "origin": "system"
+  },
+  {
+    "name": "Make the bed",
+    "icon": "bed",
+    "severity": "success",
+    "tags": [
+      "home",
+      "routine",
+      "organization",
+      "discipline"
+    ],
+    "display_name": "Make bed",
+    "category": "Sleep & Routines",
+    "origin": "system"
+  },
+  {
+    "name": "Meditation",
+    "icon": "self_improvement",
+    "severity": "success",
+    "tags": [
+      "mental health",
+      "relaxation",
+      "focus",
+      "self-care"
+    ],
+    "display_name": "Meditation",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "Practice mindfulness",
+    "icon": "visibility",
+    "severity": "success",
+    "tags": [
+      "focus",
+      "calm",
+      "mental health",
+      "clarity"
+    ],
+    "display_name": "Mindfulness",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "Journaling",
+    "icon": "edit_note",
+    "severity": "success",
+    "tags": [
+      "mental health",
+      "journaling",
+      "reflection",
+      "awareness"
+    ],
+    "display_name": "Journal",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "Practice gratitude",
+    "icon": "sentiment_satisfied",
+    "severity": "success",
+    "tags": [
+      "positivity",
+      "mental health",
+      "routine",
+      "growth"
+    ],
+    "display_name": "Gratitude",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "Positive self-talk",
+    "icon": "psychology_alt",
+    "severity": "success",
+    "tags": [
+      "mental health",
+      "growth",
+      "self-care",
+      "confidence"
+    ],
+    "display_name": "Self-talk",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "Deep breathing",
+    "icon": "air",
+    "severity": "success",
+    "tags": [
+      "mental health",
+      "relaxation",
+      "calm",
+      "focus"
+    ],
+    "display_name": "Breathing",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "Digital detox",
+    "icon": "visibility_off",
+    "severity": "success",
+    "tags": [
+      "focus",
+      "mental health",
+      "tech",
+      "relaxation"
+    ],
+    "display_name": "Digital detox",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "Self-care",
+    "icon": "self_care",
+    "severity": "success",
+    "tags": [
+      "health",
+      "self-care",
+      "mental health",
+      "wellness"
+    ],
+    "display_name": "Self-care",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "Relaxation time",
+    "icon": "spa",
+    "severity": "success",
+    "tags": [
+      "self-care",
+      "mental health",
+      "calm",
+      "relaxation"
+    ],
+    "display_name": "Relax time",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "Do therapy",
+    "icon": "psychology",
+    "severity": "success",
+    "tags": [
+      "mental health",
+      "support",
+      "self-care",
+      "growth"
+    ],
+    "display_name": "Therapy",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "Ask for help",
+    "icon": "support",
+    "severity": "success",
+    "tags": [
+      "mental health",
+      "community",
+      "communication",
+      "growth"
+    ],
+    "display_name": "Ask help",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "Play a brain training game",
+    "icon": "psychology",
+    "severity": "success",
+    "tags": [
+      "mental health",
+      "learning",
+      "fun",
+      "focus"
+    ],
+    "display_name": "Brain game",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "Set an intention for the day",
+    "icon": "wb_incandescent",
+    "severity": "success",
+    "tags": [
+      "mindfulness",
+      "planning",
+      "focus",
+      "routine"
+    ],
+    "display_name": "Set intention",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "Reflect on today's wins",
+    "icon": "emoji_events",
+    "severity": "success",
+    "tags": [
+      "gratitude",
+      "reflection",
+      "positivity",
+      "routine"
+    ],
+    "display_name": "Today's wins",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "Read a book",
+    "icon": "book",
+    "severity": "success",
+    "tags": [
+      "education",
+      "relaxation",
+      "self-improvement",
+      "focus"
+    ],
+    "display_name": "Read book",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Study",
+    "icon": "school",
+    "severity": "success",
+    "tags": [
+      "education",
+      "discipline",
+      "growth",
+      "focus"
+    ],
+    "display_name": "Study",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Learn coding",
+    "icon": "code",
+    "severity": "success",
+    "tags": [
+      "skills",
+      "learning",
+      "focus",
+      "career"
+    ],
+    "display_name": "Coding",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Learn a language",
+    "icon": "language",
+    "severity": "success",
+    "tags": [
+      "skills",
+      "communication",
+      "growth",
+      "learning"
+    ],
+    "display_name": "Language",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Take a class",
+    "icon": "cast_for_education",
+    "severity": "success",
+    "tags": [
+      "learning",
+      "growth",
+      "education",
+      "discipline"
+    ],
+    "display_name": "Take class",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Listen to a podcast",
+    "icon": "podcasts",
+    "severity": "success",
+    "tags": [
+      "learning",
+      "relaxation",
+      "focus",
+      "media"
+    ],
+    "display_name": "Podcast",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Watch documentary",
+    "icon": "public",
+    "severity": "success",
+    "tags": [
+      "education",
+      "learning",
+      "entertainment",
+      "growth"
+    ],
+    "display_name": "Docu time",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Solve a puzzle",
+    "icon": "extension",
+    "severity": "success",
+    "tags": [
+      "fun",
+      "brain",
+      "mental health",
+      "learning"
+    ],
+    "display_name": "Puzzle",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Learn a new skill",
+    "icon": "lightbulb",
+    "severity": "success",
+    "tags": [
+      "creativity",
+      "growth",
+      "productivity",
+      "learning"
+    ],
+    "display_name": "New skill",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Listen to an audiobook",
+    "icon": "headphones",
+    "severity": "success",
+    "tags": [
+      "learning",
+      "relaxation",
+      "focus",
+      "media"
+    ],
+    "display_name": "Audiobook",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Review flashcards",
+    "icon": "style",
+    "severity": "success",
+    "tags": [
+      "learning",
+      "memory",
+      "discipline",
+      "growth"
+    ],
+    "display_name": "Flashcards",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Practice public speaking",
+    "icon": "record_voice_over",
+    "severity": "success",
+    "tags": [
+      "skills",
+      "confidence",
+      "growth",
+      "communication"
+    ],
+    "display_name": "Public speak",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Watch an educational video",
+    "icon": "smart_display",
+    "severity": "success",
+    "tags": [
+      "learning",
+      "growth",
+      "education",
+      "media"
+    ],
+    "display_name": "Edu video",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Practice typing speed",
+    "icon": "keyboard",
+    "severity": "success",
+    "tags": [
+      "skills",
+      "productivity",
+      "tech",
+      "growth"
+    ],
+    "display_name": "Typing",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Learn a new word",
+    "icon": "spellcheck",
+    "severity": "success",
+    "tags": [
+      "learning",
+      "growth",
+      "language",
+      "curiosity"
+    ],
+    "display_name": "New word",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Practice handwriting or calligraphy",
+    "icon": "draw",
+    "severity": "success",
+    "tags": [
+      "creativity",
+      "skills",
+      "focus",
+      "hobby"
+    ],
+    "display_name": "Calligraphy",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Read industry news",
+    "icon": "newspaper",
+    "severity": "success",
+    "tags": [
+      "career",
+      "learning",
+      "growth",
+      "awareness"
+    ],
+    "display_name": "Industry news",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Attend a webinar",
+    "icon": "cast_for_education",
+    "severity": "success",
+    "tags": [
+      "learning",
+      "career",
+      "growth",
+      "education"
+    ],
+    "display_name": "Webinar",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Learn a new tool or software",
+    "icon": "construction",
+    "severity": "success",
+    "tags": [
+      "skills",
+      "career",
+      "growth",
+      "tech"
+    ],
+    "display_name": "New tool",
+    "category": "Learning & Growth",
+    "origin": "system"
+  },
+  {
+    "name": "Set goals",
+    "icon": "star",
+    "severity": "success",
+    "tags": [
+      "productivity",
+      "motivation",
+      "planning",
+      "growth"
+    ],
+    "display_name": "Set goals",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Review progress",
+    "icon": "equalizer",
+    "severity": "success",
+    "tags": [
+      "growth",
+      "planning",
+      "reflection",
+      "routine"
+    ],
+    "display_name": "Reflect prog.",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Plan the week",
+    "icon": "calendar_month",
+    "severity": "success",
+    "tags": [
+      "productivity",
+      "planning",
+      "routine",
+      "organization"
+    ],
+    "display_name": "Plan week",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Plan tomorrow",
+    "icon": "event_note",
+    "severity": "success",
+    "tags": [
+      "productivity",
+      "planning",
+      "routine",
+      "organization"
+    ],
+    "display_name": "Plan tomorrow",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Complete a task",
+    "icon": "task_alt",
+    "severity": "success",
+    "tags": [
+      "productivity",
+      "focus",
+      "routine",
+      "success"
+    ],
+    "display_name": "One task",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Deep work session",
+    "icon": "target",
+    "severity": "success",
+    "tags": [
+      "focus",
+      "productivity",
+      "discipline",
+      "work"
+    ],
+    "display_name": "Deep work",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Finish a project",
+    "icon": "done_outline",
+    "severity": "success",
+    "tags": [
+      "focus",
+      "success",
+      "work",
+      "growth"
+    ],
+    "display_name": "Finish proj.",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Set reminders",
+    "icon": "alarm_on",
+    "severity": "success",
+    "tags": [
+      "planning",
+      "routine",
+      "focus",
+      "organization"
+    ],
+    "display_name": "Reminders",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Limit notifications",
+    "icon": "notifications_active",
+    "severity": "success",
+    "tags": [
+      "focus",
+      "mental health",
+      "productivity",
+      "routine"
+    ],
+    "display_name": "Mute alerts",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Organize documents",
+    "icon": "folder",
+    "severity": "success",
+    "tags": [
+      "productivity",
+      "organization",
+      "routine",
+      "focus"
+    ],
+    "display_name": "Sort docs",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Declutter space",
+    "icon": "delete_sweep",
+    "severity": "success",
+    "tags": [
+      "organization",
+      "home",
+      "routine",
+      "minimalism"
+    ],
+    "display_name": "Declutter",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Inbox zero",
+    "icon": "mark_email_read",
+    "severity": "success",
+    "tags": [
+      "productivity",
+      "email",
+      "organization",
+      "routine"
+    ],
+    "display_name": "Inbox zero",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Prioritize tasks",
+    "icon": "low_priority",
+    "severity": "success",
+    "tags": [
+      "productivity",
+      "planning",
+      "focus",
+      "organization"
+    ],
+    "display_name": "Prioritize",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Take a screen break",
+    "icon": "self_improvement",
+    "severity": "success",
+    "tags": [
+      "health",
+      "productivity",
+      "routine",
+      "ergonomics"
+    ],
+    "display_name": "Screen break",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Time blocking",
+    "icon": "schedule",
+    "severity": "success",
+    "tags": [
+      "productivity",
+      "planning",
+      "focus",
+      "organization"
+    ],
+    "display_name": "Time block",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Pomodoro session",
+    "icon": "timer",
+    "severity": "success",
+    "tags": [
+      "productivity",
+      "focus",
+      "discipline",
+      "routine"
+    ],
+    "display_name": "Pomodoro",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Walking meeting",
+    "icon": "directions_walk",
+    "severity": "success",
+    "tags": [
+      "productivity",
+      "health",
+      "work",
+      "movement"
+    ],
+    "display_name": "Walk meeting",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Give feedback",
+    "icon": "rate_review",
+    "severity": "success",
+    "tags": [
+      "work",
+      "communication",
+      "growth",
+      "teamwork"
+    ],
+    "display_name": "Give feedback",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Ask for feedback",
+    "icon": "feedback",
+    "severity": "success",
+    "tags": [
+      "work",
+      "growth",
+      "communication",
+      "learning"
+    ],
+    "display_name": "Ask feedback",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Update resume",
+    "icon": "description",
+    "severity": "success",
+    "tags": [
+      "career",
+      "planning",
+      "growth",
+      "organization"
+    ],
+    "display_name": "Update resume",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Networking",
+    "icon": "diversity_3",
+    "severity": "success",
+    "tags": [
+      "career",
+      "social",
+      "growth",
+      "connection"
+    ],
+    "display_name": "Networking",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Tidy up workspace",
+    "icon": "desk",
+    "severity": "success",
+    "tags": [
+      "productivity",
+      "organization",
+      "routine",
+      "focus"
+    ],
+    "display_name": "Tidy desk",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Mentor someone",
+    "icon": "diversity_3",
+    "severity": "success",
+    "tags": [
+      "career",
+      "support",
+      "growth",
+      "community"
+    ],
+    "display_name": "Mentor",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Practice for an interview",
+    "icon": "record_voice_over",
+    "severity": "success",
+    "tags": [
+      "career",
+      "confidence",
+      "growth",
+      "preparation"
+    ],
+    "display_name": "Interview prep",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Limit screen time",
+    "icon": "screen_lock_portrait",
+    "severity": "success",
+    "tags": [
+      "focus",
+      "mental health",
+      "productivity",
+      "routine"
+    ],
+    "display_name": "Limit screen",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "Track expenses",
+    "icon": "receipt_long",
+    "severity": "success",
+    "tags": [
+      "finance",
+      "discipline",
+      "organization",
+      "planning"
+    ],
+    "display_name": "Track expense",
+    "category": "Finance",
+    "origin": "system"
+  },
+  {
+    "name": "Pay bills",
+    "icon": "credit_card",
+    "severity": "success",
+    "tags": [
+      "finance",
+      "routine",
+      "responsibility",
+      "organization"
+    ],
+    "display_name": "Pay bills",
+    "category": "Finance",
+    "origin": "system"
+  },
+  {
+    "name": "Save money",
+    "icon": "savings",
+    "severity": "success",
+    "tags": [
+      "finance",
+      "discipline",
+      "planning",
+      "growth"
+    ],
+    "display_name": "Save money",
+    "category": "Finance",
+    "origin": "system"
+  },
+  {
+    "name": "Review subscriptions",
+    "icon": "subscriptions",
+    "severity": "success",
+    "tags": [
+      "finance",
+      "organization",
+      "routine",
+      "discipline"
+    ],
+    "display_name": "Subscriptions",
+    "category": "Finance",
+    "origin": "system"
+  },
+  {
+    "name": "Check credit score",
+    "icon": "credit_score",
+    "severity": "success",
+    "tags": [
+      "finance",
+      "monitoring",
+      "routine",
+      "planning"
+    ],
+    "display_name": "Credit score",
+    "category": "Finance",
+    "origin": "system"
+  },
+  {
+    "name": "Review insurance",
+    "icon": "shield",
+    "severity": "success",
+    "tags": [
+      "finance",
+      "planning",
+      "responsibility",
+      "organization"
+    ],
+    "display_name": "Insurance",
+    "category": "Finance",
+    "origin": "system"
+  },
+  {
+    "name": "Compare prices before buying",
+    "icon": "price_check",
+    "severity": "success",
+    "tags": [
+      "finance",
+      "discipline",
+      "planning",
+      "shopping"
+    ],
+    "display_name": "Compare prices",
+    "category": "Finance",
+    "origin": "system"
+  },
+  {
+    "name": "Invest or add to savings",
+    "icon": "trending_up",
+    "severity": "success",
+    "tags": [
+      "finance",
+      "planning",
+      "growth",
+      "discipline"
+    ],
+    "display_name": "Invest",
+    "category": "Finance",
+    "origin": "system"
+  },
+  {
+    "name": "Laundry",
+    "icon": "local_laundry_service",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cleaning",
+      "responsibility",
+      "routine"
+    ],
+    "display_name": "Laundry",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Vacuuming",
+    "icon": "vacuum",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cleaning",
+      "responsibility",
+      "organization"
+    ],
+    "display_name": "Vacuuming",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Mopping",
+    "icon": "mop",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cleaning",
+      "routine",
+      "organization"
+    ],
+    "display_name": "Mopping",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Dishes",
+    "icon": "dishwasher",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cleaning",
+      "routine",
+      "responsibility"
+    ],
+    "display_name": "Dishes",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Tidy up",
+    "icon": "cleaning_services",
+    "severity": "success",
+    "tags": [
+      "cleaning",
+      "routine",
+      "productivity",
+      "home"
+    ],
+    "display_name": "Tidy up",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Grocery shopping",
+    "icon": "shopping_cart",
+    "severity": "success",
+    "tags": [
+      "home",
+      "responsibility",
+      "preparedness",
+      "food"
+    ],
+    "display_name": "Shopping",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Water plants",
+    "icon": "local_florist",
+    "severity": "success",
+    "tags": [
+      "home",
+      "routine",
+      "nature",
+      "care"
+    ],
+    "display_name": "Water plants",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Gardening",
+    "icon": "yard",
+    "severity": "success",
+    "tags": [
+      "outdoors",
+      "nature",
+      "health",
+      "relaxation"
+    ],
+    "display_name": "Gardening",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Yard work",
+    "icon": "grass",
+    "severity": "success",
+    "tags": [
+      "home",
+      "outdoors",
+      "cleaning",
+      "routine"
+    ],
+    "display_name": "Yard work",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Fix something",
+    "icon": "plumbing",
+    "severity": "success",
+    "tags": [
+      "home",
+      "maintenance",
+      "responsibility",
+      "task"
+    ],
+    "display_name": "Fix stuff",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Organize closet",
+    "icon": "inventory_2",
+    "severity": "success",
+    "tags": [
+      "organization",
+      "home",
+      "routine",
+      "minimalism"
+    ],
+    "display_name": "Sort closet",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Recycle",
+    "icon": "recycling",
+    "severity": "success",
+    "tags": [
+      "environment",
+      "responsibility",
+      "routine",
+      "awareness"
+    ],
+    "display_name": "Recycle",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Save energy",
+    "icon": "energy_savings_leaf",
+    "severity": "success",
+    "tags": [
+      "eco",
+      "responsibility",
+      "home",
+      "sustainability"
+    ],
+    "display_name": "Save energy",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Change bedsheets",
+    "icon": "king_bed",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cleaning",
+      "routine",
+      "hygiene"
+    ],
+    "display_name": "Change sheets",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Iron clothes",
+    "icon": "iron",
+    "severity": "success",
+    "tags": [
+      "home",
+      "chores",
+      "routine",
+      "organization"
+    ],
+    "display_name": "Iron clothes",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Fold laundry",
+    "icon": "checkroom",
+    "severity": "success",
+    "tags": [
+      "home",
+      "chores",
+      "routine",
+      "organization"
+    ],
+    "display_name": "Fold laundry",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Clean the fridge",
+    "icon": "kitchen",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cleaning",
+      "routine",
+      "organization"
+    ],
+    "display_name": "Clean fridge",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Clean windows",
+    "icon": "window",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cleaning",
+      "routine",
+      "maintenance"
+    ],
+    "display_name": "Clean windows",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Clean the bathroom",
+    "icon": "bathtub",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cleaning",
+      "routine",
+      "hygiene"
+    ],
+    "display_name": "Clean bathroom",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Take out the trash",
+    "icon": "delete",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cleaning",
+      "routine",
+      "responsibility"
+    ],
+    "display_name": "Take out trash",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Check smoke detector",
+    "icon": "detector_smoke",
+    "severity": "success",
+    "tags": [
+      "home",
+      "safety",
+      "maintenance",
+      "responsibility"
+    ],
+    "display_name": "Smoke detector",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Unsubscribe from junk mail",
+    "icon": "unsubscribe",
+    "severity": "success",
+    "tags": [
+      "organization",
+      "digital",
+      "routine",
+      "focus"
+    ],
+    "display_name": "Unsubscribe",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Check the mailbox",
+    "icon": "mail",
+    "severity": "success",
+    "tags": [
+      "home",
+      "routine",
+      "responsibility",
+      "organization"
+    ],
+    "display_name": "Check mail",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Sweep the porch",
+    "icon": "cleaning_services",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cleaning",
+      "outdoors",
+      "routine"
+    ],
+    "display_name": "Sweep porch",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Wipe down kitchen counters",
+    "icon": "countertops",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cleaning",
+      "hygiene",
+      "routine"
+    ],
+    "display_name": "Wipe counters",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Dust furniture",
+    "icon": "cleaning_services",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cleaning",
+      "routine",
+      "organization"
+    ],
+    "display_name": "Dust furniture",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Clean the microwave",
+    "icon": "microwave",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cleaning",
+      "kitchen",
+      "routine"
+    ],
+    "display_name": "Clean microwave",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Clean the coffee maker",
+    "icon": "coffee_maker",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cleaning",
+      "kitchen",
+      "routine"
+    ],
+    "display_name": "Clean coffee mkr",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Organize the pantry",
+    "icon": "kitchen",
+    "severity": "success",
+    "tags": [
+      "home",
+      "organization",
+      "routine",
+      "food"
+    ],
+    "display_name": "Organize pantry",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Check food expiration dates",
+    "icon": "event_busy",
+    "severity": "success",
+    "tags": [
+      "home",
+      "organization",
+      "food",
+      "responsibility"
+    ],
+    "display_name": "Check expiry",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Replace lightbulbs",
+    "icon": "light",
+    "severity": "success",
+    "tags": [
+      "home",
+      "maintenance",
+      "responsibility",
+      "task"
+    ],
+    "display_name": "Replace bulb",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Organize the garage",
+    "icon": "garage_home",
+    "severity": "success",
+    "tags": [
+      "home",
+      "organization",
+      "routine",
+      "maintenance"
+    ],
+    "display_name": "Organize garage",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Lock doors and windows",
+    "icon": "lock",
+    "severity": "success",
+    "tags": [
+      "home",
+      "safety",
+      "routine",
+      "responsibility"
+    ],
+    "display_name": "Lock up",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "DIY project",
+    "icon": "handyman",
+    "severity": "success",
+    "tags": [
+      "creativity",
+      "home",
+      "hobby",
+      "productivity"
+    ],
+    "display_name": "DIY project",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Walk the dog",
+    "icon": "pets",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "dog",
+      "routine",
+      "outdoors"
+    ],
+    "display_name": "Walk dog",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Feed the dog",
+    "icon": "pets",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "dog",
+      "routine",
+      "care"
+    ],
+    "display_name": "Feed dog",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Feed the cat",
+    "icon": "pets",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "cat",
+      "routine",
+      "care"
+    ],
+    "display_name": "Feed cat",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Play with pet",
+    "icon": "toys",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "joy",
+      "connection",
+      "care"
+    ],
+    "display_name": "Play w/ pet",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Groom the pet",
+    "icon": "content_cut",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "care",
+      "hygiene",
+      "routine"
+    ],
+    "display_name": "Groom pet",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Bathe the pet",
+    "icon": "shower",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "hygiene",
+      "care",
+      "routine"
+    ],
+    "display_name": "Bathe pet",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Train the dog",
+    "icon": "sports_and_outdoors",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "dog",
+      "training",
+      "discipline"
+    ],
+    "display_name": "Train dog",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Clean litter box",
+    "icon": "cleaning_services",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "cat",
+      "hygiene",
+      "routine"
+    ],
+    "display_name": "Litter box",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Refill pet water and food",
+    "icon": "water_drop",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "routine",
+      "care",
+      "responsibility"
+    ],
+    "display_name": "Refill pet bowl",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Pet's vet appointment",
+    "icon": "medical_services",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "health",
+      "care",
+      "responsibility"
+    ],
+    "display_name": "Vet visit",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Give pet medication",
+    "icon": "medication",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "health",
+      "care",
+      "routine"
+    ],
+    "display_name": "Pet meds",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Trim pet's nails",
+    "icon": "content_cut",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "hygiene",
+      "care",
+      "routine"
+    ],
+    "display_name": "Pet nails",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Feed the birds",
+    "icon": "flutter_dash",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "nature",
+      "care",
+      "outdoors"
+    ],
+    "display_name": "Feed birds",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Clean the aquarium",
+    "icon": "water",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "hygiene",
+      "care",
+      "routine"
+    ],
+    "display_name": "Clean aquarium",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Pick up after the dog",
+    "icon": "cleaning_services",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "dog",
+      "responsibility",
+      "routine"
+    ],
+    "display_name": "Pick up dog",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Take care of pets",
+    "icon": "pets",
+    "severity": "success",
+    "tags": [
+      "responsibility",
+      "routine",
+      "animals",
+      "care"
+    ],
+    "display_name": "Pet care",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Brush teeth",
+    "icon": "cleaning_services",
+    "severity": "success",
+    "tags": [
+      "health",
+      "hygiene",
+      "routine",
+      "self-care"
+    ],
+    "display_name": "Brush teeth",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Floss teeth",
+    "icon": "dentistry",
+    "severity": "success",
+    "tags": [
+      "health",
+      "hygiene",
+      "routine",
+      "self-care"
+    ],
+    "display_name": "Floss",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Use mouthwash",
+    "icon": "sanitizer",
+    "severity": "success",
+    "tags": [
+      "health",
+      "hygiene",
+      "routine",
+      "self-care"
+    ],
+    "display_name": "Mouthwash",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Take a shower",
+    "icon": "shower",
+    "severity": "success",
+    "tags": [
+      "hygiene",
+      "self-care",
+      "routine",
+      "health"
+    ],
+    "display_name": "Shower",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Wash face",
+    "icon": "wash",
+    "severity": "success",
+    "tags": [
+      "hygiene",
+      "self-care",
+      "routine",
+      "skincare"
+    ],
+    "display_name": "Wash face",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Apply sunscreen",
+    "icon": "wb_sunny",
+    "severity": "success",
+    "tags": [
+      "health",
+      "skincare",
+      "self-care",
+      "routine"
+    ],
+    "display_name": "Sunscreen",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Apply moisturizer",
+    "icon": "water_drop",
+    "severity": "success",
+    "tags": [
+      "skincare",
+      "self-care",
+      "routine",
+      "health"
+    ],
+    "display_name": "Moisturize",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Shave",
+    "icon": "content_cut",
+    "severity": "success",
+    "tags": [
+      "hygiene",
+      "self-care",
+      "routine",
+      "grooming"
+    ],
+    "display_name": "Shave",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Trim nails",
+    "icon": "content_cut",
+    "severity": "success",
+    "tags": [
+      "hygiene",
+      "self-care",
+      "routine",
+      "grooming"
+    ],
+    "display_name": "Trim nails",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Wash hair",
+    "icon": "shower",
+    "severity": "success",
+    "tags": [
+      "hygiene",
+      "self-care",
+      "routine",
+      "grooming"
+    ],
+    "display_name": "Wash hair",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Hair care routine",
+    "icon": "face_retouching_natural",
+    "severity": "success",
+    "tags": [
+      "self-care",
+      "grooming",
+      "routine",
+      "beauty"
+    ],
+    "display_name": "Hair care",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Face massage",
+    "icon": "face_retouching_natural",
+    "severity": "success",
+    "tags": [
+      "relaxation",
+      "routine",
+      "self-care",
+      "calm"
+    ],
+    "display_name": "Face massage",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Dress up nicely",
+    "icon": "style",
+    "severity": "success",
+    "tags": [
+      "confidence",
+      "self-care",
+      "style",
+      "routine"
+    ],
+    "display_name": "Dress well",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Skincare routine",
+    "icon": "face",
+    "severity": "success",
+    "tags": [
+      "self-care",
+      "health",
+      "beauty",
+      "routine"
+    ],
+    "display_name": "Skincare",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Wash hands",
+    "icon": "clean_hands",
+    "severity": "success",
+    "tags": [
+      "health",
+      "hygiene",
+      "routine",
+      "safety"
+    ],
+    "display_name": "Wash hands",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Check blood pressure",
+    "icon": "monitor_heart",
+    "severity": "success",
+    "tags": [
+      "health",
+      "monitoring",
+      "routine",
+      "wellness"
+    ],
+    "display_name": "Blood pressure",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "Check blood sugar",
+    "icon": "bloodtype",
+    "severity": "success",
+    "tags": [
+      "health",
+      "monitoring",
+      "routine",
+      "wellness"
+    ],
+    "display_name": "Blood sugar",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "Take temperature",
+    "icon": "device_thermostat",
+    "severity": "success",
+    "tags": [
+      "health",
+      "monitoring",
+      "routine",
+      "wellness"
+    ],
+    "display_name": "Temperature",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "Track mood",
+    "icon": "mood",
+    "severity": "success",
+    "tags": [
+      "mental health",
+      "monitoring",
+      "reflection",
+      "routine"
+    ],
+    "display_name": "Track mood",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "Track sleep quality",
+    "icon": "bedtime",
+    "severity": "success",
+    "tags": [
+      "sleep",
+      "monitoring",
+      "health",
+      "routine"
+    ],
+    "display_name": "Track sleep",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "Take medicine",
+    "icon": "medication",
+    "severity": "success",
+    "tags": [
+      "health",
+      "routine",
+      "treatment",
+      "discipline"
+    ],
+    "display_name": "Medication",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "Eye rest break (20-20-20)",
+    "icon": "visibility",
+    "severity": "success",
+    "tags": [
+      "health",
+      "eyes",
+      "routine",
+      "screen"
+    ],
+    "display_name": "Eye rest",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "Posture check",
+    "icon": "accessibility_new",
+    "severity": "success",
+    "tags": [
+      "health",
+      "ergonomics",
+      "routine",
+      "body"
+    ],
+    "display_name": "Posture check",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "Track steps",
+    "icon": "footprint",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "health",
+      "monitoring",
+      "routine"
+    ],
+    "display_name": "Track steps",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "Track weight",
+    "icon": "monitor_weight",
+    "severity": "success",
+    "tags": [
+      "health",
+      "monitoring",
+      "routine",
+      "fitness"
+    ],
+    "display_name": "Track weight",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "Dentist checkup",
+    "icon": "dentistry",
+    "severity": "success",
+    "tags": [
+      "health",
+      "self-care",
+      "hygiene",
+      "wellness"
+    ],
+    "display_name": "Dentist",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "Doctor checkup",
+    "icon": "medical_services",
+    "severity": "success",
+    "tags": [
+      "health",
+      "wellness",
+      "self-care",
+      "routine"
+    ],
+    "display_name": "Doctor visit",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "Refuel the car",
+    "icon": "local_gas_station",
+    "severity": "success",
+    "tags": [
+      "home",
+      "maintenance",
+      "responsibility",
+      "routine"
+    ],
+    "display_name": "Fuel car",
+    "category": "Transport & Car",
+    "origin": "system"
+  },
+  {
+    "name": "Wash the car",
+    "icon": "local_car_wash",
+    "severity": "success",
+    "tags": [
+      "home",
+      "cleaning",
+      "maintenance",
+      "responsibility"
+    ],
+    "display_name": "Car wash",
+    "category": "Transport & Car",
+    "origin": "system"
+  },
+  {
+    "name": "Check tire pressure",
+    "icon": "tire_repair",
+    "severity": "success",
+    "tags": [
+      "car",
+      "maintenance",
+      "safety",
+      "routine"
+    ],
+    "display_name": "Tire check",
+    "category": "Transport & Car",
+    "origin": "system"
+  },
+  {
+    "name": "Clean the car interior",
+    "icon": "local_car_wash",
+    "severity": "success",
+    "tags": [
+      "car",
+      "cleaning",
+      "maintenance",
+      "routine"
+    ],
+    "display_name": "Clean car",
+    "category": "Transport & Car",
+    "origin": "system"
+  },
+  {
+    "name": "Take public transport",
+    "icon": "directions_bus",
+    "severity": "success",
+    "tags": [
+      "transport",
+      "eco",
+      "routine",
+      "commute"
+    ],
+    "display_name": "Public transport",
+    "category": "Transport & Car",
+    "origin": "system"
+  },
+  {
+    "name": "Bike to work",
+    "icon": "directions_bike",
+    "severity": "success",
+    "tags": [
+      "transport",
+      "fitness",
+      "eco",
+      "commute"
+    ],
+    "display_name": "Bike commute",
+    "category": "Transport & Car",
+    "origin": "system"
+  },
+  {
+    "name": "Check the weather",
+    "icon": "partly_cloudy_day",
+    "severity": "success",
+    "tags": [
+      "planning",
+      "routine",
+      "preparedness",
+      "daily"
+    ],
+    "display_name": "Check weather",
+    "category": "Transport & Car",
+    "origin": "system"
+  },
+  {
+    "name": "Call family",
+    "icon": "call",
+    "severity": "success",
+    "tags": [
+      "connection",
+      "relationships",
+      "love",
+      "support"
+    ],
+    "display_name": "Call family",
+    "category": "Family & Relationships",
+    "origin": "system"
+  },
+  {
+    "name": "Meaningful conversation",
+    "icon": "forum",
+    "severity": "success",
+    "tags": [
+      "connection",
+      "social",
+      "mental health",
+      "relationships"
+    ],
+    "display_name": "Deep talk",
+    "category": "Family & Relationships",
+    "origin": "system"
+  },
+  {
+    "name": "Play with children",
+    "icon": "child_friendly",
+    "severity": "success",
+    "tags": [
+      "family",
+      "fun",
+      "connection",
+      "care"
+    ],
+    "display_name": "Play w/ kids",
+    "category": "Family & Relationships",
+    "origin": "system"
+  },
+  {
+    "name": "Read to kids",
+    "icon": "auto_stories",
+    "severity": "success",
+    "tags": [
+      "family",
+      "connection",
+      "learning",
+      "care"
+    ],
+    "display_name": "Read to kids",
+    "category": "Family & Relationships",
+    "origin": "system"
+  },
+  {
+    "name": "Help with homework",
+    "icon": "school",
+    "severity": "success",
+    "tags": [
+      "family",
+      "support",
+      "education",
+      "care"
+    ],
+    "display_name": "Homework help",
+    "category": "Family & Relationships",
+    "origin": "system"
+  },
+  {
+    "name": "Family dinner",
+    "icon": "dinner_dining",
+    "severity": "success",
+    "tags": [
+      "family",
+      "connection",
+      "food",
+      "routine"
+    ],
+    "display_name": "Family dinner",
+    "category": "Family & Relationships",
+    "origin": "system"
+  },
+  {
+    "name": "Family game night",
+    "icon": "sports_esports",
+    "severity": "success",
+    "tags": [
+      "family",
+      "fun",
+      "connection",
+      "routine"
+    ],
+    "display_name": "Game night",
+    "category": "Family & Relationships",
+    "origin": "system"
+  },
+  {
+    "name": "Date night",
+    "icon": "favorite",
+    "severity": "success",
+    "tags": [
+      "relationships",
+      "connection",
+      "fun",
+      "routine"
+    ],
+    "display_name": "Date night",
+    "category": "Family & Relationships",
+    "origin": "system"
+  },
+  {
+    "name": "Check in with partner",
+    "icon": "chat",
+    "severity": "success",
+    "tags": [
+      "relationships",
+      "communication",
+      "connection",
+      "care"
+    ],
+    "display_name": "Check in",
+    "category": "Family & Relationships",
+    "origin": "system"
+  },
+  {
+    "name": "Pack kids' school bag",
+    "icon": "backpack",
+    "severity": "success",
+    "tags": [
+      "family",
+      "planning",
+      "care",
+      "routine"
+    ],
+    "display_name": "Pack school bag",
+    "category": "Family & Relationships",
+    "origin": "system"
+  },
+  {
+    "name": "Prepare kids' lunch",
+    "icon": "lunch_dining",
+    "severity": "success",
+    "tags": [
+      "family",
+      "food",
+      "care",
+      "routine"
+    ],
+    "display_name": "Kids lunch",
+    "category": "Family & Relationships",
+    "origin": "system"
+  },
+  {
+    "name": "Give a child a bath",
+    "icon": "bathtub",
+    "severity": "success",
+    "tags": [
+      "family",
+      "care",
+      "hygiene",
+      "routine"
+    ],
+    "display_name": "Kids bath",
+    "category": "Family & Relationships",
+    "origin": "system"
+  },
+  {
+    "name": "Tell a bedtime story",
+    "icon": "auto_stories",
+    "severity": "success",
+    "tags": [
+      "family",
+      "connection",
+      "routine",
+      "care"
+    ],
+    "display_name": "Bedtime story",
+    "category": "Family & Relationships",
+    "origin": "system"
+  },
+  {
+    "name": "Praise or encourage a child",
+    "icon": "emoji_emotions",
+    "severity": "success",
+    "tags": [
+      "family",
+      "support",
+      "positivity",
+      "connection"
+    ],
+    "display_name": "Praise child",
+    "category": "Family & Relationships",
+    "origin": "system"
+  },
+  {
+    "name": "Socialize",
+    "icon": "groups",
+    "severity": "success",
+    "tags": [
+      "social",
+      "relationships",
+      "connection",
+      "community"
+    ],
+    "display_name": "Socialize",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "Offer help",
+    "icon": "handshake",
+    "severity": "success",
+    "tags": [
+      "kindness",
+      "support",
+      "community",
+      "connection"
+    ],
+    "display_name": "Offer help",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "Do volunteer work",
+    "icon": "volunteer_activism",
+    "severity": "success",
+    "tags": [
+      "kindness",
+      "community",
+      "support",
+      "values"
+    ],
+    "display_name": "Volunteer",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "Send a gift",
+    "icon": "redeem",
+    "severity": "success",
+    "tags": [
+      "kindness",
+      "relationships",
+      "social",
+      "gratitude"
+    ],
+    "display_name": "Send gift",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "Random act of kindness",
+    "icon": "emoji_emotions",
+    "severity": "success",
+    "tags": [
+      "positivity",
+      "social",
+      "kindness",
+      "connection"
+    ],
+    "display_name": "Kindness",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "Attend an event",
+    "icon": "event",
+    "severity": "success",
+    "tags": [
+      "social",
+      "community",
+      "entertainment",
+      "fun"
+    ],
+    "display_name": "Go to event",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "Compliment someone",
+    "icon": "emoji_emotions",
+    "severity": "success",
+    "tags": [
+      "kindness",
+      "social",
+      "positivity",
+      "connection"
+    ],
+    "display_name": "Compliment",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "Attend a community event",
+    "icon": "diversity_3",
+    "severity": "success",
+    "tags": [
+      "community",
+      "social",
+      "connection",
+      "engagement"
+    ],
+    "display_name": "Community event",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "Donate clothes",
+    "icon": "checkroom",
+    "severity": "success",
+    "tags": [
+      "kindness",
+      "minimalism",
+      "community",
+      "values"
+    ],
+    "display_name": "Donate clothes",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "Donate blood",
+    "icon": "bloodtype",
+    "severity": "success",
+    "tags": [
+      "kindness",
+      "health",
+      "community",
+      "values"
+    ],
+    "display_name": "Donate blood",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "Join a community cleanup",
+    "icon": "cleaning_services",
+    "severity": "success",
+    "tags": [
+      "community",
+      "environment",
+      "kindness",
+      "outdoors"
+    ],
+    "display_name": "Cleanup",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "Help a neighbor",
+    "icon": "handshake",
+    "severity": "success",
+    "tags": [
+      "kindness",
+      "community",
+      "support",
+      "connection"
+    ],
+    "display_name": "Help neighbor",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "Donate to charity",
+    "icon": "volunteer_activism",
+    "severity": "success",
+    "tags": [
+      "kindness",
+      "finance",
+      "community",
+      "values"
+    ],
+    "display_name": "Donate",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "Write a letter",
+    "icon": "mail",
+    "severity": "success",
+    "tags": [
+      "creativity",
+      "connection",
+      "expression",
+      "gratitude"
+    ],
+    "display_name": "Write letter",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "Painting or drawing",
+    "icon": "brush",
+    "severity": "success",
+    "tags": [
+      "creativity",
+      "art",
+      "expression",
+      "relaxation"
+    ],
+    "display_name": "Painting",
+    "category": "Creativity & Hobbies",
+    "origin": "system"
+  },
+  {
+    "name": "Photography",
+    "icon": "photo_camera",
+    "severity": "success",
+    "tags": [
+      "creativity",
+      "fun",
+      "memory",
+      "expression"
+    ],
+    "display_name": "Take photo",
+    "category": "Creativity & Hobbies",
+    "origin": "system"
+  },
+  {
+    "name": "Practice an instrument",
+    "icon": "piano",
+    "severity": "success",
+    "tags": [
+      "creativity",
+      "music",
+      "discipline",
+      "growth"
+    ],
+    "display_name": "Play music",
+    "category": "Creativity & Hobbies",
+    "origin": "system"
+  },
+  {
+    "name": "Listen to music",
+    "icon": "music_note",
+    "severity": "success",
+    "tags": [
+      "relaxation",
+      "fun",
+      "mental health",
+      "entertainment"
+    ],
+    "display_name": "Music time",
+    "category": "Creativity & Hobbies",
+    "origin": "system"
+  },
+  {
+    "name": "Gaming",
+    "icon": "stadia_controller",
+    "severity": "success",
+    "tags": [
+      "hobby",
+      "fun",
+      "entertainment",
+      "gaming"
+    ],
+    "display_name": "Gaming",
+    "category": "Creativity & Hobbies",
+    "origin": "system"
+  },
+  {
+    "name": "Creative writing",
+    "icon": "history_edu",
+    "severity": "success",
+    "tags": [
+      "creativity",
+      "expression",
+      "focus",
+      "growth"
+    ],
+    "display_name": "Writing",
+    "category": "Creativity & Hobbies",
+    "origin": "system"
+  },
+  {
+    "name": "Watch a movie",
+    "icon": "theaters",
+    "severity": "success",
+    "tags": [
+      "entertainment",
+      "relaxation",
+      "fun",
+      "media"
+    ],
+    "display_name": "Movie night",
+    "category": "Creativity & Hobbies",
+    "origin": "system"
+  },
+  {
+    "name": "Knitting or crochet",
+    "icon": "content_cut",
+    "severity": "success",
+    "tags": [
+      "creativity",
+      "hobby",
+      "relaxation",
+      "craft"
+    ],
+    "display_name": "Knitting",
+    "category": "Creativity & Hobbies",
+    "origin": "system"
+  },
+  {
+    "name": "Play board games",
+    "icon": "casino",
+    "severity": "success",
+    "tags": [
+      "fun",
+      "social",
+      "hobby",
+      "entertainment"
+    ],
+    "display_name": "Board games",
+    "category": "Creativity & Hobbies",
+    "origin": "system"
+  },
+  {
+    "name": "Try a new hobby",
+    "icon": "explore",
+    "severity": "success",
+    "tags": [
+      "curiosity",
+      "growth",
+      "fun",
+      "discovery"
+    ],
+    "display_name": "New hobby",
+    "category": "Creativity & Hobbies",
+    "origin": "system"
+  },
+  {
+    "name": "Time in nature",
+    "icon": "emoji_nature",
+    "severity": "success",
+    "tags": [
+      "outdoors",
+      "relaxation",
+      "health",
+      "calm"
+    ],
+    "display_name": "Nature time",
+    "category": "Outdoors & Nature",
+    "origin": "system"
+  },
+  {
+    "name": "Visit a park",
+    "icon": "park",
+    "severity": "success",
+    "tags": [
+      "outdoors",
+      "nature",
+      "relaxation",
+      "leisure"
+    ],
+    "display_name": "Go to park",
+    "category": "Outdoors & Nature",
+    "origin": "system"
+  },
+  {
+    "name": "Watch the sunset",
+    "icon": "wb_twilight",
+    "severity": "success",
+    "tags": [
+      "outdoors",
+      "relaxation",
+      "mindfulness",
+      "calm"
+    ],
+    "display_name": "Sunset watch",
+    "category": "Outdoors & Nature",
+    "origin": "system"
+  },
+  {
+    "name": "Aromatherapy",
+    "icon": "spa",
+    "severity": "success",
+    "tags": [
+      "relaxation",
+      "self-care",
+      "calm",
+      "wellness"
+    ],
+    "display_name": "Aromatherapy",
+    "category": "Outdoors & Nature",
+    "origin": "system"
+  },
+  {
+    "name": "Listen to nature sounds",
+    "icon": "forest",
+    "severity": "success",
+    "tags": [
+      "relaxation",
+      "calm",
+      "mental health",
+      "sleep"
+    ],
+    "display_name": "Nature sounds",
+    "category": "Outdoors & Nature",
+    "origin": "system"
+  },
+  {
+    "name": "Stargazing",
+    "icon": "nights_stay",
+    "severity": "success",
+    "tags": [
+      "relaxation",
+      "nature",
+      "wonder",
+      "calm"
+    ],
+    "display_name": "Stargazing",
+    "category": "Outdoors & Nature",
+    "origin": "system"
+  },
+  {
+    "name": "Watch the clouds",
+    "icon": "cloud",
+    "severity": "success",
+    "tags": [
+      "relaxation",
+      "mindfulness",
+      "calm",
+      "nature"
+    ],
+    "display_name": "Watch clouds",
+    "category": "Outdoors & Nature",
+    "origin": "system"
+  },
+  {
+    "name": "Plan a trip",
+    "icon": "flight_takeoff",
+    "severity": "success",
+    "tags": [
+      "travel",
+      "planning",
+      "adventure",
+      "excitement"
+    ],
+    "display_name": "Plan trip",
+    "category": "Travel & Adventure",
+    "origin": "system"
+  },
+  {
+    "name": "Pack a travel bag",
+    "icon": "luggage",
+    "severity": "success",
+    "tags": [
+      "travel",
+      "organization",
+      "planning",
+      "preparedness"
+    ],
+    "display_name": "Pack bag",
+    "category": "Travel & Adventure",
+    "origin": "system"
+  },
+  {
+    "name": "Research a destination",
+    "icon": "travel_explore",
+    "severity": "success",
+    "tags": [
+      "travel",
+      "planning",
+      "curiosity",
+      "learning"
+    ],
+    "display_name": "Research trip",
+    "category": "Travel & Adventure",
+    "origin": "system"
+  },
+  {
+    "name": "Explore a new neighborhood",
+    "icon": "explore",
+    "severity": "success",
+    "tags": [
+      "adventure",
+      "curiosity",
+      "outdoors",
+      "discovery"
+    ],
+    "display_name": "Explore area",
+    "category": "Travel & Adventure",
+    "origin": "system"
+  },
+  {
+    "name": "Try a new restaurant",
+    "icon": "restaurant",
+    "severity": "success",
+    "tags": [
+      "food",
+      "adventure",
+      "fun",
+      "discovery"
+    ],
+    "display_name": "New restaurant",
+    "category": "Travel & Adventure",
+    "origin": "system"
+  },
+  {
+    "name": "Unplug for an hour",
+    "icon": "phonelink_off",
+    "severity": "success",
+    "tags": [
+      "digital wellbeing",
+      "mental health",
+      "focus",
+      "routine"
+    ],
+    "display_name": "Unplug hour",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "Delete unused apps",
+    "icon": "delete_sweep",
+    "severity": "success",
+    "tags": [
+      "tech",
+      "organization",
+      "routine",
+      "minimalism"
+    ],
+    "display_name": "Delete apps",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "Organize photos",
+    "icon": "photo_library",
+    "severity": "success",
+    "tags": [
+      "organization",
+      "tech",
+      "routine",
+      "memories"
+    ],
+    "display_name": "Sort photos",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "Clean up desktop files",
+    "icon": "desktop_windows",
+    "severity": "success",
+    "tags": [
+      "tech",
+      "organization",
+      "routine",
+      "productivity"
+    ],
+    "display_name": "Clean desktop",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "Update apps and software",
+    "icon": "system_update",
+    "severity": "success",
+    "tags": [
+      "tech",
+      "maintenance",
+      "routine",
+      "security"
+    ],
+    "display_name": "Update apps",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "Review privacy settings",
+    "icon": "privacy_tip",
+    "severity": "success",
+    "tags": [
+      "tech",
+      "security",
+      "routine",
+      "awareness"
+    ],
+    "display_name": "Privacy check",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "Update passwords",
+    "icon": "password",
+    "severity": "success",
+    "tags": [
+      "security",
+      "tech",
+      "routine",
+      "digital"
+    ],
+    "display_name": "New password",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "Backup phone or computer",
+    "icon": "cloud_upload",
+    "severity": "success",
+    "tags": [
+      "tech",
+      "security",
+      "organization",
+      "productivity"
+    ],
+    "display_name": "Backup",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "Charge devices overnight",
+    "icon": "battery_charging_full",
+    "severity": "success",
+    "tags": [
+      "tech",
+      "routine",
+      "organization",
+      "home"
+    ],
+    "display_name": "Charge devices",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "Clear phone storage",
+    "icon": "storage",
+    "severity": "success",
+    "tags": [
+      "tech",
+      "organization",
+      "routine",
+      "productivity"
+    ],
+    "display_name": "Clear storage",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "Organize digital files",
+    "icon": "devices",
+    "severity": "success",
+    "tags": [
+      "tech",
+      "organization",
+      "productivity",
+      "routine"
+    ],
+    "display_name": "Sort files",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "Cold shower",
+    "icon": "bolt",
+    "severity": "success",
+    "tags": [
+      "health",
+      "energy",
+      "discipline",
+      "routine"
+    ],
+    "display_name": "Cold shower",
+    "category": "Body Care & Recovery",
+    "origin": "system"
+  },
+  {
+    "name": "Warm up before exercise",
+    "icon": "self_improvement",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "health",
+      "routine",
+      "safety"
+    ],
+    "display_name": "Warm up",
+    "category": "Body Care & Recovery",
+    "origin": "system"
+  },
+  {
+    "name": "Cool down after exercise",
+    "icon": "self_improvement",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "health",
+      "routine",
+      "recovery"
+    ],
+    "display_name": "Cool down",
+    "category": "Body Care & Recovery",
+    "origin": "system"
+  },
+  {
+    "name": "Take a sauna",
+    "icon": "hot_tub",
+    "severity": "success",
+    "tags": [
+      "relaxation",
+      "recovery",
+      "health",
+      "self-care"
+    ],
+    "display_name": "Sauna",
+    "category": "Body Care & Recovery",
+    "origin": "system"
+  },
+  {
+    "name": "Get a massage",
+    "icon": "spa",
+    "severity": "success",
+    "tags": [
+      "relaxation",
+      "recovery",
+      "self-care",
+      "health"
+    ],
+    "display_name": "Massage",
+    "category": "Body Care & Recovery",
+    "origin": "system"
+  },
+  {
+    "name": "Take a relaxing bath",
+    "icon": "bathtub",
+    "severity": "success",
+    "tags": [
+      "relaxation",
+      "self-care",
+      "calm",
+      "routine"
+    ],
+    "display_name": "Bath",
+    "category": "Body Care & Recovery",
+    "origin": "system"
+  },
+  {
+    "name": "Foam rolling",
+    "icon": "fitness_center",
+    "severity": "success",
+    "tags": [
+      "recovery",
+      "fitness",
+      "health",
+      "routine"
+    ],
+    "display_name": "Foam roll",
+    "category": "Body Care & Recovery",
+    "origin": "system"
+  },
+  {
+    "name": "Prayer or spiritual practice",
+    "icon": "self_improvement",
+    "severity": "success",
+    "tags": [
+      "spirituality",
+      "mindfulness",
+      "reflection",
+      "routine"
+    ],
+    "display_name": "Prayer",
+    "category": "Spirituality & Reflection",
+    "origin": "system"
+  },
+  {
+    "name": "Weekly reflection",
+    "icon": "menu_book",
+    "severity": "success",
+    "tags": [
+      "reflection",
+      "growth",
+      "planning",
+      "routine"
+    ],
+    "display_name": "Weekly review",
+    "category": "Spirituality & Reflection",
+    "origin": "system"
+  },
+  {
+    "name": "Plan tomorrow's outfit",
+    "icon": "checkroom",
+    "severity": "success",
+    "tags": [
+      "planning",
+      "organization",
+      "routine",
+      "preparedness"
+    ],
+    "display_name": "Plan outfit",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "procrastinating important tasks",
+    "icon": "hourglass_disabled",
+    "severity": "danger",
+    "tags": [
+      "procrastination",
+      "laziness"
+    ],
+    "display_name": "Procrastinate",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "browsing social media endlessly",
+    "icon": "smartphone",
+    "severity": "danger",
+    "tags": [
+      "distraction",
+      "addiction"
+    ],
+    "display_name": "Endless scroll",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "eating junk food late at night",
+    "icon": "fastfood",
+    "severity": "danger",
+    "tags": [
+      "junk food",
+      "addiction"
+    ],
+    "display_name": "Late night junk",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "starting the day without a plan",
+    "icon": "event_busy",
+    "severity": "danger",
+    "tags": [
+      "procrastination",
+      "stress"
+    ],
+    "display_name": "No plan start",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "doomscrolling social media",
+    "icon": "public_off",
+    "severity": "danger",
+    "tags": [
+      "distraction",
+      "addiction"
+    ],
+    "display_name": "Doomscroll",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "snacking out of boredom",
+    "icon": "restaurant",
+    "severity": "danger",
+    "tags": [
+      "junk food",
+      "stress"
+    ],
+    "display_name": "Snack bored",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "avoiding difficult tasks",
+    "icon": "block",
+    "severity": "danger",
+    "tags": [
+      "procrastination",
+      "stress"
+    ],
+    "display_name": "Avoid tasks",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "sitting for hours without a break",
+    "icon": "chair",
+    "severity": "danger",
+    "tags": [
+      "stress",
+      "health"
+    ],
+    "display_name": "Desk for hrs",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "skipping workouts regularly",
+    "icon": "fitness_center",
+    "severity": "danger",
+    "tags": [
+      "laziness",
+      "procrastination"
+    ],
+    "display_name": "Skip workout",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "working until burnout",
+    "icon": "work",
+    "severity": "danger",
+    "tags": [
+      "stress",
+      "addiction"
+    ],
+    "display_name": "Burnout work",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "eating fast food several times a week",
+    "icon": "lunch_dining",
+    "severity": "danger",
+    "tags": [
+      "junk food",
+      "addiction"
+    ],
+    "display_name": "Frequent fastf",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "watching series all night",
+    "icon": "tv",
+    "severity": "danger",
+    "tags": [
+      "distraction",
+      "laziness"
+    ],
+    "display_name": "Series allnite",
+    "category": "Sleep & Routines",
+    "origin": "system"
+  },
+  {
+    "name": "checking phone first thing in the morning",
+    "icon": "phone_android",
+    "severity": "danger",
+    "tags": [
+      "addiction",
+      "distraction"
+    ],
+    "display_name": "Phone AM",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "not preparing meals",
+    "icon": "no_meals",
+    "severity": "danger",
+    "tags": [
+      "junk food",
+      "laziness"
+    ],
+    "display_name": "No meal prep",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "leaving tasks to the last minute",
+    "icon": "alarm_off",
+    "severity": "danger",
+    "tags": [
+      "procrastination",
+      "stress"
+    ],
+    "display_name": "Last min task",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "skipping breakfast",
+    "icon": "breakfast_dining",
+    "severity": "danger",
+    "tags": [
+      "junk food",
+      "laziness"
+    ],
+    "display_name": "Skip breakfast",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "overeating out of emotion",
+    "icon": "sentiment_very_dissatisfied",
+    "severity": "danger",
+    "tags": [
+      "stress",
+      "junk food"
+    ],
+    "display_name": "Emo eating",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "sleeping until noon",
+    "icon": "bedtime_off",
+    "severity": "danger",
+    "tags": [
+      "laziness",
+      "procrastination"
+    ],
+    "display_name": "Sleep late",
+    "category": "Sleep & Routines",
+    "origin": "system"
+  },
+  {
+    "name": "ignoring to-do list",
+    "icon": "playlist_remove",
+    "severity": "danger",
+    "tags": [
+      "procrastination",
+      "laziness"
+    ],
+    "display_name": "Ignore todos",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "not drinking enough water",
+    "icon": "water_drop",
+    "severity": "danger",
+    "tags": [
+      "health",
+      "dehydration"
+    ],
+    "display_name": "Not enough water",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "drinking too much caffeine",
+    "icon": "coffee",
+    "severity": "danger",
+    "tags": [
+      "health",
+      "addiction"
+    ],
+    "display_name": "Too much coffee",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "impulse buying",
+    "icon": "shopping_bag",
+    "severity": "danger",
+    "tags": [
+      "finance",
+      "impulsivity"
+    ],
+    "display_name": "Impulse buy",
+    "category": "Finance",
+    "origin": "system"
+  },
+  {
+    "name": "comparing yourself on social media",
+    "icon": "compare",
+    "severity": "danger",
+    "tags": [
+      "mental health",
+      "social media"
+    ],
+    "display_name": "Compare online",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "interrupting others while talking",
+    "icon": "record_voice_over",
+    "severity": "danger",
+    "tags": [
+      "communication",
+      "relationships"
+    ],
+    "display_name": "Interrupting",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "smoking cigarettes",
+    "icon": "smoking_rooms",
+    "severity": "danger",
+    "tags": [
+      "addiction",
+      "health"
+    ],
+    "display_name": "Smoking",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "vaping",
+    "icon": "vaping_rooms",
+    "severity": "danger",
+    "tags": [
+      "addiction",
+      "health"
+    ],
+    "display_name": "Vaping",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "drinking alcohol",
+    "icon": "liquor",
+    "severity": "danger",
+    "tags": [
+      "addiction",
+      "health"
+    ],
+    "display_name": "Drinking",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "recreational drug use",
+    "icon": "medication_liquid",
+    "severity": "danger",
+    "tags": [
+      "addiction",
+      "health"
+    ],
+    "display_name": "Drug use",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "gambling",
+    "icon": "casino",
+    "severity": "danger",
+    "tags": [
+      "addiction",
+      "finance"
+    ],
+    "display_name": "Gambling",
+    "category": "Finance",
+    "origin": "system"
+  },
+  {
+    "name": "excessive screen time",
+    "icon": "smartphone",
+    "severity": "danger",
+    "tags": [
+      "distraction",
+      "addiction"
+    ],
+    "display_name": "Too much screen",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "texting while driving",
+    "icon": "no_cell",
+    "severity": "danger",
+    "tags": [
+      "safety",
+      "distraction"
+    ],
+    "display_name": "Text & drive",
+    "category": "Transport & Car",
+    "origin": "system"
+  },
+  {
+    "name": "online impulse shopping",
+    "icon": "shopping_bag",
+    "severity": "danger",
+    "tags": [
+      "finance",
+      "impulsivity"
+    ],
+    "display_name": "Impulse shopping",
+    "category": "Finance",
+    "origin": "system"
+  },
+  {
+    "name": "oversharing on social media",
+    "icon": "share",
+    "severity": "danger",
+    "tags": [
+      "social media",
+      "privacy"
+    ],
+    "display_name": "Oversharing",
+    "category": "Digital Wellbeing & Tech",
+    "origin": "system"
+  },
+  {
+    "name": "multitasking too much",
+    "icon": "sync_problem",
+    "severity": "danger",
+    "tags": [
+      "productivity",
+      "stress"
+    ],
+    "display_name": "Multitasking",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "skipping breaks",
+    "icon": "free_breakfast",
+    "severity": "danger",
+    "tags": [
+      "stress",
+      "health"
+    ],
+    "display_name": "Skip breaks",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "checking email obsessively",
+    "icon": "mark_email_unread",
+    "severity": "danger",
+    "tags": [
+      "stress",
+      "distraction"
+    ],
+    "display_name": "Email obsession",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "missing deadlines",
+    "icon": "event_busy",
+    "severity": "danger",
+    "tags": [
+      "procrastination",
+      "stress"
+    ],
+    "display_name": "Miss deadline",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "overcommitting to tasks",
+    "icon": "playlist_add_check",
+    "severity": "danger",
+    "tags": [
+      "stress",
+      "procrastination"
+    ],
+    "display_name": "Overcommit",
+    "category": "Productivity & Work",
+    "origin": "system"
+  },
+  {
+    "name": "eating too much sugar",
+    "icon": "cookie",
+    "severity": "danger",
+    "tags": [
+      "junk food",
+      "health"
+    ],
+    "display_name": "Too much sugar",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "poor posture",
+    "icon": "accessibility_new",
+    "severity": "danger",
+    "tags": [
+      "health",
+      "ergonomics"
+    ],
+    "display_name": "Poor posture",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "neglecting dental care",
+    "icon": "sentiment_dissatisfied",
+    "severity": "danger",
+    "tags": [
+      "hygiene",
+      "health"
+    ],
+    "display_name": "Skip dental care",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "ignoring pain or injury",
+    "icon": "personal_injury",
+    "severity": "danger",
+    "tags": [
+      "health",
+      "denial"
+    ],
+    "display_name": "Ignore pain",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "nail biting",
+    "icon": "back_hand",
+    "severity": "danger",
+    "tags": [
+      "stress",
+      "habit"
+    ],
+    "display_name": "Nail biting",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "gossiping",
+    "icon": "record_voice_over",
+    "severity": "danger",
+    "tags": [
+      "communication",
+      "relationships"
+    ],
+    "display_name": "Gossiping",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "holding grudges",
+    "icon": "sentiment_very_dissatisfied",
+    "severity": "danger",
+    "tags": [
+      "mental health",
+      "relationships"
+    ],
+    "display_name": "Holding grudges",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "avoiding difficult conversations",
+    "icon": "speaker_notes_off",
+    "severity": "danger",
+    "tags": [
+      "communication",
+      "avoidance"
+    ],
+    "display_name": "Avoid talks",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "canceling plans last minute",
+    "icon": "event_busy",
+    "severity": "danger",
+    "tags": [
+      "relationships",
+      "reliability"
+    ],
+    "display_name": "Cancel plans",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "overspending",
+    "icon": "credit_card_off",
+    "severity": "danger",
+    "tags": [
+      "finance",
+      "impulsivity"
+    ],
+    "display_name": "Overspending",
+    "category": "Finance",
+    "origin": "system"
+  },
+  {
+    "name": "ignoring bills",
+    "icon": "receipt_long",
+    "severity": "danger",
+    "tags": [
+      "finance",
+      "avoidance"
+    ],
+    "display_name": "Ignore bills",
+    "category": "Finance",
+    "origin": "system"
+  },
+  {
+    "name": "negative self-talk",
+    "icon": "sentiment_very_dissatisfied",
+    "severity": "danger",
+    "tags": [
+      "mental health",
+      "self-esteem"
+    ],
+    "display_name": "Negative self-talk",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "overthinking",
+    "icon": "psychology_alt",
+    "severity": "danger",
+    "tags": [
+      "mental health",
+      "stress"
+    ],
+    "display_name": "Overthinking",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "people pleasing",
+    "icon": "sentiment_neutral",
+    "severity": "danger",
+    "tags": [
+      "mental health",
+      "boundaries"
+    ],
+    "display_name": "People pleasing",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  },
+  {
+    "name": "suppressing your feelings",
+    "icon": "mood_bad",
+    "severity": "danger",
+    "tags": [
+      "mental health",
+      "avoidance"
+    ],
+    "display_name": "Suppress feelings",
+    "category": "Mental Health & Mindfulness",
+    "origin": "system"
+  }
 ]

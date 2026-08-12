@@ -1,132 +1,139 @@
 <template>
 	<div class="hs-root">
-		<!-- View toggle — Recently / All -->
-		<div class="hs-filter-tabs">
-			<button
-				class="hs-tab"
-				:class="{ active: currentView === 'recently' }"
-				@click="switchView('recently')">
-				<i class="pi pi-clock hs-tab-icon"></i>
-				<span>Recently</span>
-			</button>
-			<button
-				class="hs-tab"
-				:class="{ active: currentView === 'all' }"
-				@click="switchView('all')">
-				<i class="pi pi-th-large hs-tab-icon"></i>
-				<span>All</span>
-			</button>
-		</div>
-
-		<!-- Search bar -->
 		<div class="hs-search-wrap">
 			<i class="pi pi-search hs-search-icon"></i>
-			<InputText
+			<input
 				v-model="searchQuery"
-				placeholder="Search habits..."
-				class="hs-search-input w-full" />
+				:placeholder="searchPlaceholder"
+				class="hs-search-input"
+				type="text"
+				autocomplete="off"
+				spellcheck="false" />
 			<button
 				v-if="searchQuery"
 				class="hs-search-clear"
+				aria-label="Clear search"
 				@click="searchQuery = ''">
 				<i class="pi pi-times"></i>
 			</button>
 		</div>
 
-		<!-- Category pills — only visible in "all" view -->
-		<Transition name="hs-slide">
-			<div v-if="currentView === 'all'" class="hs-categories">
+		<div
+			class="hs-cat-scroller"
+			:class="{ 'has-active': activeCategories.length > 0 }">
+			<div class="hs-cat-row">
 				<button
-					class="hs-cat-pill"
-					:class="{ active: activeCategories.length === allCategoryKeys.length }"
-					@click="toggleAllCategories">
-					<i class="pi pi-list" style="font-size: 0.6rem"></i>
-					All
+					v-for="cat in superCategories"
+					:key="cat.key"
+					class="hs-cat-chip"
+					:class="{ active: activeCategories.includes(cat.key) }"
+					:aria-pressed="activeCategories.includes(cat.key)"
+					@click="toggleCategory(cat.key)">
+					<span class="hs-cat-emoji">{{ cat.emoji }}</span>
+					<span class="hs-cat-label">{{ cat.label }}</span>
 				</button>
-				<button
-					v-for="category in allCategoryKeys"
-					:key="category"
-					class="hs-cat-pill"
-					:class="{
-						active: activeCategories.includes(category),
-						negative: category === 'negative' && activeCategories.includes(category),
-					}"
-					@click="toggleCategory(category)">
-					<span class="hs-cat-dot" :class="'cat-' + category"></span>
-					{{ category }}
-				</button>
-			</div>
-		</Transition>
-
-		<!-- Results — Recently view -->
-		<div v-if="currentView === 'recently'" class="hs-results">
-			<div v-if="recentlyFiltered.length > 0" class="hs-grid">
-				<div
-					v-for="habit in recentlyFiltered"
-					:key="habit.name"
-					class="hs-item-wrap"
-					:class="{ added: isAdded(habit.name) }">
-					<HabbitItem
-						:data="goalMode && !isAdded(habit.name) ? { ...habit, severity: 'empty' } : habit"
-						:showLabel="true"
-						:showTooltip="true"
-						@click="onHabitClick(habit)" />
-					<!-- Check overlay for added items -->
-					<Transition name="hs-check">
-						<div v-if="isAdded(habit.name)" class="hs-check-overlay">
-							<i class="pi pi-check"></i>
-						</div>
-					</Transition>
-				</div>
-			</div>
-			<!-- Empty state: recently -->
-			<div v-else class="hs-empty">
-				<span class="hs-empty-icon">✨</span>
-				<p class="hs-empty-title">No recent habits yet</p>
-				<p class="hs-empty-text">
-					Switch to <button class="hs-empty-link" @click="switchView('all')">All</button>
-					to browse the full catalog
-				</p>
+				<Transition name="hs-clear">
+					<button
+						v-if="activeCategories.length > 0"
+						class="hs-cat-chip is-reset"
+						@click="clearFilters">
+						<i class="pi pi-times" style="font-size: 0.65rem"></i>
+						<span>Clear</span>
+					</button>
+				</Transition>
 			</div>
 		</div>
 
-		<!-- Results — All view (grouped by category) -->
-		<div v-else-if="currentView === 'all'" class="hs-grouped">
-			<template v-if="hasVisibleGroups">
-				<div
-					v-for="(habits, category) in groupedFiltered"
-					:key="category"
-					class="hs-group">
-					<div class="hs-group-head">
-						<span class="hs-group-dot" :class="'cat-' + category"></span>
-						<h4 class="hs-group-title">{{ category }}</h4>
-						<span class="hs-group-count">{{ habits.length }}</span>
+		<div class="hs-scroll">
+			<section
+				v-if="!searchQuery && suggestedHabits.length > 0 && activeCategories.length === 0"
+				class="hs-section">
+				<header class="hs-section-head">
+					<span class="hs-section-emoji" aria-hidden="true">✨</span>
+					<h4 class="hs-section-title">
+						{{ hasRecent ? "Recently added" : "Great to start with" }}
+					</h4>
+				</header>
+				<div class="hs-grid">
+					<div
+						v-for="habit in suggestedHabits"
+						:key="'sug-' + habit.name"
+						class="hs-cell"
+						:class="{ added: isAdded(habit.name) }">
+						<HabbitItem
+							:data="displayData(habit)"
+							:showLabel="true"
+							:showTooltip="true"
+							@click="onHabitClick(habit)" />
+						<Transition name="hs-check">
+							<div
+								v-if="isAdded(habit.name)"
+								class="hs-check"
+								aria-hidden="true">
+								<i class="pi pi-check"></i>
+							</div>
+						</Transition>
 					</div>
+				</div>
+			</section>
+
+			<template v-if="visibleGroups.length > 0">
+				<section
+					v-for="group in visibleGroups"
+					:key="group.key"
+					class="hs-section">
+					<header class="hs-section-head">
+						<span class="hs-section-emoji" aria-hidden="true">{{
+							group.emoji
+						}}</span>
+						<h4 class="hs-section-title">{{ group.label }}</h4>
+						<span class="hs-section-hint">{{ group.habits.length }}</span>
+					</header>
 					<div class="hs-grid">
 						<div
-							v-for="habit in habits"
-							:key="habit.name"
-							class="hs-item-wrap"
+							v-for="habit in group.habits"
+							:key="group.key + '-' + habit.name"
+							class="hs-cell"
 							:class="{ added: isAdded(habit.name) }">
 							<HabbitItem
-								:data="goalMode && !isAdded(habit.name) ? { ...habit, severity: 'empty' } : habit"
+								:data="displayData(habit)"
 								:showLabel="true"
 								:showTooltip="true"
 								@click="onHabitClick(habit)" />
 							<Transition name="hs-check">
-								<div v-if="isAdded(habit.name)" class="hs-check-overlay">
+								<div
+									v-if="isAdded(habit.name)"
+									class="hs-check"
+									aria-hidden="true">
 									<i class="pi pi-check"></i>
 								</div>
 							</Transition>
 						</div>
 					</div>
-				</div>
+				</section>
 			</template>
-			<!-- Empty state: search with no results -->
-			<div v-else class="hs-empty">
-				<span class="hs-empty-icon">🔍</span>
-				<p class="hs-empty-title">No habits found</p>
-				<p class="hs-empty-text">Try a different search term or category</p>
+
+			<div
+				v-else-if="searchQuery"
+				class="hs-empty">
+				<span class="hs-empty-icon" aria-hidden="true">🌿</span>
+				<p class="hs-empty-title">Nothing matches "{{ searchQuery }}"</p>
+				<button
+					class="hs-empty-link"
+					@click="clearFilters">
+					Clear filters
+				</button>
+			</div>
+			<div
+				v-else-if="activeCategories.length > 0 && visibleGroups.length === 0"
+				class="hs-empty">
+				<span class="hs-empty-icon" aria-hidden="true">🗂️</span>
+				<p class="hs-empty-title">Nothing in this filter</p>
+				<button
+					class="hs-empty-link"
+					@click="clearFilters">
+					Show all categories
+				</button>
 			</div>
 		</div>
 	</div>
@@ -136,387 +143,584 @@
 import { ref, computed } from "vue";
 import { useHabbitsStore } from "@/stores/habbits";
 import HabbitItem from "./HabbitItem.vue";
-import InputText from "primevue/inputtext";
 import { Habbit } from "@/libs/types";
 
 const habbitsStore = useHabbitsStore();
-const tag_categories = habbitsStore.tag_categories;
 
 const props = defineProps<{
-	// Names of habits already added in this session (for checkmark overlay)
 	addedNames?: string[];
-	// Gdy true — ikony wyświetlane są w stylu "empty" (jak cele w trybie wyświetlania)
 	goalMode?: boolean;
 }>();
 
 const emit = defineEmits(["select"]);
 
-// === View state ===
-const searchQuery = ref("");
+// ==========================================================================
+// Super-category configuration — consolidate 21 raw categories into 12.
+// ==========================================================================
+type SuperCategoryKey =
+	| "fitness"
+	| "health"
+	| "food"
+	| "mind"
+	| "work"
+	| "learning"
+	| "home"
+	| "social"
+	| "life"
+	| "pets"
+	| "tech"
+	| "finance";
 
-// Two views: "recently" or "all". No deselect — always one active.
-const currentView = ref<"recently" | "all">(
-	habbitsStore.recentHabbits?.length > 0 ? "recently" : "all"
+interface SuperCategoryDef {
+	key: SuperCategoryKey;
+	label: string;
+	emoji: string;
+	sources: string[];
+}
+
+const SUPER_CATEGORIES: SuperCategoryDef[] = [
+	{
+		key: "fitness",
+		label: "Fitness",
+		emoji: "🏃",
+		sources: ["Sports & Games", "Fitness & Movement"],
+	},
+	{
+		key: "health",
+		label: "Health & Body",
+		emoji: "💪",
+		sources: [
+			"Personal Hygiene & Grooming",
+			"Health Monitoring",
+			"Body Care & Recovery",
+			"Sleep & Routines",
+		],
+	},
+	{ key: "food", label: "Food", emoji: "🍎", sources: ["Nutrition & Food"] },
+	{
+		key: "mind",
+		label: "Mind",
+		emoji: "🧘",
+		sources: ["Mental Health & Mindfulness", "Spirituality & Reflection"],
+	},
+	{
+		key: "work",
+		label: "Work & Focus",
+		emoji: "💼",
+		sources: ["Productivity & Work"],
+	},
+	{
+		key: "learning",
+		label: "Learning",
+		emoji: "📚",
+		sources: ["Learning & Growth"],
+	},
+	{ key: "home", label: "Home", emoji: "🏡", sources: ["Home & Chores"] },
+	{
+		key: "social",
+		label: "Social & Family",
+		emoji: "👥",
+		sources: ["Social & Community", "Family & Relationships"],
+	},
+	{
+		key: "life",
+		label: "Life & Play",
+		emoji: "🎨",
+		sources: [
+			"Creativity & Hobbies",
+			"Travel & Adventure",
+			"Outdoors & Nature",
+			"Transport & Car",
+		],
+	},
+	{ key: "pets", label: "Pets", emoji: "🐾", sources: ["Pets"] },
+	{ key: "tech", label: "Tech", emoji: "📱", sources: ["Digital Wellbeing & Tech"] },
+	{ key: "finance", label: "Finance", emoji: "💰", sources: ["Finance"] },
+];
+
+const SOURCE_TO_SUPER: Record<string, SuperCategoryKey> = SUPER_CATEGORIES.reduce(
+	(acc, def) => {
+		for (const src of def.sources) acc[src] = def.key;
+		return acc;
+	},
+	{} as Record<string, SuperCategoryKey>,
 );
 
-// Active categories for "all" view filtering
-const allCategoryKeys = computed(() => Object.keys(tag_categories));
-const activeCategories = ref<string[]>([...Object.keys(tag_categories)]);
+function superKeyFor(habit: Habbit): SuperCategoryKey | null {
+	const raw = habit.category;
+	if (!raw) return null;
+	return SOURCE_TO_SUPER[raw] ?? null;
+}
 
-function switchView(view: "recently" | "all") {
-	currentView.value = view;
+// ==========================================================================
+// State
+// ==========================================================================
+const searchQuery = ref("");
+const activeCategories = ref<SuperCategoryKey[]>([]);
+
+// ==========================================================================
+// Derived — categories with per-key counts, in a stable order
+// ==========================================================================
+const superCategories = computed(() => {
+	const counts: Record<string, number> = {};
+	for (const h of habbitsStore.allHabbitsList as Habbit[]) {
+		if (!isAllowedForMode(h)) continue;
+		const k = superKeyFor(h);
+		if (k) counts[k] = (counts[k] ?? 0) + 1;
+	}
+	return SUPER_CATEGORIES.map((def) => ({ ...def, count: counts[def.key] ?? 0 }));
+});
+
+// ==========================================================================
+// Search — diacritic-insensitive across name, display_name, and tags
+// ==========================================================================
+function normalize(input: string): string {
+	return input
+		.toLowerCase()
+		.normalize("NFD")
+		.replace(/[̀-ͯ]/g, "");
+}
+
+const normalizedQuery = computed(() => normalize(searchQuery.value.trim()));
+
+function matchesSearch(habit: Habbit): boolean {
+	const q = normalizedQuery.value;
+	if (!q) return true;
+	if (normalize(habit.name).includes(q)) return true;
+	if (habit.display_name && normalize(habit.display_name).includes(q)) return true;
+	if (habit.tags?.some((t) => normalize(t).includes(q))) return true;
+	return false;
+}
+
+// Goals can only be things you want to *do more of* — hide negative habits.
+function isAllowedForMode(habit: Habbit): boolean {
+	if (props.goalMode && habit.severity === "danger") return false;
+	return true;
+}
+
+interface GroupView {
+	key: SuperCategoryKey;
+	label: string;
+	emoji: string;
+	habits: Habbit[];
+}
+
+const visibleGroups = computed<GroupView[]>(() => {
+	const bySuper = new Map<SuperCategoryKey, Habbit[]>();
+	const considered =
+		activeCategories.value.length > 0
+			? new Set(activeCategories.value)
+			: new Set(SUPER_CATEGORIES.map((c) => c.key));
+
+	for (const h of habbitsStore.allHabbitsList as Habbit[]) {
+		const key = superKeyFor(h);
+		if (!key || !considered.has(key)) continue;
+		if (!isAllowedForMode(h)) continue;
+		if (!matchesSearch(h)) continue;
+		if (!bySuper.has(key)) bySuper.set(key, []);
+		bySuper.get(key)!.push(h);
+	}
+
+	const groups: GroupView[] = [];
+	for (const def of SUPER_CATEGORIES) {
+		const habits = bySuper.get(def.key);
+		if (!habits || habits.length === 0) continue;
+		groups.push({ key: def.key, label: def.label, emoji: def.emoji, habits });
+	}
+	return groups;
+});
+
+// ==========================================================================
+// Suggested — Recently added, or curated defaults for new users
+// ==========================================================================
+const hasRecent = computed(() => (habbitsStore.recentHabbits ?? []).length > 0);
+
+const suggestedHabits = computed<Habbit[]>(() => {
+	const all = habbitsStore.allHabbitsList as Habbit[];
+	const recent = habbitsStore.recentHabbits ?? [];
+	if (recent.length > 0) {
+		return recent
+			.map((name) => all.find((h) => h.name === name))
+			.filter((h): h is Habbit => Boolean(h) && isAllowedForMode(h))
+			.slice(0, 8);
+	}
+	return all.filter((h) => h.severity === "success").slice(0, 8);
+});
+
+const searchPlaceholder = computed(
+	() => `Search ${habbitsStore.allHabbitsList.length} habits…`,
+);
+
+function toggleCategory(key: SuperCategoryKey) {
+	const i = activeCategories.value.indexOf(key);
+	if (i > -1) activeCategories.value.splice(i, 1);
+	else activeCategories.value.push(key);
+}
+
+function clearFilters() {
 	searchQuery.value = "";
+	activeCategories.value = [];
 }
 
-// Toggle a single category on/off
-function toggleCategory(category: string) {
-	const idx = activeCategories.value.indexOf(category);
-	if (idx > -1) {
-		// Don't allow deselecting all — keep at least one
-		if (activeCategories.value.length > 1) {
-			activeCategories.value.splice(idx, 1);
-		}
-	} else {
-		activeCategories.value.push(category);
-	}
-}
-
-// Toggle all categories on/off
-function toggleAllCategories() {
-	if (activeCategories.value.length === allCategoryKeys.value.length) {
-		// All selected -> select only first
-		activeCategories.value = [allCategoryKeys.value[0]];
-	} else {
-		activeCategories.value = [...allCategoryKeys.value];
-	}
-}
-
-// === Check if habit was already added ===
 function isAdded(name: string): boolean {
 	return props.addedNames?.includes(name) ?? false;
 }
 
-// Click handler — emit select if not already added
 function onHabitClick(habit: Habbit) {
-	if (!isAdded(habit.name)) {
-		emit("select", habit);
+	if (isAdded(habit.name)) return;
+	emit("select", habit);
+}
+
+function displayData(habit: Habbit): Habbit {
+	if (props.goalMode && !isAdded(habit.name)) {
+		return { ...habit, severity: "empty" };
 	}
+	return habit;
 }
-
-// === Filtering ===
-
-// Text search filter
-function matchesSearch(habit: Habbit): boolean {
-	if (!searchQuery.value.trim()) return true;
-	const q = searchQuery.value.toLowerCase();
-	return (
-		habit.name.toLowerCase().includes(q) ||
-		(habit.display_name?.toLowerCase().includes(q) ?? false)
-	);
-}
-
-// Recently used — filtered by search
-const recentlyFiltered = computed(() => {
-	return habbitsStore.allHabbitsList
-		.filter((h) => habbitsStore.recentHabbits.includes(h.name))
-		.filter(matchesSearch);
-});
-
-// Determine habit category based on its tags
-function getCategoryForHabit(habit: Habbit): string {
-	for (const [category, tags] of Object.entries(tag_categories)) {
-		if (habit.tags?.some((tag) => tags.includes(tag))) {
-			return category;
-		}
-	}
-	return "other";
-}
-
-// Grouped by category — filtered by search + active categories
-const groupedFiltered = computed(() => {
-	const grouped: Record<string, Habbit[]> = {};
-
-	habbitsStore.allHabbitsList
-		.filter(matchesSearch)
-		.forEach((habit) => {
-			const cat = getCategoryForHabit(habit);
-			if (activeCategories.value.includes(cat)) {
-				if (!grouped[cat]) grouped[cat] = [];
-				grouped[cat].push(habit);
-			}
-		});
-
-	return grouped;
-});
-
-const hasVisibleGroups = computed(() => {
-	return Object.keys(groupedFiltered.value).length > 0;
-});
 </script>
 
 <style scoped>
-/* =====================================================
-   ROOT
-   ===================================================== */
+/* ==========================================================================
+   ROOT — flex column, integrated with dialog shell
+   ========================================================================== */
 .hs-root {
 	display: flex;
 	flex-direction: column;
-	gap: 0.85rem;
-}
-
-/* =====================================================
-   FILTER TABS — segmented control
-   ===================================================== */
-.hs-filter-tabs {
-	display: flex;
-	gap: 0.35rem;
-	padding: 0.25rem;
-	border-radius: 0.75rem;
-	background: var(--p-orange-50);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-filter-tabs {
-	background: color-mix(in srgb, var(--p-gray-700) 50%, transparent);
-}
-
-.hs-tab {
 	flex: 1;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 0.35rem;
-	padding: 0.5rem 0.65rem;
-	border-radius: 0.55rem;
-	border: none;
-	cursor: pointer;
-	font-family: 'Lora', serif;
-	font-size: 0.78rem;
-	font-weight: 500;
-	color: var(--p-gray-500);
-	background: transparent;
-	transition: all 0.25s ease;
-	user-select: none;
-}
-.hs-tab:hover {
-	color: var(--p-gray-700);
-	background: color-mix(in srgb, var(--p-orange-100) 55%, transparent);
-}
-.hs-tab.active {
-	background: white;
-	color: var(--p-orange-600);
-	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-	font-weight: 600;
-}
-:where(.my-app-dark, .my-app-dark *) .hs-tab {
-	color: var(--p-gray-400);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-tab:hover {
-	color: var(--p-gray-200);
-	background: color-mix(in srgb, var(--p-gray-600) 40%, transparent);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-tab.active {
-	background: var(--p-gray-700);
-	color: var(--p-orange-400);
-	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
-}
-.hs-tab-icon {
-	font-size: 0.78rem;
-	opacity: 0.7;
-}
-.hs-tab.active .hs-tab-icon {
-	opacity: 1;
+	min-height: 0;
+	width: 100%;
+	gap: 0.9rem;
 }
 
-/* =====================================================
-   SEARCH BAR — with inline icon + clear button
-   ===================================================== */
+/* ==========================================================================
+   SEARCH — the focal element. Cushiony, centered, prominent.
+   ========================================================================== */
 .hs-search-wrap {
 	position: relative;
 	display: flex;
 	align-items: center;
+	flex-shrink: 0;
 }
 .hs-search-icon {
 	position: absolute;
-	left: 0.75rem;
-	font-size: 0.85rem;
-	color: var(--p-gray-400);
-	z-index: 1;
+	left: 1rem;
+	font-size: 0.95rem;
+	color: var(--p-orange-400);
 	pointer-events: none;
+	z-index: 1;
 }
 :where(.my-app-dark, .my-app-dark *) .hs-search-icon {
-	color: var(--p-gray-500);
+	color: var(--p-orange-400);
 }
 .hs-search-input {
-	padding-left: 2.25rem !important;
-	padding-right: 2.25rem !important;
+	width: 100%;
+	height: 2.85rem;
+	padding: 0 2.85rem 0 2.75rem;
+	font-family: "Lora", serif;
+	font-size: 0.95rem;
+	color: var(--p-gray-800);
+	background: color-mix(in srgb, white 65%, var(--p-orange-50));
+	border: 1px solid color-mix(in srgb, var(--p-orange-200) 55%, transparent);
+	border-radius: 0.85rem;
+	outline: none;
+	box-shadow: none;
+	transition:
+		border-color 0.2s ease,
+		background 0.2s ease;
 }
+.hs-search-input::placeholder {
+	color: var(--p-gray-400);
+	font-weight: 400;
+}
+.hs-search-input:hover {
+	border-color: color-mix(in srgb, var(--p-orange-300) 70%, transparent);
+	background: white;
+}
+.hs-search-input:focus {
+	border-color: var(--p-orange-400);
+	background: white;
+}
+:where(.my-app-dark, .my-app-dark *) .hs-search-input {
+	background: color-mix(in srgb, var(--p-gray-700) 55%, transparent);
+	color: var(--p-gray-100);
+	border-color: color-mix(in srgb, var(--p-gray-600) 70%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-search-input::placeholder {
+	color: var(--p-gray-400);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-search-input:hover {
+	border-color: var(--p-gray-500);
+	background: color-mix(in srgb, var(--p-gray-700) 75%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-search-input:focus {
+	border-color: var(--p-orange-500);
+	background: color-mix(in srgb, var(--p-gray-700) 75%, transparent);
+}
+
 .hs-search-clear {
 	position: absolute;
-	right: 0.6rem;
+	right: 0.75rem;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 1.4rem;
-	height: 1.4rem;
+	width: 1.65rem;
+	height: 1.65rem;
 	border-radius: 50%;
 	border: none;
 	background: var(--p-gray-100);
 	color: var(--p-gray-500);
-	font-size: 0.6rem;
+	font-size: 0.65rem;
 	cursor: pointer;
-	transition: all 0.2s ease;
+	transition: all 0.18s ease;
 }
 .hs-search-clear:hover {
-	background: var(--p-gray-200);
-	color: var(--p-gray-700);
+	background: var(--p-orange-100);
+	color: var(--p-orange-600);
+	transform: scale(1.08);
 }
 :where(.my-app-dark, .my-app-dark *) .hs-search-clear {
 	background: var(--p-gray-600);
-	color: var(--p-gray-400);
+	color: var(--p-gray-300);
 }
 :where(.my-app-dark, .my-app-dark *) .hs-search-clear:hover {
-	background: var(--p-gray-500);
-	color: var(--p-gray-200);
+	background: var(--p-orange-800);
+	color: var(--p-orange-200);
 }
 
-/* =====================================================
-   CATEGORY PILLS
-   ===================================================== */
-.hs-categories {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.35rem;
-}
-
-.hs-cat-pill {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.35rem;
-	padding: 0.3rem 0.7rem;
-	border-radius: 9999px;
-	border: 1px solid var(--p-orange-100);
-	background: white;
-	color: var(--p-gray-500);
-	font-size: 0.72rem;
-	font-weight: 500;
-	cursor: pointer;
-	text-transform: capitalize;
-	transition: all 0.2s ease;
-	user-select: none;
-	white-space: nowrap;
-}
-.hs-cat-pill:hover {
-	border-color: var(--p-orange-300);
-	color: var(--p-gray-700);
-	background: var(--p-orange-50);
-}
-.hs-cat-pill.active {
-	background: var(--p-orange-100);
-	border-color: var(--p-orange-300);
-	color: var(--p-orange-700);
-	font-weight: 600;
-}
-.hs-cat-pill.negative.active {
-	background: color-mix(in srgb, var(--p-red-100) 60%, transparent);
-	border-color: var(--p-red-300);
-	color: var(--p-red-600);
-}
-
-:where(.my-app-dark, .my-app-dark *) .hs-cat-pill {
-	border-color: var(--p-gray-600);
-	background: transparent;
-	color: var(--p-gray-400);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-cat-pill:hover {
-	border-color: var(--p-gray-500);
-	color: var(--p-gray-200);
-	background: color-mix(in srgb, var(--p-gray-700) 50%, transparent);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-cat-pill.active {
-	background: color-mix(in srgb, var(--p-orange-900) 35%, transparent);
-	border-color: var(--p-orange-700);
-	color: var(--p-orange-400);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-cat-pill.negative.active {
-	background: color-mix(in srgb, var(--p-red-900) 30%, transparent);
-	border-color: var(--p-red-700);
-	color: var(--p-red-400);
-}
-
-/* Category color dots */
-.hs-cat-dot {
-	width: 0.42rem;
-	height: 0.42rem;
-	border-radius: 50%;
+/* ==========================================================================
+   CATEGORY CHIPS — wrap into rows, all visible at once
+   ========================================================================== */
+.hs-cat-scroller {
 	flex-shrink: 0;
 }
-.cat-sport { background: var(--p-green-500); }
-.cat-health { background: var(--p-teal-500); }
-.cat-work { background: var(--p-blue-500); }
-.cat-learning { background: var(--p-purple-500); }
-.cat-relax { background: var(--p-cyan-400); }
-.cat-home { background: var(--p-orange-500); }
-.cat-social { background: var(--p-pink-500); }
-.cat-hobby { background: var(--p-yellow-500); }
-.cat-finance { background: var(--p-green-700); }
-.cat-tech { background: var(--p-blue-700); }
-.cat-negative { background: var(--p-red-500); }
 
-/* =====================================================
-   RESULTS GRID
-   ===================================================== */
-.hs-results,
-.hs-grouped {
-	margin-top: 0.25rem;
-}
-
-.hs-grid {
+.hs-cat-row {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.5rem;
+	gap: 0.45rem;
+	padding: 0.15rem 0 0.1rem;
 }
 
-/* =====================================================
-   ITEM WRAPPER — holds HabbitItem + check overlay
-   ===================================================== */
-.hs-item-wrap {
+.hs-cat-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.5rem 0.85rem 0.5rem 0.7rem;
+	border-radius: 9999px;
+	border: 1px solid transparent;
+	background: white;
+	color: var(--p-gray-600);
+	font-size: 0.78rem;
+	font-weight: 500;
+	cursor: pointer;
+	white-space: nowrap;
+	line-height: 1;
+	user-select: none;
+	transition:
+		transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+		background 0.18s ease,
+		color 0.18s ease,
+		border-color 0.18s ease,
+		box-shadow 0.18s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+.hs-cat-chip:hover {
+	color: var(--p-gray-900);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 10px -2px rgba(251, 146, 60, 0.18);
+}
+.hs-cat-chip.active {
+	background: var(--p-orange-500);
+	color: white;
+	box-shadow: 0 3px 10px -1px rgba(251, 146, 60, 0.4);
+}
+.hs-cat-chip.is-reset {
+	background: transparent;
+	border: 1px dashed color-mix(in srgb, var(--p-gray-400) 60%, transparent);
+	color: var(--p-gray-500);
+	box-shadow: none;
+}
+.hs-cat-chip.is-reset:hover {
+	color: var(--p-gray-800);
+	border-color: var(--p-gray-500);
+	background: white;
+	transform: none;
+	box-shadow: none;
+}
+
+/* Clear chip fade-in / fade-out */
+.hs-clear-enter-active {
+	transition:
+		opacity 0.22s ease,
+		transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.hs-clear-leave-active {
+	transition:
+		opacity 0.15s ease,
+		transform 0.18s ease;
+}
+.hs-clear-enter-from,
+.hs-clear-leave-to {
+	opacity: 0;
+	transform: scale(0.7);
+}
+
+:where(.my-app-dark, .my-app-dark *) .hs-cat-chip {
+	background: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
+	color: var(--p-gray-200);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-cat-chip:hover {
+	color: white;
+	background: color-mix(in srgb, var(--p-gray-700) 80%, transparent);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-cat-chip.active {
+	background: var(--p-orange-500);
+	color: white;
+}
+:where(.my-app-dark, .my-app-dark *) .hs-cat-chip.is-reset {
+	background: transparent;
+	border-color: color-mix(in srgb, var(--p-gray-500) 60%, transparent);
+	color: var(--p-gray-400);
+}
+:where(.my-app-dark, .my-app-dark *) .hs-cat-chip.is-reset:hover {
+	color: var(--p-gray-100);
+	border-color: var(--p-gray-400);
+	background: color-mix(in srgb, var(--p-gray-700) 40%, transparent);
+}
+
+.hs-cat-emoji {
+	font-size: 1rem;
+	line-height: 1;
+}
+.hs-cat-label {
+	line-height: 1;
+}
+
+/* ==========================================================================
+   SCROLLABLE BODY
+   ========================================================================== */
+.hs-scroll {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	padding-top: 0.25rem;
+	padding-right: 0.35rem;
+	margin-right: -0.35rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1.6rem;
+	scrollbar-width: thin;
+	scrollbar-color: color-mix(in srgb, var(--p-orange-300) 40%, transparent)
+		transparent;
+}
+.hs-scroll::-webkit-scrollbar {
+	width: 5px;
+}
+.hs-scroll::-webkit-scrollbar-thumb {
+	background: color-mix(in srgb, var(--p-orange-300) 40%, transparent);
+	border-radius: 6px;
+}
+:where(.my-app-dark, .my-app-dark *) .hs-scroll::-webkit-scrollbar-thumb {
+	background: color-mix(in srgb, var(--p-gray-500) 40%, transparent);
+}
+
+/* ==========================================================================
+   SECTION — no borders, no badges. Just emoji + name + subtle count.
+   ========================================================================== */
+.hs-section {
+	display: flex;
+	flex-direction: column;
+	gap: 0.85rem;
+}
+.hs-section-head {
+	display: flex;
+	align-items: baseline;
+	gap: 0.5rem;
+	padding: 0 0.1rem;
+}
+.hs-section-emoji {
+	font-size: 1.1rem;
+	line-height: 1;
+	transform: translateY(2px);
+}
+.hs-section-title {
+	font-family: "Lora", serif;
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: var(--p-gray-800);
+	margin: 0;
+	line-height: 1.2;
+	letter-spacing: -0.005em;
+}
+:where(.my-app-dark, .my-app-dark *) .hs-section-title {
+	color: var(--p-gray-100);
+}
+.hs-section-hint {
+	font-size: 0.72rem;
+	font-weight: 500;
+	color: var(--p-gray-400);
+	margin-left: auto;
+	font-variant-numeric: tabular-nums;
+}
+:where(.my-app-dark, .my-app-dark *) .hs-section-hint {
+	color: var(--p-gray-500);
+}
+
+/* ==========================================================================
+   GRID — uniform tile density
+   ========================================================================== */
+.hs-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
+	gap: 0.75rem 0.5rem;
+	justify-items: center;
+}
+
+.hs-cell {
 	position: relative;
 	cursor: pointer;
-	transition: all 0.25s ease;
+	transition: transform 0.22s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
-.hs-item-wrap.added {
-	opacity: 0.45;
+.hs-cell.added {
 	pointer-events: none;
-	transform: scale(0.95);
+	transform: scale(0.94);
+}
+/* Fade only the tile itself — keep check overlay at full punch */
+.hs-cell.added > :not(.hs-check) {
+	opacity: 0.5;
+	transition: opacity 0.22s ease;
 }
 
-/* Checkmark overlay on added items */
-.hs-check-overlay {
+.hs-check {
 	position: absolute;
-	inset: 0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
+	top: 0.15rem;
+	right: 0.15rem;
 	z-index: 5;
 	pointer-events: none;
 }
-.hs-check-overlay i {
+.hs-check i {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 1.5rem;
-	height: 1.5rem;
+	width: 1.35rem;
+	height: 1.35rem;
 	border-radius: 50%;
 	background: var(--p-green-500);
 	color: white;
-	font-size: 0.65rem;
+	font-size: 0.6rem;
 	font-weight: 700;
-	box-shadow: 0 2px 8px color-mix(in srgb, var(--p-green-500) 35%, transparent);
+	box-shadow:
+		0 0 0 2px color-mix(in srgb, var(--p-orange-50) 80%, white),
+		0 2px 8px color-mix(in srgb, var(--p-green-500) 45%, transparent);
 }
-:where(.my-app-dark, .my-app-dark *) .hs-check-overlay i {
-	background: var(--p-green-600);
+:where(.my-app-dark, .my-app-dark *) .hs-check i {
+	background: var(--p-emerald-400, var(--p-green-400));
+	box-shadow:
+		0 0 0 2px var(--p-gray-800),
+		0 2px 10px color-mix(in srgb, var(--p-emerald-400, var(--p-green-400)) 55%, transparent);
 }
 
-/* Check animation */
 .hs-check-enter-active {
 	transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -532,124 +736,80 @@ const hasVisibleGroups = computed(() => {
 	transform: scale(0.5);
 }
 
-/* =====================================================
-   GROUPED VIEW — category sections
-   ===================================================== */
-.hs-grouped {
-	display: flex;
-	flex-direction: column;
-	gap: 1.1rem;
-}
-.hs-group {
-	display: flex;
-	flex-direction: column;
-	gap: 0.55rem;
-}
-.hs-group-head {
-	display: flex;
-	align-items: center;
-	gap: 0.4rem;
-}
-.hs-group-dot {
-	width: 0.5rem;
-	height: 0.5rem;
-	border-radius: 50%;
-	flex-shrink: 0;
-}
-.hs-group-title {
-	font-family: 'Lora', serif;
-	font-size: 0.82rem;
-	font-weight: 600;
-	color: var(--p-gray-700);
-	text-transform: capitalize;
-	margin: 0;
-}
-:where(.my-app-dark, .my-app-dark *) .hs-group-title {
-	color: var(--p-gray-200);
-}
-.hs-group-count {
-	font-size: 0.65rem;
-	font-weight: 600;
-	padding: 0.1rem 0.4rem;
-	border-radius: 9999px;
-	background: var(--p-orange-100);
-	color: var(--p-orange-600);
-	margin-left: 0.15rem;
-}
-:where(.my-app-dark, .my-app-dark *) .hs-group-count {
-	background: color-mix(in srgb, var(--p-orange-900) 30%, transparent);
-	color: var(--p-orange-400);
-}
-
-/* =====================================================
+/* ==========================================================================
    EMPTY STATE
-   ===================================================== */
+   ========================================================================== */
 .hs-empty {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	padding: 2rem 1rem;
+	padding: 3rem 1rem 2rem;
 	text-align: center;
+	gap: 0.5rem;
 }
 .hs-empty-icon {
-	font-size: 2rem;
-	margin-bottom: 0.5rem;
+	font-size: 2.4rem;
+	opacity: 0.9;
 }
 .hs-empty-title {
-	font-family: 'Lora', serif;
+	font-family: "Lora", serif;
 	font-size: 0.95rem;
-	font-weight: 600;
+	font-weight: 500;
 	color: var(--p-gray-600);
-	margin-bottom: 0.15rem;
+	margin: 0;
 }
 :where(.my-app-dark, .my-app-dark *) .hs-empty-title {
-	color: var(--p-gray-300);
-}
-.hs-empty-text {
-	font-size: 0.78rem;
-	color: var(--p-gray-400);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-empty-text {
-	color: var(--p-gray-500);
+	color: var(--p-gray-200);
 }
 .hs-empty-link {
+	margin-top: 0.35rem;
 	border: none;
 	background: none;
 	color: var(--p-orange-500);
 	font-weight: 600;
+	font-size: 0.85rem;
 	cursor: pointer;
-	text-decoration: underline;
-	text-underline-offset: 2px;
-	font-size: inherit;
-	padding: 0;
+	padding: 0.4rem 0.85rem;
+	border-radius: 9999px;
+	transition: all 0.18s ease;
 }
 .hs-empty-link:hover {
+	background: color-mix(in srgb, var(--p-orange-100) 60%, transparent);
 	color: var(--p-orange-600);
 }
 :where(.my-app-dark, .my-app-dark *) .hs-empty-link {
 	color: var(--p-orange-400);
 }
-
-/* =====================================================
-   TRANSITIONS
-   ===================================================== */
-.hs-slide-enter-active,
-.hs-slide-leave-active {
-	transition: all 0.25s ease;
-	overflow: hidden;
-}
-.hs-slide-enter-from,
-.hs-slide-leave-to {
-	opacity: 0;
-	max-height: 0;
-}
-.hs-slide-enter-to,
-.hs-slide-leave-from {
-	max-height: 10rem;
+:where(.my-app-dark, .my-app-dark *) .hs-empty-link:hover {
+	background: color-mix(in srgb, var(--p-orange-900) 40%, transparent);
+	color: var(--p-orange-300);
 }
 
-/* Legacy icon support */
+/* Legacy icon font support (Material Icons used by HabbitItem) */
 .material-icons {
 	font-family: "Material Icons";
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 640px) {
+	.hs-root {
+		gap: 0.7rem;
+	}
+	.hs-search-input {
+		height: 2.75rem;
+		font-size: 0.9rem;
+	}
+	.hs-scroll {
+		gap: 1.35rem;
+	}
+	.hs-grid {
+		grid-template-columns: repeat(auto-fill, minmax(4rem, 1fr));
+		gap: 0.65rem 0.4rem;
+	}
+	.hs-section-title {
+		font-size: 0.88rem;
+	}
 }
 </style>
