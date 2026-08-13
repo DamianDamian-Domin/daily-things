@@ -2,7 +2,7 @@
 	<Transition name="fade">
 		<div
 			v-if="isLoading"
-			class="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-gray-900/40 bg-opacity-50 z-50">
+			class="fixed top-0 left-0 w-full h-full flex justify-center items-center bg-gray-900/40 bg-opacity-50 z-[10000]">
 			<div class="loader-container">
 				<svg
 					version="1.1"
@@ -58,15 +58,15 @@ const loadingStore = useLoaderStore();
 const { isLoading } = storeToRefs(loadingStore);
 </script>
 
-<style>
-svg {
+<style scoped>
+.loader-container svg {
 	width: 100px;
 	height: 100px;
 	margin: 50px;
 	display: inline-block;
 }
 
-#colorful circle {
+.loader-container #colorful circle {
 	fill: var(--color-green-500);
 }
 </style>

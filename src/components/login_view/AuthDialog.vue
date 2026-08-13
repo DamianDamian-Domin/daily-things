@@ -1,8 +1,9 @@
 <template>
 	<div
 		v-if="authStore.isAuthDialogOpen"
-		class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4 sm:p-8 overflow-hidden"
-		@click.self="handleGuestLogin">
+		class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 overflow-hidden"
+		:class="isNativePlatform ? 'p-0' : 'p-4 sm:p-8'"
+		@click.self="onBackgroundClick">
 		<div class="absolute inset-0 pointer-events-none overflow-hidden">
 			<span
 				v-for="(habit, index) in fallingHabits"
@@ -20,8 +21,15 @@
 		</div>
 
 		<div
-			class="card-a surface-content w-full max-w-md flex flex-col items-center relative z-10 py-6 px-4 sm:px-8 shadow-2xl max-h-full overflow-y-auto rounded-2xl">
+			class="card-a surface-content w-full flex flex-col items-center relative z-10 shadow-2xl overflow-y-auto"
+			:class="
+				isNativePlatform
+					? 'h-full max-w-none rounded-none justify-center py-8 px-6'
+					: 'max-w-md max-h-full rounded-2xl py-6 px-4 sm:px-8'
+			">
+			<!-- Przycisk zamykania ukryty na mobile -->
 			<button
+				v-if="isWebPlatform"
 				@click="authStore.isAuthDialogOpen = false"
 				class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors text-c">
 				<i class="pi pi-times"></i>
@@ -61,21 +69,24 @@
 					@click="openLoginForm" />
 			</div>
 
-			<div class="w-full flex items-center my-4 opacity-70">
-				<div class="flex-grow border-t border-gray-400"></div>
-				<span class="px-3 text-xs text-c uppercase tracking-widest">or</span>
-				<div class="flex-grow border-t border-gray-400"></div>
-			</div>
+			<!-- Separator i przycisk gościa ukryte na mobile -->
+			<template v-if="isWebPlatform">
+				<div class="w-full flex items-center my-4 opacity-70">
+					<div class="flex-grow border-t border-gray-400"></div>
+					<span class="px-3 text-xs text-c uppercase tracking-widest">or</span>
+					<div class="flex-grow border-t border-gray-400"></div>
+				</div>
 
-			<div class="w-full w-max-xs flex justify-center mb-6">
-				<Button
-					label="Continue as Guest"
-					icon="pi pi-user"
-					outlined
-					class="w-full max-w-[200px]"
-					:loading="isLoadingGuest"
-					@click="handleGuestLogin" />
-			</div>
+				<div class="w-full w-max-xs flex justify-center mb-6">
+					<Button
+						label="Continue as Guest"
+						icon="pi pi-user"
+						outlined
+						class="w-[200px] shrink-0"
+						:loading="isLoadingGuest"
+						@click="handleGuestLogin" />
+				</div>
+			</template>
 			<p class="text-xs text-c text-center">☕ Daily Things 2025</p>
 		</div>
 	</div>
@@ -88,6 +99,8 @@ import logoFile from "@/assets/logo.png";
 import { useHabbitsStore } from "@/stores/habbits";
 import { storeToRefs } from "pinia";
 import { useAuthStore } from "@/stores/auth";
+import { isNativePlatform, isWebPlatform } from "@/utils/platform";
+import { useLoaderStore } from "@/stores/loader";
 
 import LoginForm from "@/components/login_view/LoginForm.vue";
 import RegisterForm from "@/components/login_view/RegisterForm.vue";
@@ -97,6 +110,7 @@ const { allHabbitsList } = storeToRefs(habbitsStore);
 const logo = logoFile;
 
 const authStore = useAuthStore();
+const loaderStore = useLoaderStore();
 const isLoadingGuest = ref(false);
 
 const form = ref("login");
@@ -104,13 +118,24 @@ const form = ref("login");
 const openRegisterForm = () => (form.value = "register");
 const openLoginForm = () => (form.value = "login");
 
+// Zmodyfikowana funkcja kliknięcia w tło
+const onBackgroundClick = () => {
+	if (isWebPlatform) {
+		authStore.isAuthDialogOpen = false;
+	}
+};
+
 const handleGuestLogin = async () => {
+	if (isLoadingGuest.value) return;
+
 	isLoadingGuest.value = true;
+	loaderStore.startLoading();
 	try {
 		await authStore.loginAsGuest();
 		authStore.isAuthDialogOpen = false;
 	} finally {
 		isLoadingGuest.value = false;
+		loaderStore.stopLoading();
 	}
 };
 
