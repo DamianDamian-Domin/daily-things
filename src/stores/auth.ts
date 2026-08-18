@@ -9,7 +9,7 @@ import {
 	linkWithCredential,
 	EmailAuthProvider,
 	setPersistence,
-	browserSessionPersistence,
+	inMemoryPersistence,
 	browserLocalPersistence,
 	User,
 } from "firebase/auth";
@@ -107,7 +107,7 @@ export const useAuthStore = defineStore("auth", () => {
 		try {
 			// 1. Zmieniamy persystencję NA CHWILĘ na sesyjną (tylko na Webie)
 			if (isWebPlatform) {
-				await setPersistence(auth, browserSessionPersistence);
+				await setPersistence(auth, inMemoryPersistence);
 			}
 
 			const userCredential = await signInAnonymously(auth);

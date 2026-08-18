@@ -1,9 +1,7 @@
 <template>
 	<div
 		v-if="authStore.isAuthDialogOpen"
-		class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 overflow-hidden"
-		:class="isNativePlatform ? 'p-0' : 'p-4 sm:p-8'"
-		@click.self="onBackgroundClick">
+		class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 overflow-hidden">
 		<div class="absolute inset-0 pointer-events-none overflow-hidden">
 			<span
 				v-for="(habit, index) in fallingHabits"
