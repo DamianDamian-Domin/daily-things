@@ -37,9 +37,13 @@
 			<div class="dp-dialog-inner">
 				<!-- Cozy header -->
 				<div class="dp-dialog-top">
-					<span class="dp-dialog-emoji">📅</span>
 					<h4 class="dp-dialog-title">Pick a date</h4>
 				</div>
+				<img
+					class="dp-dialog-flower"
+					src="@/assets/logo.png"
+					alt=""
+					aria-hidden="true" />
 
 				<!-- Calendar -->
 				<DatePicker
@@ -232,7 +236,7 @@ watch(
 /* ====== DIALOG ====== */
 :deep(.dp-dialog.p-dialog) {
 	border-radius: 1.15rem !important;
-	overflow: hidden;
+	overflow: hidden !important;
 	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
 :deep(.dp-dialog .p-dialog-content) {
@@ -240,6 +244,7 @@ watch(
 }
 
 .dp-dialog-inner {
+	position: relative;
 	padding: 1.25rem;
 	display: flex;
 	flex-direction: column;
@@ -251,9 +256,36 @@ watch(
 	align-items: center;
 	gap: 0.45rem;
 	align-self: flex-start;
+	padding-left: 1.8rem;
 }
-.dp-dialog-emoji {
-	font-size: 1.1rem;
+.dp-dialog-flower {
+	position: absolute;
+	top: 0.45rem;
+	left: 0.45rem;
+	z-index: 2;
+	width: 2.6rem;
+	height: 2.6rem;
+	object-fit: contain;
+	filter: drop-shadow(0 0.35rem 0.35rem rgba(56, 45, 30, 0.18));
+	transform: rotate(-8deg);
+}
+@media (max-width: 640px) {
+	:deep(.dp-dialog.p-dialog) {
+		width: calc(100% - 2rem) !important;
+		max-width: 26rem !important;
+		margin: 1rem !important;
+	}
+	.dp-dialog-inner {
+		padding: 1.65rem 1rem 1.5rem;
+		gap: 1rem;
+	}
+	.dp-dialog-top {
+		padding-left: 2rem;
+	}
+	.dp-dialog-flower {
+		top: 0.6rem;
+		left: 0.45rem;
+	}
 }
 .dp-dialog-title {
 	font-family: "Lora", serif;
@@ -280,6 +312,40 @@ watch(
 :deep(.dp-calendar .p-datepicker-title) {
 	font-family: "Lora", serif !important;
 	font-weight: 600 !important;
+}
+:deep(.dp-calendar .p-datepicker-prev-button),
+:deep(.dp-calendar .p-datepicker-next-button) {
+	width: 2rem !important;
+	height: 2rem !important;
+	border-radius: 0.6rem !important;
+	color: var(--p-gray-700) !important;
+	background: color-mix(in srgb, var(--p-orange-100) 40%, transparent)
+		!important;
+	transition: all 0.2s ease !important;
+}
+:deep(.dp-calendar .p-datepicker-prev-button:hover),
+:deep(.dp-calendar .p-datepicker-next-button:hover) {
+	color: var(--p-orange-700) !important;
+	background: color-mix(in srgb, var(--p-orange-200) 60%, transparent)
+		!important;
+	transform: translateY(-1px);
+}
+:deep(.dp-calendar .p-datepicker-prev-button .p-icon),
+:deep(.dp-calendar .p-datepicker-next-button .p-icon) {
+	width: 0.9rem !important;
+	height: 0.9rem !important;
+}
+:where(.my-app-dark, .my-app-dark *) :deep(.dp-calendar .p-datepicker-prev-button),
+:where(.my-app-dark, .my-app-dark *) :deep(.dp-calendar .p-datepicker-next-button) {
+	color: var(--p-gray-100) !important;
+	background: color-mix(in srgb, var(--p-gray-700) 55%, transparent)
+		!important;
+}
+:where(.my-app-dark, .my-app-dark *) :deep(.dp-calendar .p-datepicker-prev-button:hover),
+:where(.my-app-dark, .my-app-dark *) :deep(.dp-calendar .p-datepicker-next-button:hover) {
+	color: var(--p-orange-300) !important;
+	background: color-mix(in srgb, var(--p-orange-900) 40%, transparent)
+		!important;
 }
 :deep(.dp-calendar .p-datepicker-calendar td > span) {
 	border-radius: 0.5rem !important;
@@ -364,10 +430,22 @@ watch(
 	position: relative !important;
 }
 .dp-day-marker-icon {
-	font-size: 1rem; /* Zmień to, jeśli ikona ma być większa/mniejsza */
-	color: var(--p-orange-500);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 0.8rem;
+	height: 0.8rem;
+	font-size: 0.48rem;
+	line-height: 1;
+	color: white;
+	background: var(--p-orange-500);
+	border: 1.5px solid white;
+	border-radius: 50%;
 	position: absolute;
-	bottom: -8px;
+	right: 0.05rem;
+	bottom: 0.05rem;
+	z-index: 1;
+	box-shadow: 0 1px 3px rgba(84, 55, 25, 0.2);
 }
 
 /* Zmiana koloru ikony na białym tle zaznaczonego dnia */
@@ -375,11 +453,48 @@ watch(
 	.dp-day-marker-icon,
 :deep(.dp-calendar .p-datepicker-calendar td > span.p-highlight)
 	.dp-day-marker-icon {
-	color: white !important;
+	color: var(--p-orange-600) !important;
+	background: white !important;
+	border-color: var(--p-orange-500) !important;
 }
 
 :deep(.p-datepicker-prev-icon),
 :deep(.p-datepicker-next-icon) {
-	color: var(--p-gray-600) !important;
+	color: var(--p-gray-800) !important;
+	fill: currentColor !important;
+	opacity: 1 !important;
+}
+:deep(.dp-calendar .p-datepicker-prev-button),
+:deep(.dp-calendar .p-datepicker-next-button) {
+	position: relative;
+}
+:deep(.dp-calendar .p-datepicker-prev-button::before),
+:deep(.dp-calendar .p-datepicker-next-button::before) {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-family: Arial, sans-serif;
+	font-size: 1.35rem;
+	font-weight: 700;
+	line-height: 1;
+	color: var(--p-gray-800);
+}
+:deep(.dp-calendar .p-datepicker-prev-button::before) {
+	content: "‹";
+}
+:deep(.dp-calendar .p-datepicker-next-button::before) {
+	content: "›";
+}
+:deep(.dp-calendar .p-datepicker-prev-button .p-icon),
+:deep(.dp-calendar .p-datepicker-next-button .p-icon) {
+	visibility: hidden;
+}
+:where(.my-app-dark, .my-app-dark *)
+	:deep(.dp-calendar .p-datepicker-prev-button::before),
+:where(.my-app-dark, .my-app-dark *)
+	:deep(.dp-calendar .p-datepicker-next-button::before) {
+	color: var(--p-gray-100);
 }
 </style>

@@ -6,6 +6,7 @@ export interface Habbit {
 	tags: string[];
 	origin: string;
 	display_name: string;
+	category?: string;
 }
 
 export interface UserHabbits {
