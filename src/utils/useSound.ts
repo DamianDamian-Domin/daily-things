@@ -7,6 +7,8 @@ let ctx: AudioContext | null = null;
 
 function getCtx(): AudioContext {
 	if (!ctx) ctx = new AudioContext();
+	// Przeglądarki startują AudioContext „uśpiony” do pierwszego gestu
+	if (ctx.state === "suspended") ctx.resume().catch(() => {});
 	return ctx;
 }
 

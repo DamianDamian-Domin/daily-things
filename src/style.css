@@ -1,126 +1,582 @@
-@import url("https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Sacramento&display=swap");
 @import "tailwindcss";
 @import "tailwindcss-primeui";
 @custom-variant dark (&:where(.my-app-dark, .my-app-dark *));
 
-/* Desktop: overflow hidden (karty clipują wewnętrznie) */
-/* Mobile: overflow-y scroll + padding pod fixed tab bar */
+/* ==========================================================================
+   DESIGN TOKENS — jedyne źródło kolorów, promieni, cieni i typografii.
+   Komponenty używają var(--dt-*) zamiast powielać wartości light/dark.
+   Wszystkie pary tekst/tło spełniają WCAG AA (≥ 4.5:1).
+   ========================================================================== */
+:root {
+	color-scheme: light;
+
+	/* Tła */
+	--dt-bg: #fdf6ee;
+	--dt-surface: #ffffff;
+	--dt-surface-soft: #fffaf4;
+	--dt-surface-sunken: #fbf0e4;
+	--dt-overlay: rgba(58, 34, 22, 0.34);
+
+	/* Obramowania */
+	--dt-border: #f1e3d4;
+	--dt-border-strong: #e3ccb5;
+
+	/* Tekst */
+	--dt-text: #3b2a20;
+	--dt-text-2: #6b5446;
+	--dt-text-3: #7d6556;
+
+	/* Akcent (ciepły pomarańcz / terakota) */
+	--dt-accent: #ec8a3f;
+	--dt-accent-soft: #ffedd5;
+	--dt-accent-softer: #fff5ea;
+	--dt-accent-ink: #9a3f0e;
+	--dt-accent-strong: #b5501a;
+	--dt-accent-strong-hover: #9a4414;
+	--dt-on-accent: #ffffff;
+
+	/* Statusy */
+	--dt-success: #2f7d43;
+	--dt-success-fill: #5fb56f;
+	--dt-success-soft: #e6f5e4;
+	--dt-danger: #b83a36;
+	--dt-danger-soft: #fdeae7;
+	--dt-gold: #e0a526;
+
+	/* Kształty */
+	--dt-radius-sm: 0.6rem;
+	--dt-radius: 0.9rem;
+	--dt-radius-lg: 1.25rem;
+	--dt-radius-xl: 1.6rem;
+	--dt-radius-pill: 999px;
+
+	/* Cienie — ciepłe, rozproszone */
+	--dt-shadow-sm: 0 1px 2px rgba(120, 53, 15, 0.06), 0 2px 6px rgba(120, 53, 15, 0.05);
+	--dt-shadow: 0 6px 22px -8px rgba(120, 53, 15, 0.18), 0 1px 4px rgba(120, 53, 15, 0.05);
+	--dt-shadow-lg: 0 28px 70px -22px rgba(120, 53, 15, 0.32), 0 10px 24px -10px rgba(120, 53, 15, 0.14);
+	--dt-focus-ring: 0 0 0 3px rgba(236, 138, 63, 0.5);
+
+	/* Typografia */
+	--dt-font: "Lora Variable", "Lora", Georgia, "Times New Roman", serif;
+	--dt-font-script: "Sacramento", cursive;
+	--dt-text-xs: 0.75rem;
+	--dt-text-sm: 0.85rem;
+	--dt-text-md: 0.95rem;
+	--dt-text-lg: 1.15rem;
+	--dt-text-xl: 1.45rem;
+
+	/* Ruch */
+	--dt-ease: cubic-bezier(0.22, 1, 0.36, 1);
+	--dt-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+	/* Wysokość dolnego paska na mobile */
+	--dt-tabbar-h: 68px;
+}
+
+:root.my-app-dark {
+	color-scheme: dark;
+
+	--dt-bg: #1c1714;
+	--dt-surface: #272019;
+	--dt-surface-soft: #2d251e;
+	--dt-surface-sunken: #221b16;
+	--dt-overlay: rgba(0, 0, 0, 0.55);
+
+	--dt-border: #3a3028;
+	--dt-border-strong: #4d4034;
+
+	--dt-text: #f5ebe1;
+	--dt-text-2: #d6c5b6;
+	--dt-text-3: #ad9b8e;
+
+	--dt-accent: #f59a52;
+	--dt-accent-soft: rgba(245, 154, 82, 0.16);
+	--dt-accent-softer: rgba(245, 154, 82, 0.08);
+	--dt-accent-ink: #ffb77a;
+	--dt-accent-strong: #f59a52;
+	--dt-accent-strong-hover: #ffae6e;
+	--dt-on-accent: #1f140c;
+
+	--dt-success: #86d493;
+	--dt-success-fill: #5fb56f;
+	--dt-success-soft: rgba(124, 207, 134, 0.14);
+	--dt-danger: #f39a94;
+	--dt-danger-soft: rgba(240, 138, 132, 0.14);
+	--dt-gold: #f2c14e;
+
+	--dt-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+	--dt-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.55);
+	--dt-shadow-lg: 0 28px 70px -20px rgba(0, 0, 0, 0.7);
+	--dt-focus-ring: 0 0 0 3px rgba(245, 154, 82, 0.55);
+}
+
+/* ==========================================================================
+   BAZA
+   ========================================================================== */
+html,
+body {
+	background: var(--dt-bg);
+	color: var(--dt-text);
+	font-family: var(--dt-font);
+	-webkit-font-smoothing: antialiased;
+	-webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+	outline: none;
+	box-shadow: var(--dt-focus-ring);
+	border-radius: var(--dt-radius-sm);
+}
+
+/* Użytkownik wyłączył animacje w ustawieniach lub w systemie */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+	animation-duration: 0.001ms !important;
+	animation-iteration-count: 1 !important;
+	transition-duration: 0.001ms !important;
+}
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.001ms !important;
+		scroll-behavior: auto !important;
+	}
+}
+
+/* Tekst tylko dla czytników ekranu */
+.sr-only {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* Desktop: karty clipują wewnętrznie. Mobile: przewijanie + miejsce na tab bar */
 .content-scroll {
 	overflow: hidden;
 }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: landscape) and (max-width: 1024px) and (hover: none) and (pointer: coarse) {
 	.content-scroll {
 		overflow-y: auto;
 		overflow-x: hidden;
-		padding-bottom: 68px;
+		padding-bottom: calc(var(--dt-tabbar-h) + env(safe-area-inset-bottom, 0px));
 	}
-}
-
-/* Landscape phone fallback: keep app scrollable when width exceeds mobile breakpoint */
-@media (orientation: landscape) and (max-width: 1024px) and (hover: none) and (pointer: coarse) {
-	.content-scroll {
-		overflow-y: auto;
-		overflow-x: hidden;
-		padding-bottom: 68px;
-	}
-}
-
-/* === PrimeVue dark mode — warm, consistent colors === */
-.my-app-dark {
-	/* Dialog / overlay mask */
-	--p-dialog-mask-background: rgba(0, 0, 0, 0.55);
-	--p-mask-background: rgba(0, 0, 0, 0.55);
-
-	/* Warm shadow instead of a cold one */
-	--p-dialog-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 @layer base {
-	h1 {
-		@apply font-lora text-2xl;
-	}
-	h2 {
-		@apply font-lora text-xl;
-	}
-	h3 {
-		@apply font-lora text-lg;
-	}
+	h1,
+	h2,
+	h3,
 	h4 {
-		@apply font-lora text-xs;
+		font-family: var(--dt-font);
+		color: var(--dt-text);
+		margin: 0;
+	}
+	button {
+		font-family: inherit;
 	}
 }
+
+/* ==========================================================================
+   KOMPONENTY WSPÓLNE
+   ========================================================================== */
 @layer components {
-	/* Logo — white mask under transparent flowers */
 	.logo-mask {
 		@apply relative flex items-center justify-center rounded-full;
 		background: radial-gradient(circle, white 50%, transparent 70%);
 	}
 
-	/* shapes — rounded, warm shadows */
-	.card-a {
-		@apply shadow-lg rounded-2xl py-6 px-5;
-		box-shadow: 0 4px 24px -4px rgb(0 0 0 / 0.06), 0 1px 6px -1px rgb(0 0 0 / 0.04);
+	/* Karta */
+	.card-a,
+	.dt-card {
+		background: var(--dt-surface);
+		border: 1px solid var(--dt-border);
+		border-radius: var(--dt-radius-xl);
+		box-shadow: var(--dt-shadow);
+		padding: 1.4rem 1.25rem;
 	}
 
-	/* backgrounds */
+	/* Sekcja wewnątrz karty */
+	.dt-panel {
+		background: var(--dt-surface-soft);
+		border: 1px solid var(--dt-border);
+		border-radius: var(--dt-radius-lg);
+		padding: 0.85rem 0.9rem;
+	}
+
+	.dt-title {
+		font-family: var(--dt-font);
+		font-size: var(--dt-text-lg);
+		font-weight: 700;
+		color: var(--dt-text);
+		letter-spacing: -0.01em;
+		line-height: 1.2;
+	}
+	.dt-subtitle {
+		font-size: var(--dt-text-sm);
+		font-style: italic;
+		color: var(--dt-text-3);
+		line-height: 1.35;
+	}
+	.dt-section-title {
+		font-size: var(--dt-text-sm);
+		font-weight: 700;
+		color: var(--dt-text-2);
+		letter-spacing: 0.01em;
+	}
+	.dt-muted {
+		color: var(--dt-text-3);
+	}
+
+	/* Przyciski */
+	.dt-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
+		min-height: 2.6rem;
+		padding: 0.55rem 1.15rem;
+		border-radius: var(--dt-radius-pill);
+		border: 1px solid transparent;
+		font-family: var(--dt-font);
+		font-size: var(--dt-text-md);
+		font-weight: 600;
+		line-height: 1.1;
+		cursor: pointer;
+		transition:
+			background-color 0.18s ease,
+			border-color 0.18s ease,
+			color 0.18s ease,
+			transform 0.18s var(--dt-ease);
+		user-select: none;
+		white-space: nowrap;
+	}
+	.dt-btn:active:not(:disabled) {
+		transform: scale(0.97);
+	}
+	.dt-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+	.dt-btn-primary {
+		background: var(--dt-accent-strong);
+		color: var(--dt-on-accent);
+		box-shadow: 0 6px 16px -8px rgba(181, 80, 26, 0.6);
+	}
+	.dt-btn-primary:hover:not(:disabled) {
+		background: var(--dt-accent-strong-hover);
+	}
+	.dt-btn-soft {
+		background: var(--dt-accent-soft);
+		color: var(--dt-accent-ink);
+	}
+	.dt-btn-soft:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--dt-accent) 26%, var(--dt-surface));
+	}
+	.dt-btn-outline {
+		background: var(--dt-surface);
+		border-color: var(--dt-border-strong);
+		color: var(--dt-text);
+	}
+	.dt-btn-outline:hover:not(:disabled) {
+		border-color: var(--dt-accent);
+		background: var(--dt-accent-softer);
+	}
+	.dt-btn-ghost {
+		background: transparent;
+		color: var(--dt-text-2);
+	}
+	.dt-btn-ghost:hover:not(:disabled) {
+		background: var(--dt-accent-softer);
+		color: var(--dt-accent-ink);
+	}
+	.dt-btn-danger {
+		background: var(--dt-danger-soft);
+		color: var(--dt-danger);
+	}
+	.dt-btn-danger:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--dt-danger) 20%, var(--dt-surface));
+	}
+	.dt-btn-sm {
+		min-height: 2.1rem;
+		padding: 0.35rem 0.85rem;
+		font-size: var(--dt-text-sm);
+	}
+	.dt-btn-block {
+		width: 100%;
+	}
+	.dt-link {
+		background: none;
+		border: none;
+		padding: 0.15rem 0.1rem;
+		color: var(--dt-accent-ink);
+		font-weight: 600;
+		text-decoration: underline;
+		text-decoration-color: color-mix(in srgb, var(--dt-accent-ink) 35%, transparent);
+		text-underline-offset: 3px;
+		cursor: pointer;
+	}
+	.dt-link:hover {
+		text-decoration-color: currentColor;
+	}
+
+	/* Okrągły przycisk-ikona (min. 40px — wygodny cel dotyku) */
+	.dt-icon-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: var(--dt-radius-pill);
+		border: none;
+		background: transparent;
+		color: var(--dt-text-2);
+		cursor: pointer;
+		transition:
+			background-color 0.18s ease,
+			color 0.18s ease,
+			transform 0.18s var(--dt-ease);
+		flex-shrink: 0;
+	}
+	.dt-icon-btn:hover:not(:disabled) {
+		background: var(--dt-accent-softer);
+		color: var(--dt-accent-ink);
+	}
+	.dt-icon-btn:active:not(:disabled) {
+		transform: scale(0.92);
+	}
+	.dt-icon-btn:disabled {
+		opacity: 0.35;
+		cursor: not-allowed;
+	}
+
+	/* Pola formularzy */
+	.dt-field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+	}
+	.dt-label {
+		font-size: var(--dt-text-sm);
+		font-weight: 600;
+		color: var(--dt-text-2);
+	}
+	.dt-input {
+		width: 100%;
+		min-height: 2.75rem;
+		padding: 0.6rem 0.9rem;
+		border-radius: var(--dt-radius);
+		border: 1px solid var(--dt-border-strong);
+		background: var(--dt-surface);
+		color: var(--dt-text);
+		font-family: var(--dt-font);
+		font-size: 1rem; /* ≥16px — iOS nie przybliża przy fokusie */
+		transition:
+			border-color 0.18s ease,
+			box-shadow 0.18s ease;
+	}
+	.dt-input::placeholder {
+		color: var(--dt-text-3);
+		opacity: 0.85;
+	}
+	.dt-input:hover {
+		border-color: color-mix(in srgb, var(--dt-accent) 55%, var(--dt-border-strong));
+	}
+	.dt-input:focus {
+		outline: none;
+		border-color: var(--dt-accent);
+		box-shadow: var(--dt-focus-ring);
+	}
+	.dt-input[aria-invalid="true"] {
+		border-color: var(--dt-danger);
+	}
+	.dt-hint {
+		font-size: var(--dt-text-xs);
+		color: var(--dt-text-3);
+	}
+	.dt-error-text {
+		font-size: var(--dt-text-xs);
+		color: var(--dt-danger);
+		font-weight: 600;
+	}
+
+	/* Chip / pigułka */
+	.dt-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.35rem 0.75rem;
+		border-radius: var(--dt-radius-pill);
+		border: 1px solid var(--dt-border);
+		background: var(--dt-surface);
+		color: var(--dt-text-2);
+		font-size: var(--dt-text-sm);
+		font-weight: 600;
+		cursor: pointer;
+		white-space: nowrap;
+		transition:
+			background-color 0.18s ease,
+			border-color 0.18s ease,
+			color 0.18s ease;
+	}
+	.dt-chip:hover {
+		border-color: var(--dt-border-strong);
+		background: var(--dt-accent-softer);
+	}
+	.dt-chip[aria-pressed="true"],
+	.dt-chip.is-active {
+		background: var(--dt-accent-soft);
+		border-color: color-mix(in srgb, var(--dt-accent) 55%, transparent);
+		color: var(--dt-accent-ink);
+	}
+
+	/* Przełącznik segmentowy (Tydzień / Miesiąc itp.) */
+	.dt-segmented {
+		display: inline-flex;
+		padding: 0.2rem;
+		gap: 0.15rem;
+		border-radius: var(--dt-radius-pill);
+		background: var(--dt-surface-sunken);
+		border: 1px solid var(--dt-border);
+	}
+	.dt-segmented button {
+		border: none;
+		background: transparent;
+		color: var(--dt-text-2);
+		font-size: var(--dt-text-sm);
+		font-weight: 600;
+		padding: 0.35rem 0.8rem;
+		min-height: 2rem;
+		border-radius: var(--dt-radius-pill);
+		cursor: pointer;
+		transition:
+			background-color 0.18s ease,
+			color 0.18s ease;
+	}
+	.dt-segmented button[aria-pressed="true"] {
+		background: var(--dt-surface);
+		color: var(--dt-accent-ink);
+		box-shadow: var(--dt-shadow-sm);
+	}
+
+	/* Pierścień postępu (conic-gradient) */
+	.dt-ring {
+		--pct: 0;
+		--ring-color: var(--dt-accent);
+		position: relative;
+		display: grid;
+		place-items: center;
+		width: 2.6rem;
+		height: 2.6rem;
+		border-radius: 50%;
+		background: conic-gradient(
+			var(--ring-color) calc(var(--pct) * 1%),
+			var(--dt-surface-sunken) 0
+		);
+		transition: background 0.4s ease;
+		flex-shrink: 0;
+	}
+	.dt-ring::after {
+		content: "";
+		position: absolute;
+		inset: 4px;
+		border-radius: 50%;
+		background: var(--dt-surface);
+	}
+	.dt-ring > * {
+		position: relative;
+		z-index: 1;
+		font-size: 0.7rem;
+		font-weight: 700;
+		color: var(--dt-text-2);
+		font-variant-numeric: tabular-nums;
+	}
+	.dt-ring.is-complete {
+		--ring-color: var(--dt-success-fill);
+	}
+
+	/* Pusty stan */
+	.dt-empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.35rem;
+		text-align: center;
+		padding: 1rem 0.5rem;
+		color: var(--dt-text-3);
+		font-size: var(--dt-text-sm);
+	}
+
+	/* Dialogi PrimeVue w stylu aplikacji */
+	.dt-dialog.p-dialog {
+		border-radius: var(--dt-radius-xl) !important;
+		border: 1px solid var(--dt-border) !important;
+		background: var(--dt-surface) !important;
+		color: var(--dt-text) !important;
+		box-shadow: var(--dt-shadow-lg) !important;
+		overflow: hidden;
+	}
+	.dt-dialog .p-dialog-content {
+		padding: 0 !important;
+		background: transparent !important;
+	}
+	.dt-dialog .p-dialog-header {
+		display: none !important;
+	}
+	/* Bez backdrop-filter: rozmycie całego ekranu jest drogie na słabszych telefonach */
+	.dt-dialog-mask {
+		background: var(--dt-overlay) !important;
+	}
+
+	/* Legacy klasy wciąż używane przez starsze widoki */
 	.surface-ground {
-		@apply bg-orange-50 dark:bg-gray-700;
+		background: var(--dt-bg);
 	}
 	.surface-content {
-		@apply bg-white dark:bg-gray-800;
+		background: var(--dt-surface);
 	}
-	.surface-primary {
-		@apply bg-primary-200 dark:bg-primary-700;
-	}
-	.surface-secondary {
-		@apply bg-zinc-100 dark:bg-gray-800;
-	}
-	.surface-success {
-		@apply bg-green-500 dark:bg-green-400;
-	}
-	.surface-warning {
-		@apply bg-yellow-500 dark:bg-yellow-400;
-	}
-	.surface-danger {
-		@apply bg-red-500 dark:bg-red-400;
-	}
-
-	/* texts */
 	.text-a {
-		@apply text-gray-900 dark:text-gray-100;
+		color: var(--dt-text);
 	}
 	.text-b {
-		@apply text-gray-800 dark:text-gray-200;
+		color: var(--dt-text-2);
 	}
 	.text-c {
-		@apply text-gray-700 dark:text-gray-300;
-	}
-	.text-contrast {
-		@apply dark:text-gray-900 text-gray-100;
-	}
-	.text-primary {
-		@apply text-primary-200 dark:text-primary-700;
-	}
-	.text-success {
-		@apply text-green-500 dark:text-green-400;
-	}
-	.text-warning {
-		@apply text-yellow-500 dark:text-yellow-400;
+		color: var(--dt-text-3);
 	}
 	.text-danger {
-		@apply text-red-500 dark:text-red-400;
+		color: var(--dt-danger);
 	}
-	.text-border-success-hover-danger {
-		@apply text-green-500 border-green-500 dark:text-green-400 dark:border-green-400;
-	}
-	.text-border-success-hover-danger:hover {
-		@apply text-red-500 border-red-500 dark:text-red-400 dark:border-red-400;
+	.text-success {
+		color: var(--dt-success);
 	}
 }
 
+/* Tooltipy PrimeVue */
+.p-tooltip .p-tooltip-text {
+	font-family: var(--dt-font);
+	font-size: 0.8rem;
+	padding: 0.3rem 0.6rem;
+	border-radius: var(--dt-radius-sm);
+	background: #3b2a20;
+	color: #fff7ed;
+	box-shadow: var(--dt-shadow);
+}
+.p-tooltip-arrow {
+	display: none;
+}
+
 @theme {
-	--font-lora: "Lora", serif;
+	--font-lora: "Lora Variable", "Lora", Georgia, serif;
 	--font-sacramento: "Sacramento", cursive;
 
 	/* GREEN */

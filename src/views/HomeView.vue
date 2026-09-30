@@ -1,37 +1,41 @@
 <template>
 	<div
-		class="flex flex-col gap-2 items-center flex-grow min-h-0 sm:gap-2 px-0 sm:px-0 w-full"
+		class="home"
 		@touchstart.passive="onTouchStart"
 		@touchmove.passive="onTouchMove"
 		@touchend.passive="onTouchEnd"
 		@touchcancel="resetSwipeState">
-		<div
-			class="w-full px-3 pt-2 sm:px-0 sm:pt-0 flex items-center justify-center relative min-h-[2rem]">
-			<div class="sm:hidden absolute left-3 shrink-0">
-				<img
-					src="@/assets/logo.png"
-					alt="Daily Things"
-					class="w-8 h-8 object-contain" />
-			</div>
-
-			<DatePicker class="shrink-0"></DatePicker>
+		<h1 class="sr-only">Daily Things — habits and to-dos</h1>
+		<div class="home-top">
+			<img
+				src="@/assets/logo.png"
+				alt=""
+				width="36"
+				height="36"
+				class="home-logo" />
+			<DatePicker v-if="showDatePicker" />
+			<p
+				v-else
+				class="home-wordmark"
+				aria-hidden="true">
+				Daily Things
+			</p>
 		</div>
 
-		<CarouselView class="flex-1 min-h-0 w-full" />
+		<CarouselView class="home-carousel" />
 	</div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { useHabbitsStore } from "../stores/habbits";
+import { computed, ref } from "vue";
+import { useLayout } from "@/utils/useLayout";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 import DatePicker from "@/components/home_view/DatePicker.vue";
 import CarouselView from "./CarouselView.vue";
 
-const habbitsStore = useHabbitsStore();
 const carouselStore = useCarouselStore();
 
-const MOBILE_BREAKPOINT = 640;
+const { isMobile } = useLayout();
 const SWIPE_THRESHOLD = 34;
 const SWIPE_DIRECTION_RATIO = 1.05;
 const TRANSITION_DURATION_MS = 420;
@@ -45,7 +49,7 @@ let lastY = 0;
 let canSwipe = false;
 
 function isMobileSwipeEnabled() {
-	return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
+	return isMobile.value;
 }
 
 function withAnimationLock(action: () => void) {
@@ -153,11 +157,52 @@ function onTouchEnd(event: TouchEvent) {
 	finishSwipe(touch.clientX, touch.clientY);
 }
 
-onMounted(() => {
-	habbitsStore.getDailyHabbitsInRange();
-	habbitsStore.loadDailyGoals();
-	habbitsStore.loadRecentHabbits();
-});
+// Na mobile data ma sens tylko na karcie habitów; na desktopie widać wszystkie karty
+const showDatePicker = computed(() => !isMobile.value || carouselStore.activeCardId === "manage");
 </script>
 
-<style scoped></style>
+<style scoped>
+.home {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	flex: 1;
+	min-height: 0;
+	width: 100%;
+	gap: 0.25rem;
+}
+.home-top {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	min-height: 3.25rem;
+	padding: 0.5rem 0.75rem 0;
+}
+.home-logo {
+	display: none;
+	position: absolute;
+	left: 0.75rem;
+	width: 2.25rem;
+	height: 2.25rem;
+	object-fit: contain;
+}
+.home-wordmark {
+	margin: 0;
+	font-family: var(--dt-font-script);
+	font-size: 1.9rem;
+	line-height: 1;
+	color: var(--dt-text-2);
+}
+.home-carousel {
+	flex: 1;
+	min-height: 0;
+	width: 100%;
+}
+@media (max-width: 640px) {
+	.home-logo {
+		display: block;
+	}
+}
+</style>

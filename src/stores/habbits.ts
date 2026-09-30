@@ -1,710 +1,665 @@
-import { ref, computed } from "vue";
-import { defineStore, storeToRefs } from "pinia";
-import { formatDate, toDateKey } from "@/utils/timeUtils";
-import {
-	collection,
-	query,
-	where,
-	getDocs,
-	doc,
-	updateDoc,
-	setDoc,
-	getDoc,
-} from "firebase/firestore";
-import { db } from "@/firebase";
-import { Goal, UserHabbits, Habbit } from "@/libs/types";
+import { computed, ref } from "vue";
+import { defineStore } from "pinia";
+import { arrayRemove, arrayUnion, setDoc, updateDoc } from "firebase/firestore";
 import { nanoid } from "nanoid";
-import { useAuthStore } from "./auth";
-import { handleAsyncAction } from "@/stores/asyncActionHandler";
-import habbitListData from "@/assets/habbitList.json";
-import tagListData from "@/assets/tagList.json";
+import type {
+	DayEntry,
+	Goal,
+	GoalRef,
+	GroupedGoal,
+	GroupedHabbit,
+	Habbit,
+	HabbitLog,
+} from "@/libs/types";
+import { useAuthStore } from "@/stores/auth";
+import { plain } from "@/utils/plain";
+import { useToastStore } from "@/stores/toast";
+import { dayDocRef, fetchDays, saveUserFields, type UserDoc } from "@/services/userData";
+import {
+	addDays,
+	monthBounds,
+	monthKeyOf,
+	monthsInRange,
+	startOfDay,
+	toDateKey,
+	todayKey as computeTodayKey,
+	type DateKey,
+} from "@/utils/date";
+import { CATALOG, findCatalogHabbit, resolveHabbit } from "@/utils/habitCatalog";
+
+const RECENT_LIMIT = 12;
+const MAX_STREAK_LOOKBACK_MONTHS = 24;
+const SAVE_ERROR = "Couldn't save that — check your connection and try again.";
 
 export const useHabbitsStore = defineStore("habbits", () => {
 	const authStore = useAuthStore();
-	const { userUid } = storeToRefs(authStore);
+	const toast = useToastStore();
+	const uid = computed(() => authStore.userUid);
 
-	// Date refs
-	const refDate = ref(new Date());
-	const dateFormated = computed(() => formatDate(refDate.value));
-
-	const allHabbitsList = ref<Habbit[]>([]); // This will hold all available habbits
-	const tag_categories = ref<Record<string, string[]>>({});
-
-	const specialFilters = [
-		{ name: "recently", display_name: "Recently", icon: "pi pi-clock" },
-		{ name: "all", display_name: "All", icon: "pi pi-list" },
-		{ name: "user", display_name: "User", icon: "pi pi-user" },
-	];
-
-	const recentHabbits = ref<string[]>([]); // This will hold the recently used habbits
-
-	const userHabbitsList = ref<any[]>([]); // Holds user's selected habbits and goals snapshots
-
-	const selectedDayHabbits = computed({
-		get() {
-			const key = toDateKey(refDate.value);
-			const entry = userHabbitsList.value.find((item) => item.date === key);
-			return entry ? entry.habbits : [];
-		},
-		set(newHabbits) {
-			const key = toDateKey(refDate.value);
-			const index = userHabbitsList.value.findIndex(
-				(item) => item.date === key,
-			);
-			if (index !== -1) {
-				userHabbitsList.value[index].habbits = newHabbits;
-			} else {
-				userHabbitsList.value.push({
-					date: key,
-					habbits: newHabbits,
-				});
-			}
-		},
-	});
-
-	const groupedSelectedDayHabbits = computed({
-		get() {
-			const grouped: Record<string, any> = {};
-			selectedDayHabbits.value.forEach((habbit: any) => {
-				if (!grouped[habbit.name]) {
-					grouped[habbit.name] = { ...habbit, count: 1 };
-				} else {
-					grouped[habbit.name].count += 1;
-				}
-			});
-			return Object.values(grouped);
-		},
-		set(newGroupedArray) {
-			const newRawArray: any[] = [];
-
-			newGroupedArray.forEach((group: any) => {
-				const originalItems = selectedDayHabbits.value.filter(
-					(h: any) => h.name === group.name,
-				);
-				newRawArray.push(...originalItems);
-			});
-
-			selectedDayHabbits.value = newRawArray;
-		},
-	});
-
-	// Goals refs
+	// ==========================================================================
+	// STAN
+	// ==========================================================================
+	const todayKey = ref<DateKey>(computeTodayKey());
+	const selectedDate = ref<Date>(startOfDay());
+	const days = ref<Record<DateKey, DayEntry>>({});
 	const dailyGoalsList = ref<Goal[]>([]);
+	const recentHabbits = ref<string[]>([]);
+	const customHabbits = ref<Habbit[]>([]);
+	const isHistoryLoading = ref(false);
 
-	// Pomocnicza funkcja do ustalenia, jaka lista celów obowiązuje dla danej daty
-	function getGoalsSnapshotForDate(dateKey: string) {
-		const dayEntry = userHabbitsList.value.find((d) => d.date === dateKey);
-		const isTargetToday = dateKey === toDateKey(new Date());
+	// Cache doładowanych miesięcy — każdy miesiąc czytamy z Firestore raz na sesję
+	const loadedMonths = new Set<string>();
+	const pendingMonths = new Map<string, Promise<void>>();
+	// Dni z niezakończonym zapisem — nie nadpisujemy ich danymi z serwera
+	const pendingDays = new Map<DateKey, number>();
 
-		// Jeśli to dzisiaj, zawsze używamy aktualnej, globalnej listy celów
-		if (isTargetToday) {
-			return dailyGoalsList.value;
-		}
-		// Jeśli to przeszłość i ma zapisaną migawkę celów, używamy jej
-		if (dayEntry && dayEntry.goalsSnapshot) {
-			return dayEntry.goalsSnapshot;
-		}
-		// W przeciwnym wypadku (stary dzień bez migawki) zwracamy obecną listę celów
-		return dailyGoalsList.value;
+	// Zmiana dnia o północy (aplikacja często zostaje otwarta w tle)
+	function checkDayRollover() {
+		const now = computeTodayKey();
+		if (now === todayKey.value) return;
+		const wasOnToday = toDateKey(selectedDate.value) === todayKey.value;
+		todayKey.value = now;
+		if (wasOnToday) selectedDate.value = startOfDay();
+		ensureMonthFor(new Date());
+	}
+	if (typeof window !== "undefined") {
+		setInterval(checkDayRollover, 60_000);
+		document.addEventListener("visibilitychange", () => {
+			if (document.visibilityState === "visible") checkDayRollover();
+		});
 	}
 
-	const dailyGoalsColored = computed<Goal[]>(() => {
-		const formatedGoals = [];
-		const counters: Record<string, number> = {};
+	// ==========================================================================
+	// KATALOG
+	// ==========================================================================
+	const allHabbitsList = computed<Habbit[]>(() => [...customHabbits.value, ...CATALOG]);
 
-		const key = toDateKey(refDate.value);
-		const activeGoalsList = getGoalsSnapshotForDate(key);
-
-		for (const goal of activeGoalsList) {
-			const currentDayTaskCount = selectedDayHabbits.value.filter(
-				(g) => g.name === goal.name,
-			).length;
-
-			if (!counters.hasOwnProperty(goal.name)) {
-				counters[goal.name] = 1;
-			} else {
-				counters[goal.name] = counters[goal.name] + 1;
-			}
-
-			if (counters[goal.name] <= currentDayTaskCount) {
-				formatedGoals.push({
-					...goal,
-					severity: goal.severity,
-				});
-			} else {
-				formatedGoals.push({
-					...goal,
-					severity: "empty",
-				});
-			}
-		}
-		return formatedGoals;
-	});
-
-	// INTELIGENTNY STREAK: Liczy ile dni z rzędu wszystkie cele zostały wykonane
-	const goalsStreak = computed(() => {
-		let streak = 0;
-		const checkDate = new Date();
-		checkDate.setUTCHours(0, 0, 0, 0);
-
-		while (true) {
-			const key = toDateKey(checkDate);
-			const entry = userHabbitsList.value.find((item) => item.date === key);
-			const todayKey = toDateKey(new Date());
-
-			// Jeśli brak wpisu dla danego dnia
-			if (!entry) {
-				// Jeśli to dzisiaj i nie jest jeszcze skończony, nie psujemy serii z poprzednich dni
-				if (key === todayKey) {
-					checkDate.setUTCDate(checkDate.getUTCDate() - 1);
-					continue;
-				}
-				break; // Przełamana seria
-			}
-
-			const snapshot =
-				entry.goalsSnapshot || (key === todayKey ? dailyGoalsList.value : []);
-			if (snapshot.length === 0) {
-				if (key === todayKey) {
-					checkDate.setUTCDate(checkDate.getUTCDate() - 1);
-					continue;
-				}
-				break;
-			}
-
-			// Sprawdzamy czy wszystkie cele z migawki tego dnia zostały zrealizowane
-			const counters: Record<string, number> = {};
-			let allMet = true;
-
-			for (const goal of snapshot) {
-				const count = entry.habbits.filter(
-					(h: any) => h.name === goal.name,
-				).length;
-				if (!counters.hasOwnProperty(goal.name)) counters[goal.name] = 1;
-				else counters[goal.name]++;
-
-				if (counters[goal.name] > count) {
-					allMet = false;
-					break;
-				}
-			}
-
-			if (allMet) {
-				streak++;
-				checkDate.setUTCDate(checkDate.getUTCDate() - 1);
-			} else {
-				// Jeśli to dzisiaj i cele nie są jeszcze gotowe, pomijamy i sprawdzamy wczoraj (nie psujemy serii)
-				if (key === todayKey) {
-					checkDate.setUTCDate(checkDate.getUTCDate() - 1);
-					continue;
-				}
-				break; // Przeszły dzień nieukończony -> koniec serii
-			}
-		}
-		return streak;
-	});
-
-	const now = new Date();
-	const loadedStartDate = ref(
-		new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)),
-	);
-	const loadedEndDate = ref(
-		new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)),
-	);
-
-	async function loadHabbitsForDate(selectedDate: Date) {
-		if (
-			selectedDate < loadedStartDate.value ||
-			selectedDate > loadedEndDate.value
-		) {
-			console.log("Ładuję nowy miesiąc do kalendarza");
-
-			const newStartDate = new Date(
-				Date.UTC(selectedDate.getUTCFullYear(), selectedDate.getUTCMonth(), 1),
-			);
-			const newEndDate = new Date(
-				Date.UTC(
-					selectedDate.getUTCFullYear(),
-					selectedDate.getUTCMonth() + 1,
-					0,
-				),
-			);
-
-			await getDailyHabbitsInRange(newStartDate, newEndDate);
-
-			loadedStartDate.value =
-				newStartDate < loadedStartDate.value
-					? newStartDate
-					: loadedStartDate.value;
-			loadedEndDate.value =
-				newEndDate > loadedEndDate.value ? newEndDate : loadedEndDate.value;
-		}
+	function resolve(entry: HabbitLog | GoalRef | Habbit): Habbit {
+		return resolveHabbit(entry, customHabbits.value);
 	}
 
-	const getDailyHabbitsInRange = async (
-		startDate: Date | null = null,
-		endDate: Date | null = null,
-	) => {
+	// ==========================================================================
+	// WYBRANY DZIEŃ
+	// ==========================================================================
+	const selectedKey = computed(() => toDateKey(selectedDate.value));
+	const isSelectedToday = computed(() => selectedKey.value === todayKey.value);
+
+	function logsOn(key: DateKey): HabbitLog[] {
+		return days.value[key]?.habbits ?? [];
+	}
+
+	function countsOn(key: DateKey): Record<string, number> {
+		const counts: Record<string, number> = {};
+		for (const log of logsOn(key)) counts[log.name] = (counts[log.name] ?? 0) + 1;
+		return counts;
+	}
+
+	function groupLogs(logs: HabbitLog[]): GroupedHabbit[] {
+		const map = new Map<string, GroupedHabbit>();
+		for (const log of logs) {
+			const group = map.get(log.name);
+			if (group) group.count++;
+			else map.set(log.name, { name: log.name, habbit: resolve(log), count: 1 });
+		}
+		return [...map.values()];
+	}
+
+	const selectedLogs = computed(() => logsOn(selectedKey.value));
+	const selectedCounts = computed(() => countsOn(selectedKey.value));
+	const groupedSelectedDayHabbits = computed(() => groupLogs(selectedLogs.value));
+
+	// ==========================================================================
+	// CELE
+	// ==========================================================================
+	// Dziś zawsze obowiązuje aktualna lista celów; przeszłe dni mają zapisaną
+	// „migawkę” celów z tamtego dnia, żeby zmiana celów nie psuła historii.
+	function goalsFor(key: DateKey): GoalRef[] {
+		if (key === todayKey.value) return dailyGoalsList.value;
+		return days.value[key]?.goalsSnapshot ?? dailyGoalsList.value;
+	}
+
+	// Cele, które faktycznie liczymy w statystykach (bez „dopisywania” dzisiejszych
+	// celów do dni, w których nic nie zapisano)
+	function recordedGoalsFor(key: DateKey): GoalRef[] {
+		if (key === todayKey.value) return dailyGoalsList.value;
+		return days.value[key]?.goalsSnapshot ?? [];
+	}
+
+	function groupGoals(goals: GoalRef[], counts: Record<string, number>): GroupedGoal[] {
+		const map = new Map<string, GroupedGoal>();
+		for (const goal of goals) {
+			const group = map.get(goal.name);
+			if (group) group.target++;
+			else map.set(goal.name, { name: goal.name, habbit: resolve(goal), target: 1, done: 0 });
+		}
+		for (const group of map.values()) group.done = Math.min(counts[group.name] ?? 0, group.target);
+		return [...map.values()];
+	}
+
+	const groupedGoals = computed(() =>
+		groupGoals(goalsFor(selectedKey.value), selectedCounts.value),
+	);
+
+	const goalsProgress = computed(() => {
+		let done = 0;
+		let total = 0;
+		for (const g of groupedGoals.value) {
+			done += g.done;
+			total += g.target;
+		}
+		return { done, total, complete: total > 0 && done === total };
+	});
+
+	function dayGoalsProgress(key: DateKey) {
+		const grouped = groupGoals(recordedGoalsFor(key), countsOn(key));
+		let done = 0;
+		let total = 0;
+		for (const g of grouped) {
+			done += g.done;
+			total += g.target;
+		}
+		return { done, total, perfect: total > 0 && done === total };
+	}
+
+	// ==========================================================================
+	// SERIA (STREAK)
+	// ==========================================================================
+	function hasLogsOn(key: DateKey) {
+		return logsOn(key).length > 0;
+	}
+
+	// Liczba dni z rzędu z co najmniej jednym wpisem. Dzisiejszy dzień „nie psuje”
+	// serii, dopóki trwa — liczymy od wczoraj i dodajemy dziś, jeśli coś jest.
+	const streak = computed(() => {
+		let count = hasLogsOn(todayKey.value) ? 1 : 0;
+		let day = addDays(startOfDay(), -1);
+		while (hasLogsOn(toDateKey(day))) {
+			count++;
+			day = addDays(day, -1);
+		}
+		return count;
+	});
+
+	// Seria trwa, ale dziś jeszcze nic nie zapisano — delikatne przypomnienie
+	const streakAtRisk = computed(() => streak.value > 0 && !hasLogsOn(todayKey.value));
+
+	// Czy seria dochodzi do najstarszego wczytanego miesiąca (trzeba doładować)
+	function streakTouchesLoadedEdge(): boolean {
+		const oldest = [...loadedMonths].sort()[0];
+		if (!oldest) return false;
+		const [y, m] = oldest.split("-").map(Number);
+		const firstLoaded = new Date(y, m - 1, 1);
+		const streakStart = addDays(startOfDay(), -(streak.value - (hasLogsOn(todayKey.value) ? 1 : 0)));
+		return streak.value > 0 && streakStart <= addDays(firstLoaded, 0);
+	}
+
+	// ==========================================================================
+	// WCZYTYWANIE HISTORII
+	// ==========================================================================
+	function mergeRemoteDay(remote: DayEntry) {
+		const local = days.value[remote.date];
+		if (local && pendingDays.get(remote.date)) {
+			const known = new Set(local.habbits.map((l) => l.id));
+			local.habbits.push(...remote.habbits.filter((l) => !known.has(l.id)));
+			local.goalsSnapshot ??= remote.goalsSnapshot;
+			return;
+		}
+		days.value[remote.date] = remote;
+	}
+
+	function ensureMonth(year: number, monthIndex: number): Promise<void> {
+		const currentUid = uid.value;
+		if (!currentUid) return Promise.resolve();
+		const key = monthKeyOf(new Date(year, monthIndex, 1));
+		if (loadedMonths.has(key)) return Promise.resolve();
+		const pending = pendingMonths.get(key);
+		if (pending) return pending;
+
+		const { startKey, endKey } = monthBounds(year, monthIndex);
+		const promise = fetchDays(currentUid, startKey, endKey)
+			.then((entries) => {
+				if (uid.value !== currentUid) return; // użytkownik zdążył się przelogować
+				for (const entry of entries) mergeRemoteDay(entry);
+				loadedMonths.add(key);
+			})
+			.catch((err) => {
+				console.error(`Failed to load ${key}`, err);
+			})
+			.finally(() => pendingMonths.delete(key));
+		pendingMonths.set(key, promise);
+		return promise;
+	}
+
+	function ensureMonthFor(date: Date) {
+		return ensureMonth(date.getFullYear(), date.getMonth());
+	}
+
+	async function ensureRange(start: Date, end: Date) {
+		await Promise.all(monthsInRange(start, end).map(([y, m]) => ensureMonth(y, m)));
+	}
+
+	// Start sesji: bieżący i poprzedni miesiąc, potem cofamy się tak długo,
+	// jak trwa seria (wcześniej seria „urywała się” na granicy miesiąca).
+	async function loadInitialHistory() {
+		isHistoryLoading.value = true;
 		try {
-			const _startDate = startDate || loadedStartDate.value;
-			const _endDate = endDate || loadedEndDate.value;
+			const now = new Date();
+			await Promise.all([
+				ensureMonthFor(now),
+				ensureMonthFor(new Date(now.getFullYear(), now.getMonth() - 1, 1)),
+			]);
+			for (let i = 2; i < MAX_STREAK_LOOKBACK_MONTHS && streakTouchesLoadedEdge(); i++) {
+				await ensureMonthFor(new Date(now.getFullYear(), now.getMonth() - i, 1));
+			}
+		} finally {
+			isHistoryLoading.value = false;
+		}
+	}
 
-			const habbitsRef = collection(db, "users", userUid.value!!, "habbits");
-			const q = query(
-				habbitsRef, // Naprawiono literówkę z hbitsRef
-				where("date", ">=", toDateKey(_startDate)),
-				where("date", "<=", toDateKey(_endDate)),
-			);
-			const querySnapshot = await getDocs(q);
+	function hydrate(userDoc: UserDoc) {
+		dailyGoalsList.value = Array.isArray(userDoc.dailyGoals) ? userDoc.dailyGoals : [];
+		recentHabbits.value = Array.isArray(userDoc.recentlyUsed) ? userDoc.recentlyUsed : [];
+		customHabbits.value = Array.isArray(userDoc.customHabbits) ? userDoc.customHabbits : [];
+	}
 
-			querySnapshot.forEach((doc) => {
-				const { date, habbits, goalsSnapshot } = doc.data();
+	// ==========================================================================
+	// ZAPIS WPISÓW
+	// ==========================================================================
+	function beginWrite(key: DateKey) {
+		pendingDays.set(key, (pendingDays.get(key) ?? 0) + 1);
+	}
+	function endWrite(key: DateKey) {
+		const left = (pendingDays.get(key) ?? 1) - 1;
+		if (left <= 0) pendingDays.delete(key);
+		else pendingDays.set(key, left);
+	}
 
-				const alreadyExists = userHabbitsList.value.some(
-					(entry) => entry.date === date,
-				);
+	function localDay(key: DateKey): DayEntry {
+		if (!days.value[key]) days.value[key] = { date: key, habbits: [] };
+		return days.value[key];
+	}
 
-				if (!alreadyExists) {
-					userHabbitsList.value.push({ date, habbits, goalsSnapshot });
-				}
+	// Nowe wpisy zapisujemy „odchudzone” — nazwa jest kluczem do katalogu.
+	// Własne habity niosą ikonę i nazwę, żeby historia przetrwała ich usunięcie.
+	function slim<T extends GoalRef>(habbit: Habbit | GoalRef, base: T): T {
+		if (findCatalogHabbit(habbit.name)) return base;
+		const resolved = resolve(habbit);
+		return {
+			...base,
+			icon: resolved.icon,
+			display_name: resolved.display_name,
+			severity: resolved.severity,
+			origin: "user",
+		};
+	}
+
+	function snapshotToWrite(key: DateKey): GoalRef[] | null {
+		const slimGoals = () =>
+			dailyGoalsList.value.map((g) => slim(g, { id: g.id, name: g.name }));
+		if (key === todayKey.value) return slimGoals();
+		if (days.value[key]?.goalsSnapshot) return null; // zostawiamy historyczną migawkę
+		return slimGoals();
+	}
+
+	// Zapisy są optymistyczne: stan lokalny zmienia się od razu, a zapis do
+	// Firestore leci w tle (offline trafia do kolejki). Przy błędzie cofamy zmianę.
+	function logHabbit(habbit: Habbit, key: DateKey = selectedKey.value): HabbitLog | null {
+		const currentUid = uid.value;
+		if (!currentUid) {
+			authStore.openAuthDialog("welcome");
+			return null;
+		}
+		const log: HabbitLog = slim(habbit, { id: nanoid(), name: habbit.name, at: Date.now() });
+		const snapshot = snapshotToWrite(key);
+		const entry = localDay(key);
+		entry.habbits.push(log);
+		if (snapshot) entry.goalsSnapshot = snapshot;
+		touchRecent(habbit.name);
+
+		beginWrite(key);
+		setDoc(
+			dayDocRef(currentUid, key),
+			{
+				date: key,
+				habbits: arrayUnion(log),
+				...(snapshot ? { goalsSnapshot: snapshot } : {}),
+			},
+			{ merge: true },
+		)
+			.catch((err) => {
+				console.error("logHabbit failed", err);
+				const idx = entry.habbits.findIndex((l) => l.id === log.id);
+				if (idx !== -1) entry.habbits.splice(idx, 1);
+				toast.error(SAVE_ERROR);
+			})
+			.finally(() => endWrite(key));
+		return log;
+	}
+
+	function removeLog(logId: string, key: DateKey = selectedKey.value): HabbitLog | null {
+		const currentUid = uid.value;
+		const entry = days.value[key];
+		if (!currentUid || !entry) return null;
+		const idx = entry.habbits.findIndex((l) => l.id === logId);
+		if (idx === -1) return null;
+		const removed = plain(entry.habbits[idx]);
+		entry.habbits.splice(idx, 1);
+
+		beginWrite(key);
+		updateDoc(dayDocRef(currentUid, key), { habbits: arrayRemove(removed) })
+			.catch((err) => {
+				console.error("removeLog failed", err);
+				entry.habbits.splice(Math.min(idx, entry.habbits.length), 0, removed);
+				toast.error(SAVE_ERROR);
+			})
+			.finally(() => endWrite(key));
+		return removed;
+	}
+
+	// Usuwa ostatnie odhaczenie danego habitu (np. „−1” przy myciu zębów 3×)
+	function unlogHabbit(name: string, key: DateKey = selectedKey.value): HabbitLog | null {
+		const logs = logsOn(key);
+		for (let i = logs.length - 1; i >= 0; i--) {
+			if (logs[i].name === name) return removeLog(logs[i].id, key);
+		}
+		return null;
+	}
+
+	function removeAllLogs(name: string, key: DateKey = selectedKey.value): HabbitLog[] {
+		const toRemove = logsOn(key).filter((l) => l.name === name);
+		const removed: HabbitLog[] = [];
+		for (const log of [...toRemove].reverse()) {
+			const r = removeLog(log.id, key);
+			if (r) removed.push(r);
+		}
+		return removed;
+	}
+
+	// Cofnięcie usunięcia — przywracamy dokładnie ten sam wpis (to samo id)
+	function restoreLogs(logs: HabbitLog[], key: DateKey = selectedKey.value) {
+		const currentUid = uid.value;
+		if (!currentUid || logs.length === 0) return;
+		const copies = logs.map((l) => plain(l));
+		const entry = localDay(key);
+		entry.habbits.push(...copies);
+		beginWrite(key);
+		setDoc(
+			dayDocRef(currentUid, key),
+			{ date: key, habbits: arrayUnion(...copies) },
+			{ merge: true },
+		)
+			.catch((err) => {
+				console.error("restoreLogs failed", err);
+				const ids = new Set(copies.map((l) => l.id));
+				entry.habbits = entry.habbits.filter((l) => !ids.has(l.id));
+				toast.error(SAVE_ERROR);
+			})
+			.finally(() => endWrite(key));
+	}
+
+	async function reorderSelected(names: string[]) {
+		const currentUid = uid.value;
+		const key = selectedKey.value;
+		const entry = days.value[key];
+		if (!currentUid || !entry) return;
+		const byName = new Map<string, HabbitLog[]>();
+		for (const log of entry.habbits) {
+			if (!byName.has(log.name)) byName.set(log.name, []);
+			byName.get(log.name)!.push(log);
+		}
+		entry.habbits = names.flatMap((n) => byName.get(n) ?? []);
+		beginWrite(key);
+		try {
+			await updateDoc(dayDocRef(currentUid, key), {
+				habbits: entry.habbits.map((l) => plain(l)),
 			});
-		} catch (error) {
-			console.error("Error fetching daily habbits:", error);
+		} catch (err) {
+			console.error("reorder failed", err);
+			toast.error(SAVE_ERROR);
+		} finally {
+			endWrite(key);
 		}
-	};
-
-	// Date functions
-	function changeDate(direction: number) {
-		refDate.value.setUTCDate(refDate.value.getUTCDate() + direction);
-		refDate.value.setUTCHours(0, 0, 0, 0);
-		refDate.value = new Date(refDate.value);
 	}
 
-	function isToday() {
-		const today = new Date();
-		return (
-			refDate.value.getDate() === today.getDate() &&
-			refDate.value.getMonth() === today.getMonth() &&
-			refDate.value.getFullYear() === today.getFullYear()
+	// ==========================================================================
+	// OSTATNIO UŻYWANE (zapis z opóźnieniem — nie przy każdym kliknięciu)
+	// ==========================================================================
+	let recentTimer: ReturnType<typeof setTimeout> | null = null;
+	function touchRecent(name: string) {
+		recentHabbits.value = [name, ...recentHabbits.value.filter((n) => n !== name)].slice(
+			0,
+			RECENT_LIMIT,
 		);
+		if (recentTimer) clearTimeout(recentTimer);
+		const currentUid = uid.value;
+		recentTimer = setTimeout(() => {
+			if (!currentUid || uid.value !== currentUid) return;
+			saveUserFields(currentUid, { recentlyUsed: [...recentHabbits.value] }).catch((err) =>
+				console.warn("recentlyUsed save failed", err),
+			);
+		}, 1500);
 	}
 
-	function hasHabbitsOnDate(dateObj: any) {
-		if (!dateObj) return false;
-
-		const dateToCheck = new Date(
-			Date.UTC(dateObj.year, dateObj.month, dateObj.day),
-		);
-
-		const key = toDateKey(dateToCheck);
-		const entry = userHabbitsList.value.find((item) => item.date === key);
-
-		return entry ? entry.habbits.length > 0 : false;
-	}
-
-	function setDate(date: Date) {
-		refDate.value = new Date(date);
-	}
-
-	// Habbit functions
-	async function loadHabbitsFromFile() {
-		allHabbitsList.value = habbitListData as Habbit[];
-	}
-
-	async function loadTagCategories() {
-		tag_categories.value = tagListData as Record<string, string[]>;
-	}
-
-	async function addHabbitToSelectedDay(habbit: Habbit) {
-		await handleAsyncAction(
-			async () => {
-				const formattedDate = toDateKey(refDate.value);
-				const dayEntry = userHabbitsList.value.find(
-					(day) => day.date === formattedDate,
-				);
-				const habbitWithId = { ...habbit, id: nanoid() };
-
-				// Ustalamy poprawną migawkę celów do zachowania na ten dzień
-				const snapshotToSave =
-					formattedDate === toDateKey(new Date())
-						? dailyGoalsList.value
-						: dayEntry && dayEntry.goalsSnapshot
-							? dayEntry.goalsSnapshot
-							: dailyGoalsList.value;
-
-				try {
-					const habbitsRef = doc(
-						db,
-						"users",
-						userUid.value!!,
-						"habbits",
-						formattedDate,
-					);
-
-					if (dayEntry) {
-						await updateDoc(habbitsRef, {
-							habbits: [...dayEntry.habbits, habbitWithId],
-							goalsSnapshot: snapshotToSave,
-						});
-						dayEntry.habbits.push(habbitWithId);
-						dayEntry.goalsSnapshot = [...snapshotToSave];
-					} else {
-						await setDoc(habbitsRef, {
-							date: formattedDate,
-							habbits: [habbitWithId],
-							goalsSnapshot: snapshotToSave,
-						});
-						userHabbitsList.value.push({
-							date: formattedDate,
-							habbits: [habbitWithId],
-							goalsSnapshot: [...snapshotToSave],
-						});
-					}
-
-					addToRecentHabbits(habbit.name);
-
-					// !!! TO JEST NASZ KLUCZOWY DODATEK !!!
-					if (authStore.isGuest) {
-						authStore.showGuestNotification = true;
-					}
-				} catch (error) {
-					console.error("Error adding habbit to Firestore:", error);
-				}
-			},
-			"Habbit added!",
-			"Failed to add habbit.",
-		);
-	}
-
-	async function deleteHabbitFromSelectedDay(habbit: Habbit) {
-		await handleAsyncAction(
-			async () => {
-				const formattedDate = toDateKey(refDate.value);
-				const dayEntry = userHabbitsList.value.find(
-					(day) => day.date === formattedDate,
-				);
-
-				if (dayEntry) {
-					const index = dayEntry.habbits.findIndex(
-						(t) => t.name === habbit.name,
-					);
-					const updatedHabbits = [...dayEntry.habbits];
-					updatedHabbits.splice(index, 1);
-
-					if (index !== -1) {
-						// Zachowujemy obecną migawkę celów dnia podczas usuwania nawyku
-						const snapshotToSave =
-							formattedDate === toDateKey(new Date())
-								? dailyGoalsList.value
-								: dayEntry.goalsSnapshot
-									? dayEntry.goalsSnapshot
-									: dailyGoalsList.value;
-
-						try {
-							const habbitsRef = doc(
-								db,
-								"users",
-								userUid.value!!,
-								"habbits",
-								formattedDate,
-							);
-							await updateDoc(habbitsRef, {
-								habbits: updatedHabbits,
-								goalsSnapshot: snapshotToSave,
-							});
-							dayEntry.habbits.splice(index, 1);
-							dayEntry.goalsSnapshot = [...snapshotToSave];
-						} catch (error) {
-							console.error("Error removing habbit from Firestore:", error);
-						}
-					}
-				}
-			},
-			"Habbit deleted!",
-			"Failed to deleted habbit.",
-		);
-	}
-
-	// Goals functions
-	async function loadDailyGoals() {
+	// ==========================================================================
+	// CELE — ZAPIS
+	// ==========================================================================
+	async function persistGoals(previous: Goal[]) {
+		const currentUid = uid.value;
+		if (!currentUid) return;
 		try {
-			const userDocRef = doc(db, "users", userUid.value!!);
-			const userDoc = await getDoc(userDocRef);
-
-			if (userDoc.exists() && userDoc.data().dailyGoals) {
-				dailyGoalsList.value = userDoc.data().dailyGoals;
-			} else {
-				setDoc(userDocRef, { dailyGoals: [] }, { merge: true });
-				console.log("No dailyGoals found for the user. Creating empty entry");
+			await saveUserFields(currentUid, { dailyGoals: plain(dailyGoalsList.value) });
+			// Dzisiejsza migawka nadąża za zmianami celów
+			const today = days.value[todayKey.value];
+			if (today) {
+				const snapshot = snapshotToWrite(todayKey.value)!;
+				today.goalsSnapshot = snapshot;
+				await updateDoc(dayDocRef(currentUid, todayKey.value), { goalsSnapshot: snapshot });
 			}
-		} catch (error) {
-			console.error("Error loading dailyGoals from Firestore:", error);
+		} catch (err) {
+			console.error("persistGoals failed", err);
+			dailyGoalsList.value = previous;
+			toast.error(SAVE_ERROR);
 		}
 	}
 
-	// Pomocnicza funkcja: aktualizuje migawkę dla AKTUALNIE PRZEGLĄDANEGO dnia
-	async function syncSelectedDaySnapshot(updatedList: Goal[]) {
-		const currentKey = toDateKey(refDate.value); // Zmiana z new Date() na refDate.value!
-		const dayEntry = userHabbitsList.value.find(
-			(day) => day.date === currentKey,
-		);
-
-		if (dayEntry) {
-			dayEntry.goalsSnapshot = updatedList;
-			try {
-				const habbitsRef = doc(
-					db,
-					"users",
-					userUid.value!!,
-					"habbits",
-					currentKey,
-				);
-				await updateDoc(habbitsRef, { goalsSnapshot: updatedList });
-				console.log(
-					`Zsynchronizowano migawkę celów dla wyświetlanego dnia: ${currentKey}`,
-				);
-			} catch (error) {
-				console.error("Error updating selected day's snapshot:", error);
-			}
-		}
+	async function addDailyGoal(habbit: Habbit | GoalRef) {
+		const previous = [...dailyGoalsList.value];
+		dailyGoalsList.value = [
+			...dailyGoalsList.value,
+			slim(habbit, { id: nanoid(), name: habbit.name }) as Goal,
+		];
+		await persistGoals(previous);
 	}
 
-	// Pomocnicza funkcja: ZAWSZE synchronizuje tylko dzisiejszy dzień (bo przeszłości nie edytujemy)
-	async function syncTodaySnapshot(updatedList: Goal[]) {
-		const todayKey = toDateKey(new Date());
-		const dayEntry = userHabbitsList.value.find((day) => day.date === todayKey);
-
-		if (dayEntry) {
-			dayEntry.goalsSnapshot = updatedList;
-			try {
-				const habbitsRef = doc(
-					db,
-					"users",
-					userUid.value!!,
-					"habbits",
-					todayKey,
-				);
-				await updateDoc(habbitsRef, { goalsSnapshot: updatedList });
-			} catch (error) {
-				console.error("Error updating today's snapshot:", error);
-			}
-		}
+	async function removeGoalInstance(name: string) {
+		const idx = dailyGoalsList.value.map((g) => g.name).lastIndexOf(name);
+		if (idx === -1) return;
+		const previous = [...dailyGoalsList.value];
+		dailyGoalsList.value = dailyGoalsList.value.filter((_, i) => i !== idx);
+		await persistGoals(previous);
 	}
 
-	async function addDailyGoal(goal: Goal) {
-		await handleAsyncAction(
-			async () => {
-				try {
-					const newGoal = { ...goal, id: nanoid(), severity: goal.severity };
-
-					// Dodajemy do głównej bazy (globalnie)
-					const updatedList = [...dailyGoalsList.value, newGoal];
-					const userDocRef = doc(db, "users", userUid.value!!);
-					await updateDoc(userDocRef, { dailyGoals: updatedList });
-
-					dailyGoalsList.value = updatedList;
-
-					// Synchronizujemy z dzisiejszą migawką
-					await syncTodaySnapshot(updatedList);
-					console.log("Daily goal added successfully.");
-				} catch (error) {
-					console.error("Error adding daily goal to Firestore:", error);
-				}
-			},
-			"Goal added!",
-			"Failed to add goal.",
-		);
+	async function removeGoal(name: string) {
+		const previous = [...dailyGoalsList.value];
+		dailyGoalsList.value = dailyGoalsList.value.filter((g) => g.name !== name);
+		await persistGoals(previous);
+		return previous;
 	}
 
-	async function deleteDailyGoal(goal: Goal) {
-		await handleAsyncAction(
-			async () => {
-				try {
-					// Usuwamy z głównej bazy (globalnie)
-					const updatedList = dailyGoalsList.value.filter(
-						(g) => g.id !== goal.id,
-					);
-					const userDocRef = doc(db, "users", userUid.value!!);
-					await updateDoc(userDocRef, { dailyGoals: updatedList });
-
-					dailyGoalsList.value = updatedList;
-
-					// Synchronizujemy z dzisiejszą migawką
-					await syncTodaySnapshot(updatedList);
-					console.log("Daily goal deleted successfully.");
-				} catch (error) {
-					console.error("Error deleting daily goal from Firestore:", error);
-				}
-			},
-			"Goal deleted!",
-			"Failed to deleted goal.",
-		);
+	async function restoreGoals(list: Goal[]) {
+		const previous = [...dailyGoalsList.value];
+		dailyGoalsList.value = list;
+		await persistGoals(previous);
 	}
 
-	function onGoalClick(goal: Goal) {
-		if (goal.severity !== "empty") {
-			deleteHabbitFromSelectedDay(goal);
+	async function setGoalTarget(name: string, target: number) {
+		const current = dailyGoalsList.value.filter((g) => g.name === name);
+		if (target < 1 || current.length === 0 || target === current.length) return;
+		const previous = [...dailyGoalsList.value];
+		if (target > current.length) {
+			const extra = Array.from({ length: target - current.length }, () =>
+				slim(current[0], { id: nanoid(), name }) as Goal,
+			);
+			const lastIdx = dailyGoalsList.value.map((g) => g.name).lastIndexOf(name);
+			const list = [...dailyGoalsList.value];
+			list.splice(lastIdx + 1, 0, ...extra);
+			dailyGoalsList.value = list;
 		} else {
-			const activeSnapshot = getGoalsSnapshotForDate(toDateKey(refDate.value));
-			const goalFormatted = activeSnapshot.find((g) => g.name === goal.name);
-			if (!goalFormatted) {
-				console.error("Goal not found in active snapshot:", goal.name);
-				return;
-			}
-			addHabbitToSelectedDay(goalFormatted);
-		}
-	}
-
-	async function updateHabbitsOrderInFirestore() {
-		const formattedDate = toDateKey(refDate.value);
-		const entryIndex = userHabbitsList.value.findIndex(
-			(day) => day.date === formattedDate,
-		);
-		if (entryIndex === -1) return;
-
-		const habbitsRef = doc(
-			db,
-			"users",
-			userUid.value!!,
-			"habbits",
-			formattedDate,
-		);
-		try {
-			await updateDoc(habbitsRef, {
-				habbits: userHabbitsList.value[entryIndex].habbits,
-			});
-			console.log("Habbits order updated in Firestore.");
-		} catch (error) {
-			console.error("Error updating habbits order in Firestore:", error);
-		}
-	}
-
-	async function updateGoalsOrderInFirestore() {
-		try {
-			const userDocRef = doc(db, "users", userUid.value!!);
-			await updateDoc(userDocRef, {
-				dailyGoals: dailyGoalsList.value,
-			});
-			console.log("Daily goals order updated in Firestore.");
-		} catch (error) {
-			console.error("Error updating daily goals order:", error);
-		}
-	}
-
-	function getGoalSeverity(goal: Goal) {
-		const habbitsForToday = selectedDayHabbits.value;
-		const matchingHabbits = habbitsForToday.filter((h) => h.name === goal.name);
-		const activeSnapshot = getGoalsSnapshotForDate(toDateKey(refDate.value));
-		const sameGoals = activeSnapshot.filter((g) => g.name === goal.name);
-		const indexInSameGoals = sameGoals.findIndex((g) => g.id === goal.id);
-		if (indexInSameGoals !== -1 && indexInSameGoals < matchingHabbits.length) {
-			return goal.severity;
-		}
-		return "empty";
-	}
-
-	function getGoalInstanceIndex(goal: Goal, list: Goal[]) {
-		let count = 0;
-		for (let i = 0; i < list.length; i++) {
-			if (list[i].name === goal.name) {
-				if (list[i].id === goal.id) {
-					return count;
+			let toDrop = current.length - target;
+			const list = [...dailyGoalsList.value];
+			for (let i = list.length - 1; i >= 0 && toDrop > 0; i--) {
+				if (list[i].name === name) {
+					list.splice(i, 1);
+					toDrop--;
 				}
-				count++;
 			}
+			dailyGoalsList.value = list;
 		}
-		return -1;
+		await persistGoals(previous);
 	}
 
-	function addToRecentHabbits(habbitName: string) {
-		const index = recentHabbits.value.indexOf(habbitName);
-
-		if (index !== -1) {
-			recentHabbits.value.splice(index, 1);
-		}
-		recentHabbits.value.unshift(habbitName);
-		recentHabbits.value = recentHabbits.value.slice(0, 10);
-
-		saveRecentHabbits(recentHabbits.value);
+	async function reorderGoals(names: string[]) {
+		const previous = [...dailyGoalsList.value];
+		dailyGoalsList.value = names.flatMap((n) => previous.filter((g) => g.name === n));
+		await persistGoals(previous);
 	}
 
-	async function saveRecentHabbits(recentHabbits: string[]) {
+	// Stuknięcie w cel: dopóki nie osiągnięto celu → +1, potem → cofnij jedno
+	function tapGoal(goal: GroupedGoal) {
+		if (goal.done < goal.target) {
+			return logHabbit(goal.habbit) ? ("logged" as const) : null;
+		}
+		return unlogHabbit(goal.name) ? ("unlogged" as const) : null;
+	}
+
+	// ==========================================================================
+	// WŁASNE HABITY
+	// ==========================================================================
+	async function saveCustomHabbits(previous: Habbit[]) {
+		const currentUid = uid.value;
+		if (!currentUid) return;
 		try {
-			const userDocRef = doc(db, "users", userUid.value!!);
-			await updateDoc(userDocRef, {
-				recentlyUsed: recentHabbits,
+			await saveUserFields(currentUid, {
+				customHabbits: customHabbits.value.map((h) => plain(h)),
 			});
-			console.log("recentHabbits saved to Firestore.");
-		} catch (error) {
-			console.error("Error saving recentHabbits to Firestore:", error);
+		} catch (err) {
+			console.error("saveCustomHabbits failed", err);
+			customHabbits.value = previous;
+			toast.error(SAVE_ERROR);
 		}
 	}
 
-	async function loadRecentHabbits() {
-		const userDocRef = doc(db, "users", userUid.value!!);
-		const docSnap = await getDoc(userDocRef);
-
-		if (docSnap.exists()) {
-			const data = docSnap.data();
-			if (data.recentlyUsed && Array.isArray(data.recentlyUsed)) {
-				recentHabbits.value = data.recentlyUsed;
-				console.log("recentHabbits loaded from Firestore.");
-			}
-		}
+	async function createCustomHabbit(label: string, icon: string, negative = false) {
+		const displayName = label.trim().slice(0, 40);
+		const existing = allHabbitsList.value.find(
+			(h) => (h.display_name || h.name).toLowerCase() === displayName.toLowerCase(),
+		);
+		if (existing) return existing;
+		const habbit: Habbit = {
+			name: `u_${nanoid(10)}`,
+			display_name: displayName,
+			icon,
+			severity: negative ? "danger" : "success",
+			tags: [],
+			origin: "user",
+			category: "Your habits",
+		};
+		const previous = [...customHabbits.value];
+		customHabbits.value = [habbit, ...customHabbits.value];
+		saveCustomHabbits(previous);
+		return habbit;
 	}
 
-	async function loadHabbitsForMonth(year: number, month: number) {
-		const jsMonth = month - 1;
-		const newStartDate = new Date(Date.UTC(year, jsMonth, 1));
-		const newEndDate = new Date(Date.UTC(year, jsMonth + 1, 0));
-
-		await getDailyHabbitsInRange(newStartDate, newEndDate);
+	async function deleteCustomHabbit(name: string) {
+		const previous = [...customHabbits.value];
+		customHabbits.value = customHabbits.value.filter((h) => h.name !== name);
+		await saveCustomHabbits(previous);
 	}
 
-	loadHabbitsFromFile();
-	loadTagCategories();
+	// ==========================================================================
+	// NAWIGACJA PO DATACH
+	// ==========================================================================
+	function setDate(date: Date) {
+		const day = startOfDay(date);
+		if (toDateKey(day) > todayKey.value) return; // przyszłości nie planujemy tutaj
+		selectedDate.value = day;
+		ensureMonthFor(day);
+	}
+
+	function changeDate(direction: number) {
+		setDate(addDays(selectedDate.value, direction));
+	}
+
+	function goToToday() {
+		setDate(new Date());
+	}
 
 	function clearData() {
-		userHabbitsList.value = [];
+		days.value = {};
 		dailyGoalsList.value = [];
 		recentHabbits.value = [];
-		refDate.value = new Date(); // Resetujemy datę kalendarza do "dzisiaj"
+		customHabbits.value = [];
+		loadedMonths.clear();
+		pendingMonths.clear();
+		pendingDays.clear();
+		selectedDate.value = startOfDay();
+		todayKey.value = computeTodayKey();
 	}
 
 	return {
-		refDate,
-		dateFormated,
-		changeDate,
-		allHabbitsList,
-		userHabbitsList,
-		isToday,
-		setDate,
-		selectedDayHabbits,
-		groupedSelectedDayHabbits,
-		addHabbitToSelectedDay,
-		toDateKey,
-		deleteHabbitFromSelectedDay,
+		// stan
+		todayKey,
+		selectedDate,
+		selectedKey,
+		isSelectedToday,
+		days,
 		dailyGoalsList,
-		addDailyGoal,
-		deleteDailyGoal,
-		dailyGoalsColored,
-		onGoalClick,
-		getDailyHabbitsInRange,
-		loadHabbitsForDate,
-		updateHabbitsOrderInFirestore,
-		updateGoalsOrderInFirestore,
-		getGoalSeverity,
-		getGoalInstanceIndex,
-		loadDailyGoals,
-		tag_categories,
 		recentHabbits,
-		addToRecentHabbits,
-		loadRecentHabbits,
-		specialFilters,
-		loadHabbitsFromFile,
-		hasHabbitsOnDate,
-		loadHabbitsForMonth,
-		goalsStreak, // Wyeksportowany w pełni sprawny streak celów!
+		customHabbits,
+		allHabbitsList,
+		isHistoryLoading,
+		// odczyt
+		resolve,
+		logsOn,
+		countsOn,
+		groupLogs,
+		hasLogsOn,
+		selectedLogs,
+		selectedCounts,
+		groupedSelectedDayHabbits,
+		groupedGoals,
+		goalsProgress,
+		goalsFor,
+		dayGoalsProgress,
+		streak,
+		streakAtRisk,
+		// wczytywanie
+		hydrate,
+		loadInitialHistory,
+		ensureRange,
+		ensureMonth,
+		// wpisy
+		logHabbit,
+		unlogHabbit,
+		removeLog,
+		removeAllLogs,
+		restoreLogs,
+		reorderSelected,
+		// cele
+		addDailyGoal,
+		removeGoalInstance,
+		removeGoal,
+		restoreGoals,
+		setGoalTarget,
+		reorderGoals,
+		tapGoal,
+		// własne habity
+		createCustomHabbit,
+		deleteCustomHabbit,
+		// daty
+		setDate,
+		changeDate,
+		goToToday,
 		clearData,
 	};
 });

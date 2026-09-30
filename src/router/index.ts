@@ -17,37 +17,29 @@ const router = createRouter({
 			name: "login",
 			component: LoginView,
 		},
+		// Nieznane adresy wracają na stronę główną zamiast pustego ekranu
+		{ path: "/:pathMatch(.*)*", redirect: "/" },
 	],
 });
 
 router.beforeEach(async (to) => {
 	const authStore = useAuthStore();
+	await authStore.initAuth();
 
-	if (authStore.loading) {
-		await authStore.initAuth();
-	}
-
-	// Na webie użytkownik może zamknąć dialog lub kontynuować jako gość.
+	// Web: gość może korzystać z aplikacji; /login nie jest potrzebne
 	if (!isNativePlatform) {
-		return true;
+		return to.name === "login" ? { name: "home", replace: true } : true;
 	}
 
-	// W aplikacji natywnej nieautoryzowany użytkownik nie może wejść do widoku
-	// aplikacji. Trasa /login renderuje wyłącznie pełnoekranowy AuthDialog.
+	// Aplikacja natywna: bez zalogowania widać wyłącznie ekran logowania
 	if (!authStore.isAuthenticated && to.name !== "login") {
-		authStore.isAuthDialogOpen = true;
+		authStore.openAuthDialog("login");
 		return { name: "login", replace: true };
 	}
-
 	if (authStore.isAuthenticated && to.name === "login") {
-		authStore.isAuthDialogOpen = false;
+		authStore.closeAuthDialog();
 		return { name: "home", replace: true };
 	}
-
-	if (!authStore.isAuthenticated) {
-		authStore.isAuthDialogOpen = true;
-	}
-
 	return true;
 });
 

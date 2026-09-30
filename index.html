@@ -1,15 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <link rel="icon" href="/favicon.ico">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Things</title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined" rel="stylesheet">
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+		<title>Daily Things — a cozy habit tracker & to-do list</title>
+		<meta
+			name="description"
+			content="Daily Things is a cozy, free habit tracker and to-do list. Log small daily habits with cute pixel-art icons, set daily goals, keep your streak going and see your progress." />
+		<meta
+			name="theme-color"
+			content="#fdf6ee" />
+		<meta
+			name="color-scheme"
+			content="light dark" />
+		<meta
+			name="application-name"
+			content="Daily Things" />
+		<meta
+			name="apple-mobile-web-app-title"
+			content="Daily Things" />
+		<meta
+			name="mobile-web-app-capable"
+			content="yes" />
+		<meta
+			name="apple-mobile-web-app-status-bar-style"
+			content="default" />
+
+		<!-- Udostępnianie (Open Graph / X). Po ustaleniu domeny dodaj og:url
+		     i zamień ścieżkę obrazka na pełny adres https://… -->
+		<meta
+			property="og:type"
+			content="website" />
+		<meta
+			property="og:site_name"
+			content="Daily Things" />
+		<meta
+			property="og:title"
+			content="Daily Things — a cozy habit tracker & to-do list" />
+		<meta
+			property="og:description"
+			content="Log small daily habits with pixel-art icons, tick off to-dos and keep your streak going. Free, gentle and cozy." />
+		<meta
+			property="og:image"
+			content="/og-image.png" />
+		<meta
+			property="og:image:width"
+			content="1200" />
+		<meta
+			property="og:image:height"
+			content="630" />
+		<meta
+			property="og:image:alt"
+			content="Daily Things — pixel-art habit icons on a warm cream background" />
+		<meta
+			name="twitter:card"
+			content="summary_large_image" />
+
+		<link
+			rel="icon"
+			href="/favicon.ico"
+			sizes="any" />
+		<link
+			rel="icon"
+			type="image/png"
+			sizes="32x32"
+			href="/favicon-32x32.png" />
+		<link
+			rel="apple-touch-icon"
+			href="/apple-touch-icon.png" />
+		<link
+			rel="manifest"
+			href="/site.webmanifest" />
+
+		<script type="application/ld+json">
+			{
+				"@context": "https://schema.org",
+				"@type": "WebApplication",
+				"name": "Daily Things",
+				"description": "A cozy habit tracker and to-do list with pixel-art icons, daily goals, streaks and progress stats.",
+				"applicationCategory": "LifestyleApplication",
+				"operatingSystem": "Web, Android",
+				"offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+				"inLanguage": "en"
+			}
+		</script>
+
+		<!-- Lekki splash widoczny, zanim Firebase sprawdzi sesję i Vue się zamontuje -->
+		<style>
+			html,
+			body {
+				margin: 0;
+				background: #fdf6ee;
+				color: #3b2a20;
+				font-family: Georgia, "Times New Roman", serif;
+			}
+			.boot {
+				min-height: 100dvh;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				gap: 0.5rem;
+				text-align: center;
+				padding: 1.5rem;
+				box-sizing: border-box;
+			}
+			.boot img {
+				width: 72px;
+				height: 72px;
+				animation: boot-breathe 1.8s ease-in-out infinite;
+			}
+			.boot h1 {
+				margin: 0.5rem 0 0;
+				font-size: 1.6rem;
+			}
+			.boot p {
+				margin: 0;
+				max-width: 26rem;
+				color: #6b5446;
+				line-height: 1.5;
+			}
+			@keyframes boot-breathe {
+				50% {
+					transform: scale(1.06);
+				}
+			}
+			@media (prefers-color-scheme: dark) {
+				html,
+				body {
+					background: #1c1714;
+					color: #f5ebe1;
+				}
+				.boot p {
+					color: #d6c5b6;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div id="app">
+			<main class="boot">
+				<img
+					src="/android-chrome-192x192.png"
+					alt="" />
+				<h1>Daily Things</h1>
+				<p>
+					A cozy habit tracker and to-do list. Log small daily habits, set gentle goals, keep your
+					streak and watch your progress grow.
+				</p>
+			</main>
+		</div>
+		<noscript>
+			<p style="text-align: center; padding: 1rem">
+				Daily Things needs JavaScript to run. Please enable it in your browser.
+			</p>
+		</noscript>
+		<script
+			type="module"
+			src="/src/main.ts"></script>
+	</body>
 </html>

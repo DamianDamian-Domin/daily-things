@@ -1,96 +1,103 @@
 import { defineStore } from "pinia";
 import { ref, watch } from "vue";
-// Dodane importy dla Firebase
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import { db } from "@/firebase";
+import type { UserPreferences } from "@/libs/types";
+import { saveUserFields, type UserDoc } from "@/services/userData";
+import { useAuthStore } from "@/stores/auth";
+
+function readStorage(key: string): string | null {
+	try {
+		return localStorage.getItem(key);
+	} catch {
+		return null;
+	}
+}
+
+function writeStorage(key: string, value: string) {
+	try {
+		localStorage.setItem(key, value);
+	} catch {
+		/* tryb prywatny / zablokowany storage — ignorujemy */
+	}
+}
+
+const media = (query: string) =>
+	typeof window !== "undefined" && window.matchMedia?.(query).matches;
 
 export const usePreferencesStore = defineStore("userPreferences", () => {
-	// 1. Inicjalizacja stanu z localStorage (działa natychmiastowo przy wejściu na stronę)
+	const authStore = useAuthStore();
+
+	// Domyślnie szanujemy ustawienia systemu (ciemny motyw, ograniczony ruch)
+	const storedTheme = readStorage("theme");
 	const isDarkMode = ref(
-		localStorage.getItem("theme") === "dark" ||
-			(!("theme" in localStorage) &&
-				window.matchMedia("(prefers-color-scheme: dark)").matches),
+		storedTheme ? storedTheme === "dark" : Boolean(media("(prefers-color-scheme: dark)")),
 	);
-	const soundEnabled = ref(localStorage.getItem("soundEnabled") !== "false");
+	const soundEnabled = ref(readStorage("soundEnabled") !== "false");
+	const storedAnimations = readStorage("animationsEnabled");
 	const animationsEnabled = ref(
-		localStorage.getItem("animationsEnabled") !== "false",
+		storedAnimations !== null
+			? storedAnimations !== "false"
+			: !media("(prefers-reduced-motion: reduce)"),
 	);
 
-	const applyTheme = (dark: boolean) => {
-		if (dark) {
-			document.documentElement.classList.add("my-app-dark");
-		} else {
-			document.documentElement.classList.remove("my-app-dark");
-		}
-	};
-
+	function applyTheme(dark: boolean) {
+		document.documentElement.classList.toggle("my-app-dark", dark);
+		document
+			.querySelector('meta[name="theme-color"]')
+			?.setAttribute("content", dark ? "#1c1714" : "#fdf6ee");
+	}
 	applyTheme(isDarkMode.value);
 
-	// ========================
-	// NOWOŚĆ: Logika Firebase
-	// ========================
+	// Przy wczytywaniu z Firestore nie odsyłamy od razu tych samych wartości
+	let hydrating = false;
 
-	// Zapisywanie obecnych ustawień do Firestore
-	const saveToFirebase = async () => {
-		const auth = getAuth();
-		if (!auth.currentUser) return; // Jeśli użytkownik nie jest zalogowany, ignoruj
+	function snapshot(): UserPreferences {
+		return {
+			isDarkMode: isDarkMode.value,
+			soundEnabled: soundEnabled.value,
+			animationsEnabled: animationsEnabled.value,
+		};
+	}
 
-		const docRef = doc(db, "users", auth.currentUser.uid);
-		await setDoc(
-			docRef,
-			{
-				preferences: {
-					isDarkMode: isDarkMode.value,
-					soundEnabled: soundEnabled.value,
-					animationsEnabled: animationsEnabled.value,
-				},
-			},
-			{ merge: true },
-		); // merge: true sprawia, że nie nadpiszemy innych danych użytkownika!
-	};
+	function persistRemote() {
+		if (hydrating) return;
+		const uid = authStore.userUid;
+		if (!uid) return;
+		saveUserFields(uid, { preferences: snapshot() }).catch((err) =>
+			console.warn("Preferences save failed", err),
+		);
+	}
 
-	// Pobieranie ustawień z Firestore
-	const loadFromFirebase = async (userId: string) => {
-		const docRef = doc(db, "users", userId);
-		const docSnap = await getDoc(docRef);
+	function hydrate(userDoc: UserDoc) {
+		const prefs = userDoc.preferences;
+		if (!prefs) return;
+		hydrating = true;
+		if (typeof prefs.isDarkMode === "boolean") isDarkMode.value = prefs.isDarkMode;
+		if (typeof prefs.soundEnabled === "boolean") soundEnabled.value = prefs.soundEnabled;
+		if (typeof prefs.animationsEnabled === "boolean")
+			animationsEnabled.value = prefs.animationsEnabled;
+		// watchery odpalają się asynchronicznie — zdejmujemy flagę po nich
+		queueMicrotask(() => {
+			setTimeout(() => (hydrating = false), 0);
+		});
+	}
 
-		if (docSnap.exists() && docSnap.data().preferences) {
-			const data = docSnap.data().preferences;
-
-			// Aktualizacja zmiennych
-			isDarkMode.value = data.isDarkMode;
-			soundEnabled.value = data.soundEnabled;
-			animationsEnabled.value = data.animationsEnabled;
-
-			// Zapis do lokalnej pamięci, aby przy odświeżeniu strony załadowały się od razu
-			localStorage.setItem("theme", data.isDarkMode ? "dark" : "light");
-			localStorage.setItem("soundEnabled", String(data.soundEnabled));
-			localStorage.setItem("animationsEnabled", String(data.animationsEnabled));
-
-			applyTheme(data.isDarkMode);
-		}
-	};
-
-	// ========================
-	// Obserwatory (Watchers)
-	// ========================
-
-	watch(isDarkMode, (newVal) => {
-		localStorage.setItem("theme", newVal ? "dark" : "light");
-		applyTheme(newVal);
-		saveToFirebase(); // Zapis globalny po zmianie
+	watch(isDarkMode, (dark) => {
+		writeStorage("theme", dark ? "dark" : "light");
+		applyTheme(dark);
+		persistRemote();
 	});
 
-	watch(soundEnabled, (newVal) => {
-		localStorage.setItem("soundEnabled", String(newVal));
-		saveToFirebase(); // Zapis globalny po zmianie
+	watch(soundEnabled, (enabled) => {
+		writeStorage("soundEnabled", String(enabled));
+		persistRemote();
 	});
 
-	watch(animationsEnabled, (newVal) => {
-		localStorage.setItem("animationsEnabled", String(newVal));
-		saveToFirebase(); // Zapis globalny po zmianie
+	watch(animationsEnabled, (enabled) => {
+		writeStorage("animationsEnabled", String(enabled));
+		document.documentElement.classList.toggle("reduce-motion", !enabled);
+		persistRemote();
 	});
+	document.documentElement.classList.toggle("reduce-motion", !animationsEnabled.value);
 
 	function toggleTheme() {
 		isDarkMode.value = !isDarkMode.value;
@@ -101,6 +108,6 @@ export const usePreferencesStore = defineStore("userPreferences", () => {
 		soundEnabled,
 		animationsEnabled,
 		toggleTheme,
-		loadFromFirebase, // Eksportujemy tę funkcję, by wywołać ją przy logowaniu
+		hydrate,
 	};
 });

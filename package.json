@@ -5,17 +5,22 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:emu": "vite --mode emulator",
+    "emulators": "npx -y firebase-tools@13 emulators:start --project demo-daily-things",
     "build": "vite build",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "preview": "vite preview",
-    "android": "npm run build && npx cap sync"
+    "android": "npm run build && npx cap sync",
+    "icons": "npm i --no-save @material-symbols/svg-400 @resvg/resvg-js && node scripts/generate-pixel-icons.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.3",
     "@capacitor/cli": "^8.3.3",
     "@capacitor/core": "^8.3.3",
+    "@fontsource-variable/lora": "^5.3.0",
+    "@fontsource/sacramento": "^5.3.0",
     "@primeuix/themes": "^1.0.3",
     "@tailwindcss/vite": "^4.1.4",
-    "dotenv": "^16.6.1",
     "firebase": "^11.9.1",
     "nanoid": "^5.1.5",
     "pinia": "^2.1.7",
@@ -27,13 +32,12 @@
     "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
-    "@types/firebase": "^3.2.3",
     "@types/node": "^24.0.5",
     "@vitejs/plugin-vue": "^5.2.4",
-    "autoprefixer": "^10.4.19",
     "tailwindcss": "^4.1.4",
     "typescript": "^5.8.3",
     "vite": "^5.2.8",
-    "vite-plugin-vue-devtools": "^7.0.25"
+    "vite-plugin-vue-devtools": "^7.0.25",
+    "vue-tsc": "^2.2.12"
   }
 }

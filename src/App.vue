@@ -1,117 +1,158 @@
 <template>
 	<div
-		class="flex flex-col w-screen h-dvh min-h-dvh surface-ground overflow-hidden"
-		:class="isMobileLayout ? 'px-0 py-0' : 'px-0 py-0 sm:px-4 sm:py-2'">
-		<div
-			v-if="showNavbar && !isMobileLayout"
-			class="px-4 pt-2">
+		class="app-shell"
+		:class="{ 'is-mobile': isMobileLayout }">
+		<a
+			href="#main"
+			class="skip-link"
+			>Skip to content</a
+		>
+
+		<header
+			v-if="showChrome && !isMobileLayout"
+			class="app-header">
 			<NavBar />
-			<Divider
-				v-if="showNavbar"
-				class="w-full" />
-		</div>
+		</header>
 
-		<Loader></Loader>
-		<div class="flex-1 flex flex-col min-h-0 content-scroll">
+		<main
+			id="main"
+			class="app-main content-scroll"
+			tabindex="-1">
 			<RouterView />
-		</div>
+		</main>
 
-		<div
-			v-if="showNavbar && isMobileLayout"
-			class="fixed bottom-0 left-0 right-0 z-50">
-			<MobileTabBar />
-		</div>
+		<MobileTabBar v-if="showChrome && isMobileLayout" />
 
 		<CookiesConsentBanner
-			v-if="!isLoginRoute"
-			:bottom-offset="cookieBannerOffset" />
-		<GuestInfoDialog />
-		<AuthDialog />
+			v-if="!isLoginRoute && !authStore.isAuthDialogOpen"
+			:bottom-offset="bottomOffset" />
+		<AuthDialog v-if="authDialogNeeded" />
+		<ToastHost :bottom-offset="bottomOffset" />
 	</div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, defineAsyncComponent, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useHabbitsStore } from "@/stores/habbits";
 import { useTodosStore } from "@/stores/todos";
+import { usePreferencesStore } from "@/stores/userPreferences";
+import { useToastStore } from "@/stores/toast";
+import { fetchUserDoc } from "@/services/userData";
+import { isNativePlatform } from "@/utils/platform";
+import { useLayout } from "@/utils/useLayout";
 
-import Loader from "./components/home_view/Loader.vue";
 import NavBar from "@/components/navbar/NavBar.vue";
 import MobileTabBar from "@/components/navbar/MobileTabBar.vue";
 import CookiesConsentBanner from "@/components/CookiesConsentBanner.vue";
-import AuthDialog from "@/components/login_view/AuthDialog.vue";
-import GuestInfoDialog from "@/components/navbar/GuestInfoDialog.vue";
-import Divider from "primevue/divider";
-import { watch } from "vue";
-import { isNativePlatform } from "@/utils/platform";
+// Okno logowania ładujemy dopiero, gdy jest potrzebne (powracający
+// użytkownicy nigdy go nie pobiorą)
+const AuthDialog = defineAsyncComponent(() => import("@/components/login_view/AuthDialog.vue"));
+import ToastHost from "@/components/ui/ToastHost.vue";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const habbitsStore = useHabbitsStore();
 const todosStore = useTodosStore();
+const preferencesStore = usePreferencesStore();
+const toast = useToastStore();
 
-const isMobileLayout = ref(false);
-const mobileLayoutQuery =
-	"(max-width: 640px), (orientation: landscape) and (max-width: 1024px) and (hover: none) and (pointer: coarse)";
-let mediaQueryList: MediaQueryList | null = null;
+// ==========================================
+// UKŁAD (mobile / desktop)
+// ==========================================
+const { isMobile: isMobileLayout } = useLayout();
 
-function updateMobileLayout() {
-	if (!mediaQueryList) return;
-	isMobileLayout.value = mediaQueryList.matches;
+const isLoginRoute = computed(() => route.name === "login");
+const authDialogNeeded = ref(false);
+watch(
+	() => authStore.isAuthDialogOpen,
+	(open) => {
+		if (open) authDialogNeeded.value = true;
+	},
+	{ immediate: true },
+);
+const showChrome = computed(() => !isLoginRoute.value);
+const bottomOffset = computed(() => (showChrome.value && isMobileLayout.value ? 68 : 0));
+
+// ==========================================
+// SESJA — jedno miejsce, które ładuje dane zalogowanego użytkownika
+// ==========================================
+async function loadSession(uid: string) {
+	try {
+		const userDoc = await fetchUserDoc(uid);
+		if (authStore.userUid !== uid) return;
+		preferencesStore.hydrate(userDoc);
+		habbitsStore.hydrate(userDoc);
+		todosStore.hydrate(userDoc);
+		await habbitsStore.loadInitialHistory();
+	} catch (err) {
+		console.error("Session load failed", err);
+		toast.error("We couldn't load your data. Check your connection.");
+	}
 }
 
-onMounted(async () => {
-	mediaQueryList = window.matchMedia(mobileLayoutQuery);
-	updateMobileLayout();
-	mediaQueryList.addEventListener("change", updateMobileLayout);
-
-	// --- NOWA LOGIKA STARTOWA ---
-	// Pobieramy dane o sesji z Firebase
-	await authStore.initAuth();
-
-	// Jeśli nie ma użytkownika po załadowaniu aplikacji, otwieramy modal powitalny
-	if (!authStore.user) {
-		authStore.isAuthDialogOpen = true;
-	}
-});
-
-onBeforeUnmount(() => {
-	mediaQueryList?.removeEventListener("change", updateMobileLayout);
-});
-
-// Zmieniono na true, ponieważ nie chowamy już navbara na dedykowanej stronie logowania
-const isLoginRoute = computed(() => route.name === "login");
-const showNavbar = computed(() => !isLoginRoute.value);
-
-const cookieBannerOffset = computed(() => {
-	return showNavbar.value && isMobileLayout.value ? 68 : 0;
-});
-
-// --- OBSERWATOR ZMIANY UŻYTKOWNIKA ---
 watch(
-	() => authStore.userUid,
-	async (newUid) => {
-		if (newUid) {
-			if (isNativePlatform && isLoginRoute.value) {
-				await router.replace({ name: "home" });
+	() => [authStore.userUid, authStore.dataRevision] as const,
+	async ([uid]) => {
+		habbitsStore.clearData();
+		todosStore.clearData();
+
+		if (!uid) {
+			if (isNativePlatform) {
+				authStore.openAuthDialog("login");
+				if (!isLoginRoute.value) await router.replace({ name: "login" });
+			} else {
+				// Web: pierwsze wejście → ekran powitalny. Zamknięcie go = tryb gościa.
+				authStore.openAuthDialog("welcome");
 			}
-			// Ktoś się zalogował (lub wszedł jako gość) -> Pobieramy wszystkie dane
-			await todosStore.loadTodos();
-			await habbitsStore.loadDailyGoals();
-			await habbitsStore.loadRecentHabbits();
-			await habbitsStore.loadHabbitsForDate(new Date());
-		} else {
-			if (isNativePlatform && !isLoginRoute.value) {
-				await router.replace({ name: "login" });
-			}
-			// Ktoś się wylogował -> Czyścimy stan aplikacji
-			todosStore.clearData();
-			habbitsStore.clearData();
+			return;
 		}
+
+		if (isNativePlatform && isLoginRoute.value) await router.replace({ name: "home" });
+		await loadSession(uid);
 	},
-	{ immediate: true }, // immediate: true upewnia się, że zadziała to od razu po załadowaniu apki
+	{ immediate: true },
 );
 </script>
+
+<style scoped>
+.app-shell {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	height: 100dvh;
+	min-height: 100dvh;
+	overflow: hidden;
+	background: var(--dt-bg);
+}
+
+.app-header {
+	padding: 0.5rem 1.25rem 0;
+}
+
+.app-main {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	outline: none;
+}
+
+.skip-link {
+	position: absolute;
+	left: 0.75rem;
+	top: -3rem;
+	z-index: 10000;
+	padding: 0.5rem 0.9rem;
+	border-radius: var(--dt-radius-pill);
+	background: var(--dt-accent-strong);
+	color: var(--dt-on-accent);
+	font-weight: 600;
+	transition: top 0.2s ease;
+}
+.skip-link:focus {
+	top: 0.75rem;
+}
+</style>
