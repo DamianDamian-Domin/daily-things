@@ -155,7 +155,7 @@
   },
   {
     "name": "Pilates",
-    "icon": "self_improvement",
+    "icon": "accessibility",
     "severity": "success",
     "tags": [
       "fitness",
@@ -197,7 +197,7 @@
   },
   {
     "name": "Trail running",
-    "icon": "hiking",
+    "icon": "sprint",
     "severity": "success",
     "tags": [
       "sport",
@@ -225,7 +225,7 @@
   },
   {
     "name": "Calisthenics",
-    "icon": "sports_gymnastics",
+    "icon": "exercise",
     "severity": "success",
     "tags": [
       "fitness",
@@ -365,7 +365,7 @@
   },
   {
     "name": "Rock climbing",
-    "icon": "landscape",
+    "icon": "mountain_flag",
     "severity": "success",
     "tags": [
       "sport",
@@ -387,7 +387,7 @@
       "outdoors",
       "balance"
     ],
-    "display_name": "Skateboard",
+    "display_name": "Skateboarding",
     "category": "Sports & Games",
     "origin": "system"
   },
@@ -443,7 +443,7 @@
       "balance",
       "outdoors"
     ],
-    "display_name": "Paddleboard",
+    "display_name": "Paddleboarding",
     "category": "Sports & Games",
     "origin": "system"
   },
@@ -491,7 +491,7 @@
   },
   {
     "name": "Snowboarding",
-    "icon": "downhill_skiing",
+    "icon": "snowboarding",
     "severity": "success",
     "tags": [
       "sport",
@@ -499,7 +499,7 @@
       "outdoors",
       "balance"
     ],
-    "display_name": "Snowboard",
+    "display_name": "Snowboarding",
     "category": "Sports & Games",
     "origin": "system"
   },
@@ -589,7 +589,7 @@
   },
   {
     "name": "Archery",
-    "icon": "sports",
+    "icon": "target",
     "severity": "success",
     "tags": [
       "sport",
@@ -625,7 +625,7 @@
       "fun",
       "outdoors"
     ],
-    "display_name": "Roller skate",
+    "display_name": "Roller skating",
     "category": "Sports & Games",
     "origin": "system"
   },
@@ -639,7 +639,7 @@
       "fitness",
       "adventure"
     ],
-    "display_name": "MTB",
+    "display_name": "Mountain biking",
     "category": "Sports & Games",
     "origin": "system"
   },
@@ -729,7 +729,7 @@
   },
   {
     "name": "Snorkeling",
-    "icon": "snorkeling",
+    "icon": "scuba_diving",
     "severity": "success",
     "tags": [
       "sport",
@@ -743,7 +743,7 @@
   },
   {
     "name": "Cross-country skiing",
-    "icon": "downhill_skiing",
+    "icon": "nordic_walking",
     "severity": "success",
     "tags": [
       "sport",
@@ -751,7 +751,7 @@
       "cardio",
       "outdoors"
     ],
-    "display_name": "XC skiing",
+    "display_name": "Cross-country ski",
     "category": "Sports & Games",
     "origin": "system"
   },
@@ -827,7 +827,7 @@
   },
   {
     "name": "Kitesurfing",
-    "icon": "surfing",
+    "icon": "kitesurfing",
     "severity": "success",
     "tags": [
       "sport",
@@ -939,7 +939,7 @@
   },
   {
     "name": "Try new recipe",
-    "icon": "restaurant_menu",
+    "icon": "cooking",
     "severity": "success",
     "tags": [
       "food",
@@ -953,7 +953,7 @@
   },
   {
     "name": "Take vitamins",
-    "icon": "health_and_safety",
+    "icon": "pill",
     "severity": "success",
     "tags": [
       "health",
@@ -981,7 +981,7 @@
   },
   {
     "name": "Mindful eating",
-    "icon": "restaurant",
+    "icon": "rice_bowl",
     "severity": "success",
     "tags": [
       "nutrition",
@@ -1004,7 +1004,7 @@
       "mental health"
     ],
     "display_name": "No alcohol",
-    "category": "Nutrition & Food",
+    "category": "Health Monitoring",
     "origin": "system"
   },
   {
@@ -1018,7 +1018,7 @@
       "routine"
     ],
     "display_name": "No smoking",
-    "category": "Nutrition & Food",
+    "category": "Health Monitoring",
     "origin": "system"
   },
   {
@@ -1115,13 +1115,13 @@
       "morning",
       "productivity"
     ],
-    "display_name": "Wake early",
+    "display_name": "Wake up early",
     "category": "Sleep & Routines",
     "origin": "system"
   },
   {
     "name": "Go to bed early",
-    "icon": "hotel",
+    "icon": "bedtime",
     "severity": "success",
     "tags": [
       "sleep",
@@ -1129,13 +1129,13 @@
       "health",
       "routine"
     ],
-    "display_name": "Early sleep",
+    "display_name": "Early bedtime",
     "category": "Sleep & Routines",
     "origin": "system"
   },
   {
     "name": "Morning routine",
-    "icon": "wb_sunny",
+    "icon": "routine",
     "severity": "success",
     "tags": [
       "routine",
@@ -1149,7 +1149,7 @@
   },
   {
     "name": "Evening routine",
-    "icon": "bedtime",
+    "icon": "moon_stars",
     "severity": "success",
     "tags": [
       "sleep",
@@ -1163,7 +1163,7 @@
   },
   {
     "name": "No phone before bed",
-    "icon": "phonelink_erase",
+    "icon": "mobile_cancel",
     "severity": "success",
     "tags": [
       "sleep",
@@ -1171,7 +1171,7 @@
       "discipline",
       "routine"
     ],
-    "display_name": "No phone bed",
+    "display_name": "No phone in bed",
     "category": "Sleep & Routines",
     "origin": "system"
   },
@@ -1191,7 +1191,7 @@
   },
   {
     "name": "Get sunlight",
-    "icon": "light_mode",
+    "icon": "sunny",
     "severity": "success",
     "tags": [
       "health",
@@ -1205,7 +1205,7 @@
   },
   {
     "name": "Make the bed",
-    "icon": "bed",
+    "icon": "king_bed",
     "severity": "success",
     "tags": [
       "home",
@@ -1233,7 +1233,7 @@
   },
   {
     "name": "Practice mindfulness",
-    "icon": "visibility",
+    "icon": "filter_vintage",
     "severity": "success",
     "tags": [
       "focus",
@@ -1283,7 +1283,7 @@
       "self-care",
       "confidence"
     ],
-    "display_name": "Self-talk",
+    "display_name": "Positive self-talk",
     "category": "Mental Health & Mindfulness",
     "origin": "system"
   },
@@ -1331,7 +1331,7 @@
   },
   {
     "name": "Relaxation time",
-    "icon": "spa",
+    "icon": "weekend",
     "severity": "success",
     "tags": [
       "self-care",
@@ -1339,7 +1339,7 @@
       "calm",
       "relaxation"
     ],
-    "display_name": "Relax time",
+    "display_name": "Relax",
     "category": "Mental Health & Mindfulness",
     "origin": "system"
   },
@@ -1367,13 +1367,13 @@
       "communication",
       "growth"
     ],
-    "display_name": "Ask help",
+    "display_name": "Ask for help",
     "category": "Mental Health & Mindfulness",
     "origin": "system"
   },
   {
     "name": "Play a brain training game",
-    "icon": "psychology",
+    "icon": "neurology",
     "severity": "success",
     "tags": [
       "mental health",
@@ -1387,7 +1387,7 @@
   },
   {
     "name": "Set an intention for the day",
-    "icon": "wb_incandescent",
+    "icon": "flag",
     "severity": "success",
     "tags": [
       "mindfulness",
@@ -1401,7 +1401,7 @@
   },
   {
     "name": "Reflect on today's wins",
-    "icon": "emoji_events",
+    "icon": "trophy",
     "severity": "success",
     "tags": [
       "gratitude",
@@ -1415,7 +1415,7 @@
   },
   {
     "name": "Read a book",
-    "icon": "book",
+    "icon": "menu_book",
     "severity": "success",
     "tags": [
       "education",
@@ -1423,7 +1423,7 @@
       "self-improvement",
       "focus"
     ],
-    "display_name": "Read book",
+    "display_name": "Read a book",
     "category": "Learning & Growth",
     "origin": "system"
   },
@@ -1479,7 +1479,7 @@
       "education",
       "discipline"
     ],
-    "display_name": "Take class",
+    "display_name": "Take a class",
     "category": "Learning & Growth",
     "origin": "system"
   },
@@ -1507,7 +1507,7 @@
       "entertainment",
       "growth"
     ],
-    "display_name": "Docu time",
+    "display_name": "Documentary",
     "category": "Learning & Growth",
     "origin": "system"
   },
@@ -1577,7 +1577,7 @@
       "growth",
       "communication"
     ],
-    "display_name": "Public speak",
+    "display_name": "Public speaking",
     "category": "Learning & Growth",
     "origin": "system"
   },
@@ -1591,7 +1591,7 @@
       "education",
       "media"
     ],
-    "display_name": "Edu video",
+    "display_name": "Learning video",
     "category": "Learning & Growth",
     "origin": "system"
   },
@@ -1703,7 +1703,7 @@
       "reflection",
       "routine"
     ],
-    "display_name": "Reflect prog.",
+    "display_name": "Review progress",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -1745,7 +1745,7 @@
       "routine",
       "success"
     ],
-    "display_name": "One task",
+    "display_name": "Complete a task",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -1773,7 +1773,7 @@
       "work",
       "growth"
     ],
-    "display_name": "Finish proj.",
+    "display_name": "Finish a project",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -1793,7 +1793,7 @@
   },
   {
     "name": "Limit notifications",
-    "icon": "notifications_active",
+    "icon": "notifications_off",
     "severity": "success",
     "tags": [
       "focus",
@@ -1815,7 +1815,7 @@
       "routine",
       "focus"
     ],
-    "display_name": "Sort docs",
+    "display_name": "Organize docs",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -1863,7 +1863,7 @@
   },
   {
     "name": "Take a screen break",
-    "icon": "self_improvement",
+    "icon": "desktop_access_disabled",
     "severity": "success",
     "tags": [
       "health",
@@ -1885,7 +1885,7 @@
       "focus",
       "organization"
     ],
-    "display_name": "Time block",
+    "display_name": "Time blocking",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -1913,7 +1913,7 @@
       "work",
       "movement"
     ],
-    "display_name": "Walk meeting",
+    "display_name": "Walking meeting",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -1989,7 +1989,7 @@
   },
   {
     "name": "Mentor someone",
-    "icon": "diversity_3",
+    "icon": "co_present",
     "severity": "success",
     "tags": [
       "career",
@@ -2017,7 +2017,7 @@
   },
   {
     "name": "Limit screen time",
-    "icon": "screen_lock_portrait",
+    "icon": "mobile_lock_portrait",
     "severity": "success",
     "tags": [
       "focus",
@@ -2025,7 +2025,7 @@
       "productivity",
       "routine"
     ],
-    "display_name": "Limit screen",
+    "display_name": "Limit screen time",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -2039,7 +2039,7 @@
       "organization",
       "planning"
     ],
-    "display_name": "Track expense",
+    "display_name": "Track expenses",
     "category": "Finance",
     "origin": "system"
   },
@@ -2277,7 +2277,7 @@
       "responsibility",
       "task"
     ],
-    "display_name": "Fix stuff",
+    "display_name": "Fix something",
     "category": "Home & Chores",
     "origin": "system"
   },
@@ -2291,7 +2291,7 @@
       "routine",
       "minimalism"
     ],
-    "display_name": "Sort closet",
+    "display_name": "Organize closet",
     "category": "Home & Chores",
     "origin": "system"
   },
@@ -2325,7 +2325,7 @@
   },
   {
     "name": "Change bedsheets",
-    "icon": "king_bed",
+    "icon": "bedroom_parent",
     "severity": "success",
     "tags": [
       "home",
@@ -2529,7 +2529,7 @@
       "kitchen",
       "routine"
     ],
-    "display_name": "Clean coffee mkr",
+    "display_name": "Clean coffee maker",
     "category": "Home & Chores",
     "origin": "system"
   },
@@ -2633,7 +2633,7 @@
   },
   {
     "name": "Feed the dog",
-    "icon": "pets",
+    "icon": "sound_detection_dog_barking",
     "severity": "success",
     "tags": [
       "pets",
@@ -2669,7 +2669,7 @@
       "connection",
       "care"
     ],
-    "display_name": "Play w/ pet",
+    "display_name": "Play with pet",
     "category": "Pets",
     "origin": "system"
   },
@@ -2823,7 +2823,7 @@
       "responsibility",
       "routine"
     ],
-    "display_name": "Pick up dog",
+    "display_name": "Pick up after dog",
     "category": "Pets",
     "origin": "system"
   },
@@ -2843,7 +2843,7 @@
   },
   {
     "name": "Brush teeth",
-    "icon": "cleaning_services",
+    "icon": "dentistry",
     "severity": "success",
     "tags": [
       "health",
@@ -2857,7 +2857,7 @@
   },
   {
     "name": "Floss teeth",
-    "icon": "dentistry",
+    "icon": "gesture",
     "severity": "success",
     "tags": [
       "health",
@@ -2913,7 +2913,7 @@
   },
   {
     "name": "Apply sunscreen",
-    "icon": "wb_sunny",
+    "icon": "beach_access",
     "severity": "success",
     "tags": [
       "health",
@@ -2927,7 +2927,7 @@
   },
   {
     "name": "Apply moisturizer",
-    "icon": "water_drop",
+    "icon": "soap",
     "severity": "success",
     "tags": [
       "skincare",
@@ -2941,7 +2941,7 @@
   },
   {
     "name": "Shave",
-    "icon": "content_cut",
+    "icon": "face_6",
     "severity": "success",
     "tags": [
       "hygiene",
@@ -2983,7 +2983,7 @@
   },
   {
     "name": "Hair care routine",
-    "icon": "face_retouching_natural",
+    "icon": "face_3",
     "severity": "success",
     "tags": [
       "self-care",
@@ -2997,7 +2997,7 @@
   },
   {
     "name": "Face massage",
-    "icon": "face_retouching_natural",
+    "icon": "face_4",
     "severity": "success",
     "tags": [
       "relaxation",
@@ -3011,7 +3011,7 @@
   },
   {
     "name": "Dress up nicely",
-    "icon": "style",
+    "icon": "apparel",
     "severity": "success",
     "tags": [
       "confidence",
@@ -3229,7 +3229,7 @@
       "responsibility",
       "routine"
     ],
-    "display_name": "Fuel car",
+    "display_name": "Refuel car",
     "category": "Transport & Car",
     "origin": "system"
   },
@@ -3355,7 +3355,7 @@
       "connection",
       "care"
     ],
-    "display_name": "Play w/ kids",
+    "display_name": "Play with kids",
     "category": "Family & Relationships",
     "origin": "system"
   },
@@ -3467,7 +3467,7 @@
       "care",
       "routine"
     ],
-    "display_name": "Kids lunch",
+    "display_name": "Kids' lunch",
     "category": "Family & Relationships",
     "origin": "system"
   },
@@ -3501,7 +3501,7 @@
   },
   {
     "name": "Praise or encourage a child",
-    "icon": "emoji_emotions",
+    "icon": "sentiment_very_satisfied",
     "severity": "success",
     "tags": [
       "family",
@@ -3571,7 +3571,7 @@
   },
   {
     "name": "Random act of kindness",
-    "icon": "emoji_emotions",
+    "icon": "volunteer_activism",
     "severity": "success",
     "tags": [
       "positivity",
@@ -3593,13 +3593,13 @@
       "entertainment",
       "fun"
     ],
-    "display_name": "Go to event",
+    "display_name": "Attend an event",
     "category": "Social & Community",
     "origin": "system"
   },
   {
     "name": "Compliment someone",
-    "icon": "emoji_emotions",
+    "icon": "mood",
     "severity": "success",
     "tags": [
       "kindness",
@@ -3733,7 +3733,7 @@
       "memory",
       "expression"
     ],
-    "display_name": "Take photo",
+    "display_name": "Photography",
     "category": "Creativity & Hobbies",
     "origin": "system"
   },
@@ -3809,7 +3809,7 @@
   },
   {
     "name": "Knitting or crochet",
-    "icon": "content_cut",
+    "icon": "styler",
     "severity": "success",
     "tags": [
       "creativity",
@@ -3837,7 +3837,7 @@
   },
   {
     "name": "Try a new hobby",
-    "icon": "explore",
+    "icon": "interests",
     "severity": "success",
     "tags": [
       "curiosity",
@@ -3873,7 +3873,7 @@
       "relaxation",
       "leisure"
     ],
-    "display_name": "Go to park",
+    "display_name": "Visit a park",
     "category": "Outdoors & Nature",
     "origin": "system"
   },
@@ -3887,7 +3887,7 @@
       "mindfulness",
       "calm"
     ],
-    "display_name": "Sunset watch",
+    "display_name": "Watch the sunset",
     "category": "Outdoors & Nature",
     "origin": "system"
   },
@@ -3921,7 +3921,7 @@
   },
   {
     "name": "Stargazing",
-    "icon": "nights_stay",
+    "icon": "moon_stars",
     "severity": "success",
     "tags": [
       "relaxation",
@@ -3999,7 +3999,7 @@
       "outdoors",
       "discovery"
     ],
-    "display_name": "Explore area",
+    "display_name": "Explore nearby",
     "category": "Travel & Adventure",
     "origin": "system"
   },
@@ -4019,7 +4019,7 @@
   },
   {
     "name": "Unplug for an hour",
-    "icon": "phonelink_off",
+    "icon": "mobile_off",
     "severity": "success",
     "tags": [
       "digital wellbeing",
@@ -4027,7 +4027,7 @@
       "focus",
       "routine"
     ],
-    "display_name": "Unplug hour",
+    "display_name": "Unplug for an hour",
     "category": "Digital Wellbeing & Tech",
     "origin": "system"
   },
@@ -4055,7 +4055,7 @@
       "routine",
       "memories"
     ],
-    "display_name": "Sort photos",
+    "display_name": "Organize photos",
     "category": "Digital Wellbeing & Tech",
     "origin": "system"
   },
@@ -4075,7 +4075,7 @@
   },
   {
     "name": "Update apps and software",
-    "icon": "system_update",
+    "icon": "system_update_alt",
     "severity": "success",
     "tags": [
       "tech",
@@ -4111,7 +4111,7 @@
       "routine",
       "digital"
     ],
-    "display_name": "New password",
+    "display_name": "Update passwords",
     "category": "Digital Wellbeing & Tech",
     "origin": "system"
   },
@@ -4167,13 +4167,13 @@
       "productivity",
       "routine"
     ],
-    "display_name": "Sort files",
+    "display_name": "Organize files",
     "category": "Digital Wellbeing & Tech",
     "origin": "system"
   },
   {
     "name": "Cold shower",
-    "icon": "bolt",
+    "icon": "severe_cold",
     "severity": "success",
     "tags": [
       "health",
@@ -4187,7 +4187,7 @@
   },
   {
     "name": "Warm up before exercise",
-    "icon": "self_improvement",
+    "icon": "local_fire_department",
     "severity": "success",
     "tags": [
       "fitness",
@@ -4201,7 +4201,7 @@
   },
   {
     "name": "Cool down after exercise",
-    "icon": "self_improvement",
+    "icon": "ac_unit",
     "severity": "success",
     "tags": [
       "fitness",
@@ -4215,7 +4215,7 @@
   },
   {
     "name": "Take a sauna",
-    "icon": "hot_tub",
+    "icon": "sauna",
     "severity": "success",
     "tags": [
       "relaxation",
@@ -4265,13 +4265,13 @@
       "health",
       "routine"
     ],
-    "display_name": "Foam roll",
+    "display_name": "Foam rolling",
     "category": "Body Care & Recovery",
     "origin": "system"
   },
   {
     "name": "Prayer or spiritual practice",
-    "icon": "self_improvement",
+    "icon": "folded_hands",
     "severity": "success",
     "tags": [
       "spirituality",
@@ -4319,19 +4319,19 @@
       "procrastination",
       "laziness"
     ],
-    "display_name": "Procrastinate",
+    "display_name": "Procrastinating",
     "category": "Productivity & Work",
     "origin": "system"
   },
   {
     "name": "browsing social media endlessly",
-    "icon": "smartphone",
+    "icon": "mobile",
     "severity": "danger",
     "tags": [
       "distraction",
       "addiction"
     ],
-    "display_name": "Endless scroll",
+    "display_name": "Endless scrolling",
     "category": "Digital Wellbeing & Tech",
     "origin": "system"
   },
@@ -4343,7 +4343,7 @@
       "junk food",
       "addiction"
     ],
-    "display_name": "Late night junk",
+    "display_name": "Late-night junk food",
     "category": "Nutrition & Food",
     "origin": "system"
   },
@@ -4355,7 +4355,7 @@
       "procrastination",
       "stress"
     ],
-    "display_name": "No plan start",
+    "display_name": "No plan for the day",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -4367,7 +4367,7 @@
       "distraction",
       "addiction"
     ],
-    "display_name": "Doomscroll",
+    "display_name": "Doomscrolling",
     "category": "Digital Wellbeing & Tech",
     "origin": "system"
   },
@@ -4379,7 +4379,7 @@
       "junk food",
       "stress"
     ],
-    "display_name": "Snack bored",
+    "display_name": "Boredom snacking",
     "category": "Nutrition & Food",
     "origin": "system"
   },
@@ -4391,7 +4391,7 @@
       "procrastination",
       "stress"
     ],
-    "display_name": "Avoid tasks",
+    "display_name": "Avoiding tasks",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -4403,7 +4403,7 @@
       "stress",
       "health"
     ],
-    "display_name": "Desk for hrs",
+    "display_name": "Sitting for hours",
     "category": "Fitness & Movement",
     "origin": "system"
   },
@@ -4415,7 +4415,7 @@
       "laziness",
       "procrastination"
     ],
-    "display_name": "Skip workout",
+    "display_name": "Skipping workouts",
     "category": "Fitness & Movement",
     "origin": "system"
   },
@@ -4427,7 +4427,7 @@
       "stress",
       "addiction"
     ],
-    "display_name": "Burnout work",
+    "display_name": "Overworking",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -4439,7 +4439,7 @@
       "junk food",
       "addiction"
     ],
-    "display_name": "Frequent fastf",
+    "display_name": "Fast food",
     "category": "Nutrition & Food",
     "origin": "system"
   },
@@ -4451,19 +4451,19 @@
       "distraction",
       "laziness"
     ],
-    "display_name": "Series allnite",
+    "display_name": "Binge-watching",
     "category": "Sleep & Routines",
     "origin": "system"
   },
   {
     "name": "checking phone first thing in the morning",
-    "icon": "phone_android",
+    "icon": "mobile_alert",
     "severity": "danger",
     "tags": [
       "addiction",
       "distraction"
     ],
-    "display_name": "Phone AM",
+    "display_name": "Phone first thing",
     "category": "Digital Wellbeing & Tech",
     "origin": "system"
   },
@@ -4487,7 +4487,7 @@
       "procrastination",
       "stress"
     ],
-    "display_name": "Last min task",
+    "display_name": "Last-minute rush",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -4499,7 +4499,7 @@
       "junk food",
       "laziness"
     ],
-    "display_name": "Skip breakfast",
+    "display_name": "Skipping breakfast",
     "category": "Nutrition & Food",
     "origin": "system"
   },
@@ -4511,7 +4511,7 @@
       "stress",
       "junk food"
     ],
-    "display_name": "Emo eating",
+    "display_name": "Emotional eating",
     "category": "Nutrition & Food",
     "origin": "system"
   },
@@ -4523,7 +4523,7 @@
       "laziness",
       "procrastination"
     ],
-    "display_name": "Sleep late",
+    "display_name": "Sleeping in",
     "category": "Sleep & Routines",
     "origin": "system"
   },
@@ -4535,7 +4535,7 @@
       "procrastination",
       "laziness"
     ],
-    "display_name": "Ignore todos",
+    "display_name": "Ignoring to-dos",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -4571,7 +4571,7 @@
       "finance",
       "impulsivity"
     ],
-    "display_name": "Impulse buy",
+    "display_name": "Impulse buying",
     "category": "Finance",
     "origin": "system"
   },
@@ -4583,7 +4583,7 @@
       "mental health",
       "social media"
     ],
-    "display_name": "Compare online",
+    "display_name": "Comparing online",
     "category": "Mental Health & Mindfulness",
     "origin": "system"
   },
@@ -4608,7 +4608,7 @@
       "health"
     ],
     "display_name": "Smoking",
-    "category": "Nutrition & Food",
+    "category": "Health Monitoring",
     "origin": "system"
   },
   {
@@ -4620,7 +4620,7 @@
       "health"
     ],
     "display_name": "Vaping",
-    "category": "Nutrition & Food",
+    "category": "Health Monitoring",
     "origin": "system"
   },
   {
@@ -4631,8 +4631,8 @@
       "addiction",
       "health"
     ],
-    "display_name": "Drinking",
-    "category": "Nutrition & Food",
+    "display_name": "Drinking alcohol",
+    "category": "Health Monitoring",
     "origin": "system"
   },
   {
@@ -4644,7 +4644,7 @@
       "health"
     ],
     "display_name": "Drug use",
-    "category": "Nutrition & Food",
+    "category": "Health Monitoring",
     "origin": "system"
   },
   {
@@ -4661,25 +4661,25 @@
   },
   {
     "name": "excessive screen time",
-    "icon": "smartphone",
+    "icon": "mobile_dots",
     "severity": "danger",
     "tags": [
       "distraction",
       "addiction"
     ],
-    "display_name": "Too much screen",
+    "display_name": "Too much screen time",
     "category": "Digital Wellbeing & Tech",
     "origin": "system"
   },
   {
     "name": "texting while driving",
-    "icon": "no_cell",
+    "icon": "car_crash",
     "severity": "danger",
     "tags": [
       "safety",
       "distraction"
     ],
-    "display_name": "Text & drive",
+    "display_name": "Texting & driving",
     "category": "Transport & Car",
     "origin": "system"
   },
@@ -4691,7 +4691,7 @@
       "finance",
       "impulsivity"
     ],
-    "display_name": "Impulse shopping",
+    "display_name": "Online impulse buys",
     "category": "Finance",
     "origin": "system"
   },
@@ -4721,13 +4721,13 @@
   },
   {
     "name": "skipping breaks",
-    "icon": "free_breakfast",
+    "icon": "timer_off",
     "severity": "danger",
     "tags": [
       "stress",
       "health"
     ],
-    "display_name": "Skip breaks",
+    "display_name": "Skipping breaks",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -4739,7 +4739,7 @@
       "stress",
       "distraction"
     ],
-    "display_name": "Email obsession",
+    "display_name": "Checking email",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -4751,7 +4751,7 @@
       "procrastination",
       "stress"
     ],
-    "display_name": "Miss deadline",
+    "display_name": "Missed deadline",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -4763,7 +4763,7 @@
       "stress",
       "procrastination"
     ],
-    "display_name": "Overcommit",
+    "display_name": "Overcommitting",
     "category": "Productivity & Work",
     "origin": "system"
   },
@@ -4811,7 +4811,7 @@
       "health",
       "denial"
     ],
-    "display_name": "Ignore pain",
+    "display_name": "Ignoring pain",
     "category": "Health Monitoring",
     "origin": "system"
   },
@@ -4859,7 +4859,7 @@
       "communication",
       "avoidance"
     ],
-    "display_name": "Avoid talks",
+    "display_name": "Avoiding hard talks",
     "category": "Social & Community",
     "origin": "system"
   },
@@ -4871,7 +4871,7 @@
       "relationships",
       "reliability"
     ],
-    "display_name": "Cancel plans",
+    "display_name": "Cancelling plans",
     "category": "Social & Community",
     "origin": "system"
   },
@@ -4895,7 +4895,7 @@
       "finance",
       "avoidance"
     ],
-    "display_name": "Ignore bills",
+    "display_name": "Ignoring bills",
     "category": "Finance",
     "origin": "system"
   },
@@ -4943,7 +4943,7 @@
       "mental health",
       "avoidance"
     ],
-    "display_name": "Suppress feelings",
+    "display_name": "Bottling feelings",
     "category": "Mental Health & Mindfulness",
     "origin": "system"
   }

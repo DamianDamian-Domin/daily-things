@@ -19,18 +19,28 @@ export const useCarouselStore = defineStore("carouselStore", () => {
 	const rightCard = computed(() =>
 		activeIndex.value < cards.length - 1 ? cards[activeIndex.value + 1] : null,
 	);
+	// Kierunek ostatniej zmiany — do animacji przesunięcia na mobile
+	const direction = ref<"left" | "right">("left");
 
 	function setActiveCard(targetId: CarouselCardConfig["id"]) {
 		const idx = cards.findIndex((c) => c.id === targetId);
-		if (idx !== -1) activeIndex.value = idx;
+		if (idx === -1 || idx === activeIndex.value) return;
+		direction.value = idx > activeIndex.value ? "left" : "right";
+		activeIndex.value = idx;
 	}
 
 	function goNext() {
-		if (activeIndex.value < cards.length - 1) activeIndex.value++;
+		if (activeIndex.value < cards.length - 1) {
+			direction.value = "left";
+			activeIndex.value++;
+		}
 	}
 
 	function goPrev() {
-		if (activeIndex.value > 0) activeIndex.value--;
+		if (activeIndex.value > 0) {
+			direction.value = "right";
+			activeIndex.value--;
+		}
 	}
 
 	function reset() {
@@ -39,10 +49,12 @@ export const useCarouselStore = defineStore("carouselStore", () => {
 
 	return {
 		cards,
+		activeIndex,
 		activeCardId,
 		activeCard,
 		leftCard,
 		rightCard,
+		direction,
 		setActiveCard,
 		goNext,
 		goPrev,

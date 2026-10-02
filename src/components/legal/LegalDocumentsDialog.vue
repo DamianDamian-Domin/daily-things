@@ -4,23 +4,26 @@
 		modal
 		dismissableMask
 		closable
-		class="w-[min(96vw,56rem)]"
+		class="w-[min(96vw,56rem)] legal-dialog"
+		:pt="{ mask: { class: 'dt-dialog-mask' } }"
 		:draggable="false"
 		:header="activeDocument === 'privacy' ? 'Privacy Policy' : 'Terms of Service'">
-		<div class="grid grid-cols-1 gap-2 pb-3 sm:grid-cols-[auto_auto_1fr] sm:items-center">
-			<Button
-				label="Privacy Policy"
-				:size="'small'"
-				class="legal-switch-btn"
-				:severity="activeDocument === 'privacy' ? 'success' : 'secondary'"
-				@click="activeDocument = 'privacy'" />
-			<Button
-				label="Terms of Service"
-				:size="'small'"
-				class="legal-switch-btn"
-				:severity="activeDocument === 'terms' ? 'success' : 'secondary'"
-				@click="activeDocument = 'terms'" />
-			<div class="hidden sm:block"></div>
+		<div
+			class="dt-segmented legal-switch"
+			role="group"
+			aria-label="Document">
+			<button
+				type="button"
+				:aria-pressed="activeDocument === 'privacy'"
+				@click="activeDocument = 'privacy'">
+				Privacy Policy
+			</button>
+			<button
+				type="button"
+				:aria-pressed="activeDocument === 'terms'"
+				@click="activeDocument = 'terms'">
+				Terms of Service
+			</button>
 		</div>
 
 		<div class="max-h-[62vh] overflow-y-auto pr-1 text-sm leading-6 text-b">
@@ -180,12 +183,12 @@
 
 		<template #footer>
 			<div class="flex justify-end">
-				<Button
-					label="Close"
-					icon="pi pi-times"
-					size="small"
-					severity="secondary"
-					@click="isVisible = false" />
+				<button
+					type="button"
+					class="dt-btn dt-btn-outline dt-btn-sm"
+					@click="isVisible = false">
+					Close
+				</button>
 			</div>
 		</template>
 
@@ -195,7 +198,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import Dialog from "primevue/dialog";
-import Button from "primevue/button";
 
 type LegalDocumentType = "privacy" | "terms";
 
@@ -213,7 +215,7 @@ defineExpose({
 </script>
 
 <style scoped>
-.legal-switch-btn:deep(.p-button-label) {
-	white-space: nowrap;
+.legal-switch {
+	margin-bottom: 1rem;
 }
 </style>

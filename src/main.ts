@@ -1,3 +1,7 @@
+// Fonty hostowane lokalnie (bez Google Fonts CDN — szybciej, offline i zgodnie z RODO)
+import "@fontsource-variable/lora/wght.css";
+import "@fontsource-variable/lora/wght-italic.css";
+import "@fontsource/sacramento/400.css";
 import "./style.css";
 
 import { createApp } from "vue";
@@ -8,212 +12,109 @@ import router from "./router";
 
 import PrimeVue from "primevue/config";
 import Tooltip from "primevue/tooltip";
-import ConfirmationService from "primevue/confirmationservice";
 import "primeicons/primeicons.css";
 
 import Aura from "@primeuix/themes/aura";
-
 import { definePreset } from "@primeuix/themes";
 import { useAuthStore } from "@/stores/auth";
 
-import { useHabbitsStore } from "./stores/habbits";
-
-const app = createApp(App);
-
-const MyPreset = definePreset(Aura, {
+// Ciepły preset: pomarańczowy akcent + „kamienne” (stone) szarości zamiast
+// zimnych zinc/gray. Wartości zgodne z tokenami --dt-* ze style.css.
+const CozyPreset = definePreset(Aura, {
 	semantic: {
+		primary: {
+			50: "{orange.50}",
+			100: "{orange.100}",
+			200: "{orange.200}",
+			300: "{orange.300}",
+			400: "{orange.400}",
+			500: "{orange.500}",
+			600: "{orange.600}",
+			700: "{orange.700}",
+			800: "{orange.800}",
+			900: "{orange.900}",
+			950: "{orange.950}",
+		},
 		colorScheme: {
 			light: {
 				surface: {
 					0: "#ffffff",
-					50: "{zinc.50}",
-					100: "{zinc.100}",
-					200: "{zinc.200}",
-					300: "{zinc.300}",
-					400: "{zinc.400}",
-					500: "{zinc.500}",
-					600: "{zinc.600}",
-					700: "{zinc.700}",
-					800: "{zinc.800}",
-					900: "{zinc.900}",
-					950: "{zinc.950}",
+					50: "#fdf6ee",
+					100: "#fbf0e4",
+					200: "#f1e3d4",
+					300: "#e3ccb5",
+					400: "#b8a08d",
+					500: "#7d6556",
+					600: "#6b5446",
+					700: "#54403a",
+					800: "#3b2a20",
+					900: "#2b1f18",
+					950: "#1c1714",
+				},
+				primary: {
+					color: "#b5501a",
+					contrastColor: "#ffffff",
+					hoverColor: "#9a4414",
+					activeColor: "#86390f",
+				},
+				highlight: {
+					background: "#ffedd5",
+					focusBackground: "#fed7aa",
+					color: "#9a3f0e",
+					focusColor: "#7c2d12",
 				},
 			},
 			dark: {
 				surface: {
-					0: "{gray.950}",
-					50: "{gray.900}",
-					100: "{gray.800}",
-					200: "{gray.700}",
-					300: "{gray.600}",
-					400: "{gray.500}",
-					500: "{gray.400}",
-					600: "{gray.300}",
-					700: "{gray.200}",
-					800: "{gray.100}",
-					900: "{gray.50}",
-					950: "{gray.50}",
+					0: "#ffffff",
+					50: "#f5ebe1",
+					100: "#d6c5b6",
+					200: "#ad9b8e",
+					300: "#8a786b",
+					400: "#6b5a4e",
+					500: "#4d4034",
+					600: "#3a3028",
+					700: "#2d251e",
+					800: "#272019",
+					900: "#221b16",
+					950: "#1c1714",
 				},
-				// Content background and text (dialogs, cards, popovers)
-				content: {
-					background: "{gray.800}",
-					hoverBackground: "{gray.700}",
-					borderColor: "{gray.600}",
-					color: "{gray.100}",
-					hoverColor: "{gray.50}",
+				primary: {
+					color: "#f59a52",
+					contrastColor: "#1f140c",
+					hoverColor: "#ffae6e",
+					activeColor: "#ffc28f",
 				},
-				// Form fields — transparent background, blended with container
-				formField: {
-					background: "transparent",
-					disabledBackground: "{gray.800}",
-					filledBackground: "transparent",
-					filledHoverBackground: "transparent",
-					filledFocusBackground: "transparent",
-					borderColor: "{gray.600}",
-					hoverBorderColor: "{gray.500}",
-					focusBorderColor: "{primary.500}",
-					invalidBorderColor: "{red.400}",
-					color: "{gray.100}",
-					disabledColor: "{gray.500}",
-					placeholderColor: "{gray.500}",
-					floatLabelColor: "{gray.400}",
-					floatLabelFocusColor: "{primary.400}",
-					floatLabelInvalidColor: "{red.400}",
-					iconColor: "{gray.400}",
-					shadow: "none",
-				},
-				// Overlays (modal dialog, popover, dropdown)
-				overlay: {
-					select: {
-						background: "{gray.800}",
-						borderColor: "{gray.600}",
-						color: "{gray.100}",
-					},
-					popover: {
-						background: "{gray.800}",
-						borderColor: "{gray.600}",
-						color: "{gray.100}",
-					},
-					modal: {
-						background: "{gray.800}",
-						borderColor: "{gray.600}",
-						color: "{gray.100}",
-					},
-				},
-				// Navigation
-				navigation: {
-					item: {
-						focusBackground: "{gray.700}",
-						activeBackground: "{gray.700}",
-						color: "{gray.300}",
-						focusColor: "{gray.100}",
-						activeColor: "{gray.100}",
-						icon: {
-							color: "{gray.500}",
-							focusColor: "{gray.100}",
-							activeColor: "{gray.100}",
-						},
-					},
-				},
-				// Highlight / selection
 				highlight: {
-					background: "color-mix(in srgb, {primary.500}, transparent 84%)",
-					focusBackground: "color-mix(in srgb, {primary.500}, transparent 76%)",
-					color: "rgba(255, 255, 255, 0.87)",
-					focusColor: "rgba(255, 255, 255, 0.87)",
+					background: "rgba(245, 154, 82, 0.16)",
+					focusBackground: "rgba(245, 154, 82, 0.24)",
+					color: "#ffd9b8",
+					focusColor: "#ffe7d1",
 				},
-			},
-		},
-	},
-	components: {
-		divider: {
-			colorScheme: {
-				dark: {
-					border: {
-						color: "{gray.600}",
-					},
+				content: {
+					background: "#272019",
+					hoverBackground: "#2d251e",
+					borderColor: "#3a3028",
+					color: "#f5ebe1",
+					hoverColor: "#ffffff",
 				},
-			},
-		},
-		dialog: {
-			colorScheme: {
-				dark: {
-					root: {
-						background: "{gray.800}",
-						borderColor: "{gray.600}",
-					},
-					title: {
-						color: "{gray.100}",
-					},
-				},
-			},
-		},
-		popover: {
-			colorScheme: {
-				dark: {
-					root: {
-						background: "{gray.800}",
-						borderColor: "{gray.600}",
-					},
-				},
-			},
-		},
-		datepicker: {
-			colorScheme: {
-				dark: {
-					root: {
-						background: "{gray.800}",
-					},
-					header: {
-						color: "{gray.100}",
-					},
-				},
-			},
-		},
-		button: {
-			colorScheme: {
-				light: {
-					primary: {
-						background: "{primary.200}",
-						border: {
-							color: "{primary.200}",
-						},
-						color: "{zinc.600}",
-						hover: {
-							background: "{primary.300}",
-							border: {
-								color: "{primary.300}",
-							},
-							color: "{zinc.600}",
-						},
-					},
-				},
-				dark: {
-					primary: {
-						background: "{primary.700}",
-						border: {
-							color: "{primary.700}",
-						},
-						color: "{zinc.200}",
-						hover: {
-							background: "{primary.800}",
-							border: {
-								color: "{primary.800}",
-							},
-							color: "{zinc.200}",
-						},
-					},
+				overlay: {
+					select: { background: "#272019", borderColor: "#3a3028", color: "#f5ebe1" },
+					popover: { background: "#272019", borderColor: "#3a3028", color: "#f5ebe1" },
+					modal: { background: "#272019", borderColor: "#3a3028", color: "#f5ebe1" },
 				},
 			},
 		},
 	},
 });
 
+const app = createApp(App);
+
 app.use(createPinia());
 app.use(router);
 app.use(PrimeVue, {
 	theme: {
-		preset: MyPreset,
+		preset: CozyPreset,
 		options: {
 			darkModeSelector: ".my-app-dark",
 			cssLayer: {
@@ -223,11 +124,10 @@ app.use(PrimeVue, {
 		},
 	},
 });
-app.use(ConfirmationService);
 app.directive("tooltip", Tooltip);
 
-const authStore = useAuthStore();
-
-authStore.initAuth().then(() => {
-	app.mount("#app");
-});
+// Montujemy dopiero, gdy Firebase powie, kto jest zalogowany — bez „mrugania”
+// ekranu logowania. Do tego czasu widać lekki splash z index.html.
+useAuthStore()
+	.initAuth()
+	.finally(() => app.mount("#app"));

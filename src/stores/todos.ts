@@ -1,259 +1,208 @@
-import { ref, computed } from "vue";
-import { defineStore, storeToRefs } from "pinia";
-import { doc, updateDoc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "@/firebase";
+import { computed, ref } from "vue";
+import { defineStore } from "pinia";
 import { nanoid } from "nanoid";
+import type { Subtask, TodoItem } from "@/libs/types";
+import { useAuthStore } from "@/stores/auth";
+import { plain } from "@/utils/plain";
+import { useToastStore } from "@/stores/toast";
+import { saveUserFields, type UserDoc } from "@/services/userData";
 
-import { useAuthStore } from "./auth";
-import { handleAsyncAction } from "@/stores/asyncActionHandler";
+export type { TodoColor, TodoItem, Subtask } from "@/libs/types";
 
-export type TodoColor =
-	| ""
-	| "red"
-	| "orange"
-	| "yellow"
-	| "green"
-	| "blue"
-	| "purple";
-
-export interface TodoItem {
-	id: string;
-	text: string;
-	completed: boolean;
-	description?: string;
-	createdAt?: number;
-	order?: number;
-	color?: TodoColor;
-}
+const SAVE_ERROR = "Couldn't save your to-do — check your connection.";
 
 export const useTodosStore = defineStore("todos", () => {
 	const authStore = useAuthStore();
-	const { userUid } = storeToRefs(authStore);
+	const toast = useToastStore();
 
-	// Teraz mamy po prostu jedną płaską listę wszystkich zadań
+	// Zadania trzymamy w jednej tablicy w dokumencie użytkownika (users/{uid}.todos)
 	const userTodosList = ref<TodoItem[]>([]);
 
-	// =========================
-	// ALL TODOS (WITH SORTING)
-	// =========================
-	function getSortValue(todo: TodoItem) {
-		return todo.order !== undefined ? todo.order : todo.createdAt || 0;
+	function sortValue(todo: TodoItem) {
+		return todo.order ?? todo.createdAt ?? 0;
 	}
 
-	function normalizeActiveOrders() {
-		const activeSorted = [...userTodosList.value]
-			.filter((t) => !t.completed)
-			.sort((a, b) => getSortValue(a) - getSortValue(b));
+	const activeTodos = computed(() =>
+		userTodosList.value.filter((t) => !t.completed).sort((a, b) => sortValue(a) - sortValue(b)),
+	);
 
-		activeSorted.forEach((todo, index) => {
-			todo.order = index;
+	// Ukończone — najświeższe na górze
+	const completedTodos = computed(() =>
+		userTodosList.value
+			.filter((t) => t.completed)
+			.sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0)),
+	);
+
+	const sortedTodos = computed(() => [...activeTodos.value, ...completedTodos.value]);
+
+	function hydrate(userDoc: UserDoc) {
+		const loaded = Array.isArray(userDoc.todos) ? userDoc.todos : [];
+		// Stary format (lista pogrupowana po datach) — spłaszczamy
+		userTodosList.value =
+			loaded.length > 0 && (loaded[0] as unknown as { date?: string }).date !== undefined
+				? loaded.flatMap((entry) => (entry as unknown as { todos: TodoItem[] }).todos ?? [])
+				: loaded;
+	}
+
+	// Każda zmiana zapisuje całą listę. Stan lokalny zmienia się od razu,
+	// zapis leci w tle; przy błędzie przywracamy poprzedni stan.
+	function commit(mutate: () => void) {
+		const uid = authStore.userUid;
+		if (!uid) return false;
+		const previous = plain(userTodosList.value);
+		mutate();
+		saveUserFields(uid, {
+			todos: userTodosList.value.map((t) => plain(t)),
+		}).catch((err) => {
+			console.error("todos save failed", err);
+			if (authStore.userUid === uid) userTodosList.value = previous;
+			toast.error(SAVE_ERROR);
+		});
+		return true;
+	}
+
+	function find(id: string) {
+		return userTodosList.value.find((t) => t.id === id);
+	}
+
+	async function addTodo(text: string) {
+		const trimmed = text.trim();
+		if (!trimmed) return null;
+		const maxOrder = activeTodos.value.reduce((max, t) => Math.max(max, t.order ?? -1), -1);
+		const todo: TodoItem = {
+			id: nanoid(),
+			text: trimmed,
+			completed: false,
+			createdAt: Date.now(),
+			order: maxOrder + 1,
+			subtasks: [],
+		};
+		commit(() => userTodosList.value.push(todo));
+		return todo;
+	}
+
+	async function updateTodo(id: string, patch: Partial<Omit<TodoItem, "id">>) {
+		commit(() => {
+			const todo = find(id);
+			if (todo) Object.assign(todo, patch);
 		});
 	}
 
-	const sortedTodos = computed(() => {
-		return [...userTodosList.value].sort((a, b) => {
-			// Najpierw sortujemy aktywne vs ukończone
-			if (a.completed === b.completed) {
-				// Jeśli element ma przypisany 'order' z Drag&Drop, używamy go.
-				// Jeśli nie, traktujemy createdAt jako fallback, aby nowsze trafiały na koniec.
-				const orderA = getSortValue(a);
-				const orderB = getSortValue(b);
-				return orderA - orderB;
-			}
-			return a.completed ? 1 : -1;
-		});
-	});
-
-	// =========================
-	// LOAD TODOS
-	// =========================
-	async function loadTodos() {
-		try {
-			const userDocRef = doc(db, "users", userUid.value!!);
-			const userDoc = await getDoc(userDocRef);
-
-			if (userDoc.exists() && userDoc.data().todos) {
-				const loadedTodos = userDoc.data().todos;
-
-				// TRICK MIGRACYJNY: Jeśli dane są w starym formacie (z datami), spłaszczamy je
-				if (loadedTodos.length > 0 && loadedTodos[0].date !== undefined) {
-					const flatTodos = loadedTodos.flatMap((entry: any) => entry.todos);
-					userTodosList.value = flatTodos;
-					await updateDoc(userDocRef, { todos: flatTodos }); // Aktualizacja bazy
-				} else {
-					userTodosList.value = loadedTodos;
-				}
-			} else {
-				await setDoc(userDocRef, { todos: [] }, { merge: true });
-				userTodosList.value = [];
-			}
-		} catch (error) {
-			console.error("Error loading todos:", error);
-		}
-	}
-
-	// =========================
-	// ADD TODO
-	// =========================
-	async function addTodo(text: string, description: string = "") {
-		await handleAsyncAction(
-			async () => {
-				normalizeActiveOrders();
-
-				const maxActiveOrder = userTodosList.value
-					.filter((t) => !t.completed)
-					.reduce((max, t) => Math.max(max, t.order ?? -1), -1);
-
-				const newTodo: TodoItem = {
-					id: nanoid(),
-					text,
-					description,
-					completed: false,
-					createdAt: Date.now(),
-					order: maxActiveOrder + 1,
-				};
-
-				userTodosList.value.push(newTodo);
-
-				if (authStore.isGuest) {
-					authStore.showGuestNotification = true;
-				}
-				const userDocRef = doc(db, "users", userUid.value!!);
-				await updateDoc(userDocRef, { todos: userTodosList.value });
-			},
-			"Task added!",
-			"Failed to add task.",
-		);
-	}
-
-	// =========================
-	// DELETE TODO
-	// =========================
-	async function deleteTodo(todoId: string) {
-		await handleAsyncAction(
-			async () => {
-				userTodosList.value = userTodosList.value.filter(
-					(t) => t.id !== todoId,
-				);
-
-				const userDocRef = doc(db, "users", userUid.value!!);
-				await updateDoc(userDocRef, { todos: userTodosList.value });
-			},
-			"Task deleted!",
-			"Failed to delete task.",
-		);
-	}
-
-	// =========================
-	// UPDATE TODO
-	// =========================
-
-	async function updateTodo(
-		todoId: string,
-		newText: string,
-		newDescription: string = "",
-	) {
-		const todo = userTodosList.value.find((t) => t.id === todoId);
-		if (!todo) return;
-
-		todo.text = newText;
-		todo.description = newDescription;
-
-		try {
-			const userDocRef = doc(db, "users", userUid.value!!);
-			await updateDoc(userDocRef, { todos: userTodosList.value });
-		} catch (error) {
-			console.error("Error updating todo:", error);
-		}
-	}
-
-	async function updateTodosOrder(newOrderedList: TodoItem[]) {
-		// 1. Nadajemy każdemu zadaniu nowy indeks w oparciu o ich ułożenie na liście
-		newOrderedList.forEach((todo, index) => {
-			todo.order = index;
-		});
-
-		// 2. Aktualizujemy główną listę w pamięci
-		userTodosList.value = newOrderedList;
-
-		// 3. Zapisujemy nową kolejność do bazy danych (Firebase)
-		try {
-			const userDocRef = doc(db, "users", userUid.value!!);
-			await updateDoc(userDocRef, { todos: userTodosList.value });
-		} catch (error) {
-			console.error("Error saving new order:", error);
-		}
-	}
-
-	// =========================
-	// TOGGLE TODO COMPLETION
-	// =========================
-	async function toggleTodo(todoId: string) {
-		const todo = userTodosList.value.find((t) => t.id === todoId);
-		if (!todo) return;
-
-		todo.completed = !todo.completed;
-
-		try {
-			const userDocRef = doc(db, "users", userUid.value!!);
-			await updateDoc(userDocRef, { todos: userTodosList.value });
-		} catch (error) {
+	async function toggleTodo(id: string) {
+		commit(() => {
+			const todo = find(id);
+			if (!todo) return;
 			todo.completed = !todo.completed;
-			console.error("Error toggling todo status:", error);
-		}
+			todo.completedAt = todo.completed ? Date.now() : undefined;
+			if (!todo.completed) {
+				todo.order = activeTodos.value.reduce((max, t) => Math.max(max, t.order ?? -1), -1) + 1;
+			}
+		});
 	}
 
-	// =========================
-	// UPDATE TODO COLOR
-	// =========================
-	async function updateTodoColor(
-		todoId: string,
-		color: import("./todos").TodoColor,
-	) {
-		const todo = userTodosList.value.find((t) => t.id === todoId);
-		if (!todo) return;
-		todo.color = color;
-		try {
-			const userDocRef = doc(db, "users", userUid.value!!);
-			await updateDoc(userDocRef, { todos: userTodosList.value });
-		} catch (error) {
-			console.error("Error updating todo color:", error);
-		}
+	async function deleteTodo(id: string) {
+		const removed = find(id);
+		if (!removed) return null;
+		const copy = plain(removed);
+		commit(() => {
+			userTodosList.value = userTodosList.value.filter((t) => t.id !== id);
+		});
+		return copy;
 	}
 
-	// =========================
-	// CLEAR COMPLETED TODOS
-	// =========================
+	async function restoreTodo(todo: TodoItem) {
+		commit(() => {
+			if (!find(todo.id)) userTodosList.value.push(todo);
+		});
+	}
+
+	async function updateTodosOrder(ordered: TodoItem[]) {
+		commit(() => {
+			ordered.forEach((todo, index) => {
+				const t = find(todo.id);
+				if (t) t.order = index;
+			});
+		});
+	}
+
 	async function clearCompletedTodos() {
-		await handleAsyncAction(
-			async () => {
-				userTodosList.value = userTodosList.value.filter((t) => !t.completed);
-				const userDocRef = doc(db, "users", userUid.value!!);
-				await updateDoc(userDocRef, { todos: userTodosList.value });
-			},
-			"Completed tasks cleared!",
-			"Failed to clear completed tasks.",
-		);
+		const removed = completedTodos.value.map((t) => plain(t));
+		commit(() => {
+			userTodosList.value = userTodosList.value.filter((t) => !t.completed);
+		});
+		return removed;
 	}
 
-	// =========================
-	// CLEAR DATA (LOGOUT)
-	// =========================
+	async function restoreTodos(todos: TodoItem[]) {
+		commit(() => {
+			const ids = new Set(userTodosList.value.map((t) => t.id));
+			userTodosList.value.push(...todos.filter((t) => !ids.has(t.id)));
+		});
+	}
+
+	// ==========================================
+	// PODZADANIA
+	// ==========================================
+	async function addSubtask(todoId: string, text: string) {
+		const trimmed = text.trim();
+		if (!trimmed) return;
+		commit(() => {
+			const todo = find(todoId);
+			if (!todo) return;
+			todo.subtasks = [...(todo.subtasks ?? []), { id: nanoid(8), text: trimmed, done: false }];
+		});
+	}
+
+	async function updateSubtask(todoId: string, subtaskId: string, patch: Partial<Subtask>) {
+		commit(() => {
+			const sub = find(todoId)?.subtasks?.find((s) => s.id === subtaskId);
+			if (sub) Object.assign(sub, patch);
+		});
+	}
+
+	async function toggleSubtask(todoId: string, subtaskId: string) {
+		const sub = find(todoId)?.subtasks?.find((s) => s.id === subtaskId);
+		if (!sub) return;
+		await updateSubtask(todoId, subtaskId, { done: !sub.done });
+	}
+
+	async function deleteSubtask(todoId: string, subtaskId: string) {
+		commit(() => {
+			const todo = find(todoId);
+			if (todo) todo.subtasks = (todo.subtasks ?? []).filter((s) => s.id !== subtaskId);
+		});
+	}
+
+	async function reorderSubtasks(todoId: string, subtasks: Subtask[]) {
+		commit(() => {
+			const todo = find(todoId);
+			if (todo) todo.subtasks = plain(subtasks);
+		});
+	}
+
 	function clearData() {
 		userTodosList.value = [];
 	}
 
 	return {
 		userTodosList,
+		activeTodos,
+		completedTodos,
 		sortedTodos,
-		loadTodos,
+		hydrate,
 		addTodo,
-		deleteTodo,
 		updateTodo,
-		updateTodosOrder,
 		toggleTodo,
+		deleteTodo,
+		restoreTodo,
+		updateTodosOrder,
 		clearCompletedTodos,
-		updateTodoColor,
+		restoreTodos,
+		addSubtask,
+		updateSubtask,
+		toggleSubtask,
+		deleteSubtask,
+		reorderSubtasks,
 		clearData,
 	};
 });

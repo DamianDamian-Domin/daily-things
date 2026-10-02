@@ -1,40 +1,72 @@
 <template>
 	<div class="carousel-root">
-		<!-- DOTS -->
-		<div class="carousel-dots">
-			<button
-				v-for="(card, index) in carouselStore.cards"
-				:key="card.id"
-				class="dot"
-				:class="{ active: card.id === carouselStore.activeCardId }"
-				:aria-label="`Przejdź do karty ${index + 1}`"
-				@click="onDotClick(card.id)" />
-		</div>
-
-		<!-- DESKTOP: 3-card layout -->
+		<!-- DESKTOP: trzy karty, boczne jako podgląd -->
 		<div
+			v-if="!isMobile"
 			class="carousel-view desktop-carousel">
 			<div
 				v-for="item in visibleCards"
 				:key="item.card.id"
 				class="carousel-card"
 				:class="`role-${item.role}`"
-				@click="onCardClick(item.role)">
+				:inert="item.role !== 'active' || undefined">
 				<component
 					:is="cardComponentMap[item.card.id]"
 					:isActive="item.role === 'active'" />
 			</div>
+			<button
+				v-if="carouselStore.leftCard"
+				type="button"
+				class="side-hit side-left"
+				:aria-label="`Show ${cardLabels[carouselStore.leftCard.id]}`"
+				@click="goPrevWithAnimation">
+				<i
+					class="pi pi-chevron-left"
+					aria-hidden="true"></i>
+			</button>
+			<button
+				v-if="carouselStore.rightCard"
+				type="button"
+				class="side-hit side-right"
+				:aria-label="`Show ${cardLabels[carouselStore.rightCard.id]}`"
+				@click="goNextWithAnimation">
+				<i
+					class="pi pi-chevron-right"
+					aria-hidden="true"></i>
+			</button>
 		</div>
 
-		<!-- MOBILE: full-width single card with swipe -->
+		<!-- Kropki nawigacji (desktop) -->
 		<div
+			v-if="!isMobile"
+			class="carousel-dots"
+			role="tablist"
+			aria-label="Cards">
+			<button
+				v-for="card in carouselStore.cards"
+				:key="card.id"
+				type="button"
+				role="tab"
+				class="dot"
+				:class="{ active: card.id === carouselStore.activeCardId }"
+				:aria-selected="card.id === carouselStore.activeCardId"
+				:aria-label="cardLabels[card.id]"
+				@click="onDotClick(card.id)" />
+		</div>
+
+		<!-- MOBILE: jedna karta na pełną szerokość, przesuwana gestem -->
+		<div
+			v-else
 			class="mobile-carousel">
-			<TransitionGroup :name="slideDirection" tag="div" class="mobile-track">
+			<TransitionGroup
+				:name="`slide-${carouselStore.direction}`"
+				tag="div"
+				class="mobile-track">
 				<div
 					:key="carouselStore.activeCardId"
 					class="mobile-card">
 					<component
-						:is="cardComponentMap[carouselStore.activeCard!.id]"
+						:is="cardComponentMap[carouselStore.activeCard.id]"
 						:isActive="true" />
 				</div>
 			</TransitionGroup>
@@ -49,28 +81,31 @@ type VisibleCarouselCard = {
 	role: CarouselRole;
 	card: CarouselCardConfig;
 };
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useCarouselStore } from "@/stores/useCarouselStore";
+import { useLayout } from "@/utils/useLayout";
 
 import ToDosCard from "../components/home_view/ToDosCard.vue";
 import StatsCard from "../components/home_view/StatsCard.vue";
 import HabbitsCard from "@/components/home_view/HabbitsCard.vue";
-import ProfileCard from "@/components/home_view/ProfileCard.vue";
 
 const carouselStore = useCarouselStore();
+const { isMobile } = useLayout();
 const TRANSITION_DURATION_MS = 420;
-const SWIPE_THRESHOLD = 34;
-const SWIPE_DIRECTION_RATIO = 1.05;
 
 const isAnimating = ref(false);
-const slideDirection = ref<"slide-left" | "slide-right">("slide-left");
 
 const cardComponentMap = {
 	manage: HabbitsCard,
 	textAdd: ToDosCard,
 	stats: StatsCard,
-	profile: ProfileCard,
 } as const;
+
+const cardLabels: Record<CarouselCardConfig["id"], string> = {
+	textAdd: "To-do list",
+	manage: "Today's habits",
+	stats: "Progress",
+};
 
 const visibleCards = computed<VisibleCarouselCard[]>(() => {
 	const candidates = [
@@ -94,41 +129,29 @@ function withAnimationLock(action: () => void) {
 
 function goNextWithAnimation() {
 	if (!carouselStore.rightCard) return;
-	slideDirection.value = "slide-left";
 	withAnimationLock(() => carouselStore.goNext());
 }
 
 function goPrevWithAnimation() {
 	if (!carouselStore.leftCard) return;
-	slideDirection.value = "slide-right";
 	withAnimationLock(() => carouselStore.goPrev());
 }
 
 function onDotClick(targetId: CarouselCardConfig["id"]) {
 	if (targetId === carouselStore.activeCardId) return;
-	const currentIndex = carouselStore.cards.findIndex(
-		(card) => card.id === carouselStore.activeCardId,
-	);
-	const targetIndex = carouselStore.cards.findIndex((card) => card.id === targetId);
-	if (targetIndex === -1 || currentIndex === -1) return;
-
-	slideDirection.value = targetIndex > currentIndex ? "slide-left" : "slide-right";
 	withAnimationLock(() => carouselStore.setActiveCard(targetId));
 }
 
-function onCardClick(role: "left" | "active" | "right") {
-	if (role === "left") goPrevWithAnimation();
-	if (role === "right") goNextWithAnimation();
+// Strzałki ←/→ przełączają karty (gdy nie piszemy w polu tekstowym)
+function onKeydown(event: KeyboardEvent) {
+	if (event.altKey || event.ctrlKey || event.metaKey) return;
+	const target = event.target as HTMLElement | null;
+	if (target?.closest("input, textarea, [contenteditable='true'], .p-dialog, .p-drawer")) return;
+	if (event.key === "ArrowRight") goNextWithAnimation();
+	if (event.key === "ArrowLeft") goPrevWithAnimation();
 }
-
-// Swipe / pointer
-let startX = 0;
-let startY = 0;
-let lastX = 0;
-let lastY = 0;
-let canSwipe = false;
-let activePointerId: number | null = null;
-
+onMounted(() => window.addEventListener("keydown", onKeydown));
+onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 </script>
 
 <style scoped>
@@ -143,38 +166,41 @@ let activePointerId: number | null = null;
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	gap: 10px;
-	margin-top: 10px;
+	gap: 6px;
+	margin-bottom: 8px;
 }
-@media (max-width: 640px) {
+@media (max-width: 640px), (orientation: landscape) and (max-width: 1024px) and (hover: none) and (pointer: coarse) {
 	.carousel-dots { display: none; }
 }
+/* Obszar kliknięcia 24px, widoczna kropka 8px */
 .dot {
-	width: 8px;
-	height: 8px;
-	border-radius: 50%;
-	background-color: var(--p-orange-200);
+	position: relative;
+	width: 24px;
+	height: 24px;
 	border: none;
+	background: transparent;
 	cursor: pointer;
-	transition: transform 250ms ease, background-color 250ms ease, box-shadow 250ms ease;
+	border-radius: 50%;
 }
-:where(.my-app-dark, .my-app-dark *) .dot { background-color: var(--p-gray-600); }
-.dot.active {
-	background-color: var(--p-orange-400);
-	transform: scale(1.6);
-	box-shadow: 0 0 8px color-mix(in srgb, var(--p-orange-400) 40%, transparent);
+.dot::before {
+	content: "";
+	position: absolute;
+	inset: 8px;
+	border-radius: 50%;
+	background-color: var(--dt-border-strong);
+	transition: transform 250ms ease, background-color 250ms ease;
 }
-:where(.my-app-dark, .my-app-dark *) .dot.active {
-	background-color: var(--p-orange-500);
-	box-shadow: 0 0 8px color-mix(in srgb, var(--p-orange-500) 30%, transparent);
+.dot.active::before {
+	background-color: var(--dt-accent);
+	transform: scale(1.5);
 }
 
 /* ====== DESKTOP CAROUSEL (hidden on mobile) ====== */
 .desktop-carousel {
 	position: relative;
 	width: 100%;
-	height: 80vh;
-	max-height: 80vh;
+	flex: 1;
+	min-height: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -185,10 +211,10 @@ let activePointerId: number | null = null;
 }
 .carousel-card {
 	position: absolute;
-	top: 45%;
+	top: 50%;
 	left: 50%;
-	height: 80%;
-	max-height: 80vh;
+	height: 94%;
+	max-height: 50rem;
 	display: flex;
 	align-items: stretch;
 	justify-content: center;
@@ -208,21 +234,62 @@ let activePointerId: number | null = null;
 .role-left {
 	transform: translate(calc(-50% - var(--carousel-side-offset)), -50%) scale(var(--carousel-side-scale));
 	opacity: var(--carousel-side-opacity);
-	filter: saturate(0.92);
+	filter: saturate(0.9);
 	z-index: 2;
-	cursor: pointer;
 }
 .role-right {
 	transform: translate(calc(-50% + var(--carousel-side-offset)), -50%) scale(var(--carousel-side-scale));
 	opacity: var(--carousel-side-opacity);
-	filter: saturate(0.92);
+	filter: saturate(0.9);
 	z-index: 2;
+}
+/* Przezroczyste pola kliknięcia nad kartami bocznymi */
+.side-hit {
+	position: absolute;
+	top: 8%;
+	bottom: 8%;
+	width: clamp(80px, 12vw, 180px);
+	z-index: 4;
+	display: flex;
+	align-items: center;
+	border: none;
+	background: transparent;
+	color: var(--dt-text-3);
 	cursor: pointer;
+	border-radius: var(--dt-radius-xl);
+}
+.side-hit i {
+	display: grid;
+	place-items: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 50%;
+	background: var(--dt-surface);
+	box-shadow: var(--dt-shadow);
+	opacity: 0;
+	transition: opacity 0.2s ease;
+}
+.side-hit:hover i,
+.side-hit:focus-visible i {
+	opacity: 1;
+}
+.side-left {
+	left: 0;
+	justify-content: flex-start;
+	padding-left: 1rem;
+}
+.side-right {
+	right: 0;
+	justify-content: flex-end;
+	padding-right: 1rem;
 }
 
 /* ====== MOBILE CAROUSEL (hidden on desktop) ====== */
 .mobile-carousel {
-	display: none;
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-height: 0;
 	position: relative;
 	width: 100%;
 	overflow-x: hidden;

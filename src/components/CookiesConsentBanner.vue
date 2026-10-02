@@ -1,152 +1,182 @@
 <template>
-	<transition name="consent-fade">
-		<div
+	<Transition name="consent">
+		<section
 			v-if="isBannerVisible"
-			class="pointer-events-none fixed left-0 right-0 z-[70] px-3 sm:px-4"
-			:style="{ bottom: `${safeBottomOffset}px` }">
-			<div
-				class="pointer-events-auto mx-auto w-full max-w-3xl rounded-2xl border border-orange-200/70 bg-gradient-to-br from-orange-50 via-orange-100 to-amber-100 p-4 shadow-[0_10px_30px_rgba(120,53,15,0.16)] dark:border-orange-300/20 dark:from-gray-800 dark:via-gray-800 dark:to-gray-700">
-				<div class="flex items-start justify-between gap-3">
-					<div class="min-w-0">
-						<p class="font-lora text-base font-semibold text-a">
-							Your privacy matters ✨
-						</p>
-						<p class="mt-1 text-sm text-b">
-							We use essential cookies to keep the app working. With your
-							permission, we can also enable analytics to improve Daily Things.
-						</p>
-					</div>
-
-					<Button
-						text
-						size="small"
-						class="shrink-0"
-						:label="showSettings ? 'Hide settings' : 'Settings'"
-						@click="showSettings = !showSettings" />
+			class="consent"
+			:style="{ bottom: `calc(${bottomOffset + 12}px + env(safe-area-inset-bottom, 0px))` }"
+			role="region"
+			aria-labelledby="consent-title">
+			<div class="consent-card">
+				<div class="consent-text">
+					<h2
+						id="consent-title"
+						class="consent-title">
+						A quick note on privacy 🍪
+					</h2>
+					<p class="consent-desc">
+						We only store what's needed to keep you signed in and save your progress. With your
+						OK, we may also measure anonymous usage to make Daily Things better.
+					</p>
 				</div>
 
 				<div
 					v-if="showSettings"
-					class="mt-3 rounded-xl border border-orange-200/70 bg-white/70 p-3 dark:border-gray-600 dark:bg-gray-900/35">
-					<div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-						<div class="min-w-0">
-							<p class="text-sm font-semibold text-a">Essential cookies</p>
-							<p class="text-xs text-c">
-								Always on. Without them, login and data persistence will not
-								work properly.
-							</p>
+					class="consent-settings">
+					<div class="consent-row">
+						<div>
+							<p class="consent-row-title">Essential</p>
+							<p class="consent-row-desc">Sign-in and saving your data. Always on.</p>
 						</div>
-						<Tag
-							value="Always active"
-							severity="success"
-							class="self-start sm:self-auto shrink-0 whitespace-nowrap text-[11px] sm:text-xs"
-							rounded />
+						<span class="consent-always">Always on</span>
 					</div>
-
-					<div class="mt-3 flex items-center justify-between gap-4">
-						<div class="min-w-0">
-							<p class="text-sm font-semibold text-a">Analytics</p>
-							<p class="text-xs text-c">
-								Helps us understand what can be improved in the app.
-							</p>
+					<div class="consent-row">
+						<div>
+							<label
+								for="cookie-analytics"
+								class="consent-row-title"
+								>Anonymous analytics</label
+							>
+							<p class="consent-row-desc">Helps us see what to improve.</p>
 						</div>
 						<ToggleSwitch
-							v-model="formState.analyticsEnabled"
-							class="shrink-0"
+							v-model="analyticsEnabled"
 							input-id="cookie-analytics" />
 					</div>
 				</div>
 
-				<div class="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
-					<Button
-						label="Essential only"
-						severity="secondary"
-						size="small"
-						class="consent-action-btn"
-						@click="acceptNecessaryOnly" />
-					<Button
-						label="Save preferences"
-						severity="secondary"
-						size="small"
-						class="consent-action-btn"
-						@click="saveCustomSettings" />
-					<Button
-                        severity="success"
-						label="Accept all"
-						size="small"
-						class="consent-action-btn"
-						@click="acceptAll" />
+				<div class="consent-actions">
+					<button
+						type="button"
+						class="dt-btn dt-btn-ghost dt-btn-sm"
+						:aria-expanded="showSettings"
+						@click="showSettings = !showSettings">
+						{{ showSettings ? "Hide options" : "Options" }}
+					</button>
+					<span class="consent-spacer"></span>
+					<button
+						v-if="showSettings"
+						type="button"
+						class="dt-btn dt-btn-outline dt-btn-sm"
+						@click="cookieConsentStore.saveCustom(analyticsEnabled)">
+						Save choice
+					</button>
+					<template v-else>
+						<button
+							type="button"
+							class="dt-btn dt-btn-outline dt-btn-sm"
+							@click="cookieConsentStore.acceptNecessaryOnly()">
+							Essential only
+						</button>
+						<button
+							type="button"
+							class="dt-btn dt-btn-primary dt-btn-sm"
+							@click="cookieConsentStore.acceptAll()">
+							Accept all
+						</button>
+					</template>
 				</div>
 			</div>
-		</div>
-	</transition>
+		</section>
+	</Transition>
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from "vue";
-import Button from "primevue/button";
+import { computed, ref } from "vue";
 import ToggleSwitch from "primevue/toggleswitch";
-import Tag from "primevue/tag";
 import { useCookieConsentStore } from "@/stores/cookieConsent";
 
-const props = withDefaults(
-	defineProps<{
-		bottomOffset?: number;
-	}>(),
-	{
-		bottomOffset: 12,
-	},
-);
+withDefaults(defineProps<{ bottomOffset?: number }>(), { bottomOffset: 0 });
 
 const cookieConsentStore = useCookieConsentStore();
 const showSettings = ref(false);
-const formState = reactive({
-	analyticsEnabled: false,
-});
+const analyticsEnabled = ref(false);
 
 const isBannerVisible = computed(() => cookieConsentStore.consent === null);
-const safeBottomOffset = computed(() => Math.max(props.bottomOffset, 0) + 12);
-
-function acceptAll() {
-	cookieConsentStore.acceptAll();
-}
-
-function acceptNecessaryOnly() {
-	cookieConsentStore.acceptNecessaryOnly();
-}
-
-function saveCustomSettings() {
-	cookieConsentStore.saveCustom(formState.analyticsEnabled);
-}
 </script>
 
 <style scoped>
-.consent-fade-enter-active,
-.consent-fade-leave-active {
-	transition: opacity 0.25s ease, transform 0.25s ease;
+.consent {
+	position: fixed;
+	left: 0;
+	right: 0;
+	z-index: 70;
+	display: flex;
+	justify-content: center;
+	padding: 0 0.75rem;
+	pointer-events: none;
+}
+.consent-card {
+	pointer-events: auto;
+	width: min(100%, 40rem);
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 1rem 1.1rem;
+	border-radius: var(--dt-radius-lg);
+	background: var(--dt-surface);
+	border: 1px solid var(--dt-border);
+	box-shadow: var(--dt-shadow-lg);
+}
+.consent-title {
+	font-size: var(--dt-text-md);
+	font-weight: 700;
+}
+.consent-desc {
+	margin: 0.25rem 0 0;
+	font-size: var(--dt-text-sm);
+	color: var(--dt-text-2);
+	line-height: 1.5;
+}
+.consent-settings {
+	display: flex;
+	flex-direction: column;
+	gap: 0.6rem;
+	padding: 0.75rem;
+	border-radius: var(--dt-radius);
+	background: var(--dt-surface-soft);
+}
+.consent-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+}
+.consent-row-title {
+	margin: 0;
+	font-size: var(--dt-text-sm);
+	font-weight: 700;
+	color: var(--dt-text);
+}
+.consent-row-desc {
+	margin: 0;
+	font-size: var(--dt-text-xs);
+	color: var(--dt-text-3);
+}
+.consent-always {
+	font-size: var(--dt-text-xs);
+	font-weight: 700;
+	color: var(--dt-success);
+	white-space: nowrap;
+}
+.consent-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem;
+}
+.consent-spacer {
+	flex: 1;
 }
 
-.consent-fade-enter-from,
-.consent-fade-leave-to {
+.consent-enter-active,
+.consent-leave-active {
+	transition:
+		opacity 0.25s ease,
+		transform 0.3s var(--dt-ease);
+}
+.consent-enter-from,
+.consent-leave-to {
 	opacity: 0;
-	transform: translateY(18px);
-}
-
-.consent-action-btn {
-	min-height: 2.15rem;
-}
-
-.consent-action-btn:deep(.p-button-label) {
-	font-size: 0.78rem;
-}
-
-@media (min-width: 640px) {
-	.consent-action-btn {
-		min-height: 2.35rem;
-	}
-
-	.consent-action-btn:deep(.p-button-label) {
-		font-size: 0.88rem;
-	}
+	transform: translateY(16px);
 }
 </style>

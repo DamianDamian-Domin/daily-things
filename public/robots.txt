@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Po wdrożeniu na docelową domenę dodaj:
+# Sitemap: https://TWOJA-DOMENA/sitemap.xml

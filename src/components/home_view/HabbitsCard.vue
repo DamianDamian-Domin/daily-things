@@ -1,1336 +1,774 @@
 <template>
-	<Dialog
-		v-model:visible="showHabbitDialog"
-		modal
-		dismissableMask
-		:closable="false"
-		:show-header="false"
-		:pt="{ mask: { class: 'hs-dialog-mask' } }"
-		class="hs-dialog w-[clamp(22rem,92vw,44rem)]">
-		<div
-			class="hs-dialog-shell"
-			:data-mode="addDialogMode">
-			<header class="hs-dialog-header">
-				<div
-					class="hs-dialog-emoji"
-					:class="'mode-' + addDialogMode"
-					aria-hidden="true">
-					{{ addDialogMode === "habbit" ? "🌱" : "🎯" }}
-				</div>
-				<div class="hs-dialog-header-text">
-					<h3 class="hs-dialog-title">{{ headerText }}</h3>
-					<p class="hs-dialog-subtitle">
-						{{
-							addDialogMode === "habbit"
-								? "Pick what you did today"
-								: "Choose goals you want to hit"
-						}}
-					</p>
-				</div>
-				<button
-					class="hs-dialog-close"
-					aria-label="Close"
-					@click="showHabbitDialog = false">
-					<i class="pi pi-times"></i>
-				</button>
-			</header>
-
-			<div class="hs-dialog-body">
-				<HabbitSearch
-					:addedNames="addedInSession"
-					:goalMode="addDialogMode === 'goal'"
-					@select="handleHabbitSelect" />
+	<section
+		class="today dt-card"
+		:class="{ 'is-inactive': !isActive }"
+		aria-labelledby="today-title">
+		<!-- ============ NAGŁÓWEK ============ -->
+		<header class="today-head">
+			<div class="today-greeting">
+				<h2
+					id="today-title"
+					class="today-title">
+					<span aria-hidden="true">{{ dayPart.emoji }}</span>
+					{{ headline }}
+				</h2>
+				<p class="today-sub">{{ subline }}</p>
 			</div>
+			<div
+				v-if="habbitsStore.streak > 0"
+				class="streak-chip"
+				:class="{ 'at-risk': habbitsStore.streakAtRisk }"
+				role="img"
+				:aria-label="`${habbitsStore.streak}-day streak`"
+				v-tooltip.bottom="streakTooltip">
+				<PixelIcon
+					icon="local_fire_department"
+					:palette="habbitsStore.streakAtRisk ? 'gray' : 'orange'"
+					:size="22" />
+				<span>{{ habbitsStore.streak }}</span>
+			</div>
+		</header>
 
-			<Transition name="hs-cta">
-				<div
-					v-if="addedInSession.length > 0"
-					class="hs-cta-dock">
-					<div class="hs-cta-pill">
-						<span class="hs-cta-count">{{ addedInSession.length }}</span>
-						<span class="hs-cta-label">
-							{{ addedInSession.length === 1 ? "habit added" : "habits added" }}
-						</span>
-						<button
-							class="hs-cta-done"
-							@click="showHabbitDialog = false">
-							Done
-						</button>
-					</div>
-				</div>
-			</Transition>
-
-			<button
-				v-if="addedInSession.length === 0"
-				class="hs-dialog-plain-close"
-				@click="showHabbitDialog = false">
-				Close
-			</button>
-		</div>
-	</Dialog>
-	<div
-		class="card-root"
-		:data-active="isActive">
-		<div
-			class="flex flex-col justify-between card-a sm:w-[480px] surface-content w-full h-full min-h-0 sm:min-h-[30rem] max-h-full sm:max-h-[50rem] sm:overflow-auto hc-inner"
-			@click.capture="handleGlobalClick">
-			<div>
-				<div class="hc-greeting-area">
-					<div>
-						<span class="hc-greeting-hello">{{ greetingEmoji }}</span>
-						<h2 class="hc-greeting-text">{{ greetingText }}</h2>
-					</div>
+		<div class="today-scroll">
+			<!-- ============ CELE ============ -->
+			<section
+				class="dt-panel goals"
+				:class="{ 'is-complete': progress.complete }"
+				aria-labelledby="goals-title">
+				<div class="panel-head">
 					<div
-						v-if="streak > 0"
-						class="hc-streak"
-						v-tooltip.bottom="streak + ' day streak'">
-						<span class="hc-streak-fire">🔥</span>
-						<span class="hc-streak-num">{{ streak }}</span>
+						v-if="progress.total > 0"
+						class="dt-ring"
+						:class="{ 'is-complete': progress.complete }"
+						:style="{ '--pct': ringPct }"
+						aria-hidden="true">
+						<span>{{ progress.done }}/{{ progress.total }}</span>
 					</div>
-				</div>
-
-				<div class="hc-header">
-					<template v-if="selectedDayHabbits.length > 0">
-						<span
-							class="hc-count"
-							:class="{ 'hc-count-bump': countBump }"
-							>{{ selectedDayHabbits.length }}</span
-						>
-						<span class="hc-count-label"
-							>{{
-								selectedDayHabbits.length === 1 ? "habit" : "habits"
-							}}
-							tracked ✨</span
-						>
-					</template>
-					<p
-						v-else
-						class="hc-encourage">
-						Tap <span class="hc-plus-badge">+</span> to start tracking 🌱
-					</p>
-				</div>
-
-				<div
-					ref="tasksContainerRef"
-					class="tasks-area mt-4">
-					<div class="flex flex-row flex-wrap h-min gap-3">
-						<draggable
-							v-model="habbitsStore.groupedSelectedDayHabbits"
-							item-key="name"
-							class="contents"
-							ghost-class="opacity-40"
-							:animation="150"
-							@end="habbitsStore.updateHabbitsOrderInFirestore">
-							<template #item="{ element }">
-								<HabbitItem
-									:data="getHabbitDisplayData(element)"
-									:count="element.count"
-									:showCheckBadge="false"
-									:showTooltip="
-										!editMode && markedHabbitToDelete !== element.id
-									"
-									@click="() => toggleMarkHabbit(element)" />
-							</template>
-						</draggable>
-						<HabbitItem
-							@click="openAddHabbitDialog"
-							:showTooltip="!editMode"
-							:data="{ severity: 'empty', icon: 'add', name: 'add' }" />
-					</div>
-				</div>
-			</div>
-
-			<div class="hc-goals-section">
-				<div class="hc-goals-header">
-					<div class="hc-goals-header-left">
-						<div
-							v-if="habbitsStore.dailyGoalsColored.length > 0"
-							class="hc-goals-ring"
-							:style="goalsRingStyle">
-							<div class="hc-goals-ring-inner">
-								<span class="hc-goals-ring-text"
-									>{{ completedGoals }}/{{
-										habbitsStore.dailyGoalsColored.length
-									}}</span
-								>
-							</div>
-						</div>
-						<h3 class="hc-goals-title">Daily goals 🎯</h3>
+					<div class="panel-title-wrap">
+						<h3
+							id="goals-title"
+							class="dt-section-title">
+							Daily goals
+						</h3>
+						<p
+							v-if="progress.total > 0"
+							class="panel-hint">
+							{{ goalsHint }}
+						</p>
 					</div>
 					<button
-						v-if="habbitsStore.isToday()"
-						class="hc-edit-pill"
-						:class="{ active: editMode }"
-						@click="toggleEditMode">
+						type="button"
+						class="dt-btn dt-btn-ghost dt-btn-sm"
+						@click="openDialog('goal')">
 						<i
-							class="pi"
-							:class="editMode ? 'pi-check' : 'pi-pencil'"
-							style="font-size: 0.6rem"></i>
-						{{ editMode ? "Done" : "Edit" }}
+							class="pi pi-pencil"
+							aria-hidden="true"></i>
+						{{ progress.total > 0 ? "Edit" : "Set goals" }}
 					</button>
 				</div>
-				<Transition name="hc-banner-fade">
-					<div
-						v-if="allGoalsDone"
-						class="hc-banner">
-						🌟 On a roll! All goals for today completed!
-					</div>
+
+				<Transition name="banner">
+					<p
+						v-if="progress.complete"
+						class="goals-banner"
+						role="status">
+						🌟 All goals done{{ habbitsStore.isSelectedToday ? " for today" : "" }}! Well
+						deserved.
+					</p>
 				</Transition>
+
+				<draggable
+					v-if="goalTiles.length > 0"
+					v-model="goalTiles"
+					item-key="name"
+					class="tile-row"
+					ghost-class="tile-ghost"
+					:animation="160"
+					:delay="220"
+					:delay-on-touch-only="true"
+					:touch-start-threshold="6">
+					<template #item="{ element: goal }">
+						<HabitTile
+							:habbit="goal.habbit"
+							:muted="goal.done === 0"
+							:done="goal.done >= goal.target"
+							:badge="goalBadge(goal)"
+							:progress="goal.target > 1 ? goal.done / goal.target : null"
+							:aria-label="goalAria(goal)"
+							:pressed="goal.done >= goal.target"
+							@click="(e: MouseEvent) => onGoalTap(goal, e)" />
+					</template>
+				</draggable>
+
 				<div
-					ref="goalsContainerRef"
-					class="flex flex-row flex-wrap h-min gap-3">
+					v-else
+					class="goals-empty">
+					<PixelIcon
+						icon="flag"
+						palette="yellow"
+						:size="34" />
+					<p>
+						Pick 2–3 small things you'd like to do every day. Tapping a goal logs it — that's it.
+					</p>
+					<button
+						type="button"
+						class="dt-btn dt-btn-soft dt-btn-sm"
+						@click="openDialog('goal')">
+						Choose goals
+					</button>
+				</div>
+			</section>
+
+			<!-- ============ ZALOGOWANE ============ -->
+			<section
+				class="logged"
+				aria-labelledby="logged-title">
+				<div class="panel-head">
+					<h3
+						id="logged-title"
+						class="dt-section-title">
+						{{ loggedHeading }}
+					</h3>
+					<span
+						v-if="otherLogsCount"
+						class="logged-count"
+						:class="{ bump: countBump }"
+						>{{ otherLogsCount }}</span
+					>
+				</div>
+
+				<div class="tile-row">
 					<draggable
-						v-if="editMode && habbitsStore.isToday()"
-						:list="dailyGoalsColored"
-						item-key="id"
+						v-model="loggedTiles"
+						item-key="name"
 						class="contents"
-						ghost-class="opacity-40"
-						:animation="150"
-						@end="habbitsStore.updateGoalsOrderInFirestore">
-						<template #item="{ element: goal }">
-							<HabbitItem
-								:data="getGoalDisplayData(goal)"
-								:showTooltip="false"
-								:noCompliment="true"
-								@click="toggleMarkGoal(goal)" />
+						ghost-class="tile-ghost"
+						:animation="160"
+						:delay="220"
+						:delay-on-touch-only="true"
+						:touch-start-threshold="6">
+						<template #item="{ element: group }">
+							<HabitTile
+								:habbit="group.habbit"
+								:badge="group.count > 1 ? `×${group.count}` : null"
+								:selected="stepperFor === group.name"
+								:aria-label="`${group.habbit.display_name}, logged ${group.count} ${group.count === 1 ? 'time' : 'times'}. Edit`"
+								aria-haspopup="dialog"
+								@click="(e: MouseEvent) => openStepper(group.name, e)" />
 						</template>
 					</draggable>
 
-					<template v-else>
-						<HabbitItem
-							v-for="goal in dailyGoalsColored"
-							:key="goal.id"
-							:data="{
-								...getFullGoalData(goal),
-								severity:
-									habbitsStore.getGoalSeverity(goal) === 'empty' ? 'empty' : '',
-							}"
-							:showCheckBadge="habbitsStore.getGoalSeverity(goal) !== 'empty'"
-							:showTooltip="true"
-							:noCompliment="true"
-							@click="onReachGoal(goal)" />
-					</template>
-
-					<HabbitItem
-						v-if="editMode && habbitsStore.isToday()"
-						@click="openaddDailyGoalDialog"
-						:showTooltip="!editMode"
-						:data="{ severity: 'empty', icon: 'add', name: 'add' }" />
-				</div>
-				<div
-					v-if="
-						habbitsStore.dailyGoalsColored.length === 0 &&
-						(!editMode || !habbitsStore.isToday())
-					"
-					class="hc-goals-empty">
-					<span class="hc-goals-empty-emoji">🎯</span>
-					<p class="hc-goals-empty-text">
-						{{
-							habbitsStore.isToday()
-								? "Set goals to track your progress"
-								: "No goals were tracked on this day"
-						}}
-					</p>
 					<button
-						v-if="habbitsStore.isToday()"
-						class="hc-goals-empty-btn"
-						@click="toggleEditMode">
+						type="button"
+						class="add-tile"
+						aria-label="Log a habit"
+						v-tooltip.bottom="'Log a habit'"
+						@click="openDialog('log')">
 						<i
 							class="pi pi-plus"
-							style="font-size: 0.55rem"></i>
-						Add goals
+							aria-hidden="true"></i>
 					</button>
 				</div>
-			</div>
+
+				<p
+					v-if="loggedTiles.length === 0"
+					class="logged-empty">
+					{{ loggedEmptyText }}
+				</p>
+			</section>
 		</div>
-	</div>
+
+		<!-- Stepper −/+ dla zalogowanego habitu -->
+		<Popover
+			ref="stepperRef"
+			:pt="{ root: { class: 'stepper-pop' } }"
+			@hide="stepperFor = null">
+			<div
+				v-if="stepperGroup"
+				class="stepper"
+				role="dialog"
+				:aria-label="`Edit ${stepperGroup.habbit.display_name}`">
+				<p class="stepper-name">{{ stepperGroup.habbit.display_name }}</p>
+				<div class="stepper-row">
+					<button
+						type="button"
+						class="stepper-btn"
+						aria-label="Remove one"
+						@click="stepDown">
+						<i
+							class="pi pi-minus"
+							aria-hidden="true"></i>
+					</button>
+					<span
+						class="stepper-count"
+						aria-live="polite"
+						>×{{ stepperGroup.count }}</span
+					>
+					<button
+						type="button"
+						class="stepper-btn is-plus"
+						aria-label="Log one more"
+						@click="stepUp">
+						<i
+							class="pi pi-plus"
+							aria-hidden="true"></i>
+					</button>
+				</div>
+				<button
+					v-if="stepperGroup.count > 1"
+					type="button"
+					class="dt-btn dt-btn-ghost dt-btn-sm stepper-clear"
+					@click="removeAll">
+					Remove all
+				</button>
+			</div>
+		</Popover>
+
+		<AddHabitDialog
+			v-model="dialogOpen"
+			:mode="dialogMode"
+			@logged="markTap" />
+	</section>
 </template>
 
 <script setup lang="ts">
-import HabbitItem from "@/components/home_view/HabbitItem.vue";
-import HabbitSearch from "@/components/home_view/HabbitSearch.vue";
-import Dialog from "primevue/dialog";
-import { ref, computed, onBeforeUnmount, nextTick, watch } from "vue";
-import { useHabbitsStore } from "@/stores/habbits";
-import { storeToRefs } from "pinia";
+import { computed, defineAsyncComponent, ref, watch } from "vue";
+import Popover from "primevue/popover";
 import draggable from "vuedraggable";
-import { toDateKey } from "@/utils/timeUtils";
+import type { GroupedGoal, GroupedHabbit } from "@/libs/types";
+import { useHabbitsStore } from "@/stores/habbits";
+import { useAuthStore } from "@/stores/auth";
+import { useToastStore } from "@/stores/toast";
+import { usePreferencesStore } from "@/stores/userPreferences";
 import { useSound } from "@/utils/useSound";
 import { useConfetti } from "@/utils/useConfetti";
-import { useCompliment } from "@/utils/useCompliment";
-import { usePreferencesStore } from "@/stores/userPreferences"; // <-- 1. Import naszego sklepu
+import { randomCheer } from "@/utils/useCompliment";
+import { formatDayTitle, partOfDay } from "@/utils/date";
+import { displayName } from "@/utils/habitCatalog";
+import HabitTile from "@/components/home_view/HabitTile.vue";
+const AddHabitDialog = defineAsyncComponent(
+	() => import("@/components/home_view/AddHabitDialog.vue"),
+);
+import PixelIcon from "@/components/ui/PixelIcon.vue";
 
-import { Habbit, Goal } from "@/libs/types";
+defineProps<{ isActive: boolean }>();
 
 const habbitsStore = useHabbitsStore();
-const preferencesStore = usePreferencesStore(); // <-- 2. Inicjalizacja sklepu
-const tasksContainerRef = ref<Node | null>(null);
-const {
-	allHabbitsList,
-	selectedDayHabbits,
-	dailyGoalsColored,
-	dailyGoalsList,
-	userHabbitsList,
-} = storeToRefs(habbitsStore);
-
-const props = defineProps<{
-	isActive: boolean;
-}>();
-
-// Greeting based on time of day
-const greetingText = computed(() => {
-	const hour = new Date().getHours();
-	if (hour < 6) return "Good night";
-	if (hour < 12) return "Good morning";
-	if (hour < 18) return "Good afternoon";
-	return "Good evening";
-});
-
-const greetingEmoji = computed(() => {
-	const hour = new Date().getHours();
-	if (hour < 6) return "🌙";
-	if (hour < 12) return "☀️";
-	if (hour < 18) return "🌤️";
-	return "🌙";
-});
-
-// Streak — count consecutive days (from yesterday backwards) that have at least 1 habit
-const streak = computed(() => {
-	let count = 0;
-	const today = new Date();
-
-	// If today has habits, count today too
-	const todayKey = toDateKey(today);
-	const todayEntry = userHabbitsList.value.find((e) => e.date === todayKey);
-	if (todayEntry && todayEntry.habbits.length > 0) {
-		count++;
-	}
-
-	// Go backwards from yesterday
-	for (let i = 1; i <= 30; i++) {
-		const d = new Date(today);
-		d.setDate(d.getDate() - i);
-		const key = toDateKey(d);
-		const entry = userHabbitsList.value.find((e) => e.date === key);
-		if (entry && entry.habbits.length > 0) {
-			count++;
-		} else {
-			break;
-		}
-	}
-	return count;
-});
-
-// POPRAWKA: Licznik celów teraz opiera się o historię wybranego dnia
-const totalGoals = computed(() => dailyGoalsColored.value.length);
-const completedGoals = computed(() => {
-	return dailyGoalsColored.value.filter((g) => g.severity !== "empty").length;
-});
-const goalsPercent = computed(() => {
-	if (totalGoals.value === 0) return 0;
-	return (completedGoals.value / totalGoals.value) * 100;
-});
-const goalsRingStyle = computed(() => {
-	const pct = goalsPercent.value;
-	const color =
-		pct >= 100 ? "var(--p-green-500, #22c55e)" : "var(--p-orange-400, #fb923c)";
-	return {
-		"--ring-pct": pct,
-		"--ring-color": color,
-	};
-});
-
-// Obserwujemy ukończenie wszystkich celów — odpalamy fanfarę i konfetti
-const { playVictory } = useSound();
+const authStore = useAuthStore();
+const toast = useToastStore();
+const preferences = usePreferencesStore();
+const { playHabitCheck, playUncheck, playVictory } = useSound();
 const { launch: launchConfetti } = useConfetti();
-let goalsCelebrated = false;
-watch(completedGoals, (val) => {
-	if (val > 0 && val === totalGoals.value) {
-		if (!goalsCelebrated) {
-			goalsCelebrated = true;
+
+// ==========================================================================
+// NAGŁÓWEK
+// ==========================================================================
+const dayPart = computed(() => partOfDay());
+
+const headline = computed(() => {
+	if (!habbitsStore.isSelectedToday) return formatDayTitle(habbitsStore.selectedDate).weekday;
+	const name = authStore.firstName;
+	return name ? `${dayPart.value.greeting}, ${name}` : dayPart.value.greeting;
+});
+
+const progress = computed(() => habbitsStore.goalsProgress);
+const ringPct = computed(() =>
+	progress.value.total ? Math.round((progress.value.done / progress.value.total) * 100) : 0,
+);
+
+const subline = computed(() => {
+	if (!habbitsStore.isSelectedToday) return "Looking back — you can still fill in this day.";
+	if (habbitsStore.streakAtRisk)
+		return `Log anything today to keep your ${habbitsStore.streak}-day streak 🔥`;
+	const { done, total, complete } = progress.value;
+	if (complete) return "Everything's done. Enjoy the rest of your day ☕";
+	if (total > 0 && done === 0) return "A fresh day. Start with the easiest goal.";
+	if (total > 0) return `${total - done} to go — you've got this.`;
+	if (habbitsStore.selectedLogs.length > 0) return "Nice rhythm today. Keep it gentle.";
+	return "Small steps count. What's one thing you'll do today?";
+});
+
+const streakTooltip = computed(() =>
+	habbitsStore.streakAtRisk
+		? `${habbitsStore.streak}-day streak — log something today to keep it`
+		: `${habbitsStore.streak}-day streak — keep it going!`,
+);
+
+const goalsHint = computed(() => {
+	const left = progress.value.total - progress.value.done;
+	if (progress.value.complete) return "Perfect day ✨";
+	return `${left} left · tap a goal to log it`;
+});
+
+// ==========================================================================
+// CELE
+// ==========================================================================
+const goalTiles = computed<GroupedGoal[]>({
+	get: () => habbitsStore.groupedGoals,
+	set: (list) => habbitsStore.reorderGoals(list.map((g) => g.name)),
+});
+
+function goalBadge(goal: GroupedGoal) {
+	if (goal.done >= goal.target) return "✓";
+	if (goal.target > 1) return `${goal.done}/${goal.target}`;
+	return null;
+}
+
+function goalAria(goal: GroupedGoal) {
+	const name = displayName(goal.habbit);
+	if (goal.target > 1) return `${name}: ${goal.done} of ${goal.target} done`;
+	return `${name}: ${goal.done ? "done" : "not done yet"}`;
+}
+
+// Stuknięcie w cel: dopóki nie jest zrobiony → +1. Zrobiony → stepper −/+,
+// żeby przypadkowe stuknięcie niczego nie odznaczało.
+async function onGoalTap(goal: GroupedGoal, event: MouseEvent) {
+	markTap();
+	if (goal.done >= goal.target) {
+		openStepper(goal.name, event);
+		return;
+	}
+	playHabitCheck();
+	const result = habbitsStore.tapGoal(goal);
+	if (result === "logged") {
+		const done = goal.done + 1;
+		const suffix = goal.target > 1 ? ` (${Math.min(done, goal.target)}/${goal.target})` : "";
+		toast.undoable(`${displayName(goal.habbit)}${suffix} — ${randomCheer()}`, () =>
+			habbitsStore.unlogHabbit(goal.name),
+		);
+		if (done >= goal.target) flyEmoji();
+	}
+}
+
+// Świętujemy tylko po akcji użytkownika — nie wtedy, gdy dane się wczytały
+let lastTapAt = 0;
+const markTap = () => (lastTapAt = Date.now());
+
+// Świętowanie, gdy wszystkie cele zrobione
+watch(
+	() => progress.value.complete,
+	(complete, was) => {
+		const byUser = Date.now() - lastTapAt < 2000;
+		if (complete && was === false && byUser && habbitsStore.isSelectedToday) {
 			playVictory();
 			launchConfetti();
-		}
-	} else {
-		goalsCelebrated = false;
-	}
-});
-
-const showHabbitDialog = ref(false);
-
-// Feature 3: animacja licznika habitów
-const countBump = ref(false);
-watch(
-	() => selectedDayHabbits.value.length,
-	(newVal, oldVal) => {
-		if (newVal > (oldVal ?? 0)) {
-			// 3. Blokada animacji pulsującego licznika, gdy animacje są wyłączone
-			if (preferencesStore.animationsEnabled) {
-				countBump.value = true;
-				setTimeout(() => {
-					countBump.value = false;
-				}, 420);
-			}
+			toast.show("All goals done — what a day! 🌟", { tone: "celebrate", duration: 3500 });
 		}
 	},
 );
 
-// Feature 5: dobra passa — computed
-const allGoalsDone = computed(
-	() => totalGoals.value > 0 && completedGoals.value === totalGoals.value,
-);
-
-// Feature 6: emoji wylatuje przy ukończeniu celu
-function injectGoalFlyStyles() {
-	if (document.getElementById("goal-fly-styles")) return;
-	const style = document.createElement("style");
-	style.id = "goal-fly-styles";
-	style.textContent = `
-        @keyframes goal-fly {
-            0%   { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-110px) scale(1.8); }
-        }
-        .goal-fly-emoji {
-            position: fixed;
-            pointer-events: none;
-            z-index: 9999;
-            font-size: 1.9rem;
-            animation: goal-fly 0.85s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-        }
-    `;
-	document.head.appendChild(style);
-}
-
-function flyGoalEmoji() {
-	// 4. Blokada: Jeśli animacje są wyłączone, przerywamy funkcję od razu!
-	if (!preferencesStore.animationsEnabled) return;
-
-	injectGoalFlyStyles();
-	const emojis = ["🎯", "✨", "⭐", "🌟", "💫"];
-	const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+function flyEmoji() {
+	if (!preferences.animationsEnabled) return;
+	const emojis = ["✨", "⭐", "🌟", "💫", "🎯"];
 	const el = document.createElement("span");
-	el.className = "goal-fly-emoji";
-	el.textContent = emoji;
-	el.style.left = `${38 + Math.random() * 24}vw`;
-	el.style.bottom = `${120 + Math.random() * 60}px`;
+	el.className = "fly-emoji";
+	el.setAttribute("aria-hidden", "true");
+	el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+	el.style.left = `${40 + Math.random() * 20}vw`;
+	el.style.bottom = `${140 + Math.random() * 60}px`;
 	document.body.appendChild(el);
-	setTimeout(() => el.remove(), 850);
+	setTimeout(() => el.remove(), 900);
 }
 
-watch(completedGoals, (newVal, oldVal) => {
-	if (newVal > (oldVal ?? 0)) {
-		flyGoalEmoji();
-	}
+// ==========================================================================
+// ZALOGOWANE HABITY + STEPPER
+// ==========================================================================
+// Habity-cele mają już swoje kafelki wyżej — tu pokazujemy resztę dnia
+const goalNames = computed(() => new Set(habbitsStore.groupedGoals.map((g) => g.name)));
+const loggedTiles = computed<GroupedHabbit[]>({
+	get: () => habbitsStore.groupedSelectedDayHabbits.filter((g) => !goalNames.value.has(g.name)),
+	set: (list) =>
+		habbitsStore.reorderSelected([
+			...habbitsStore.groupedSelectedDayHabbits
+				.filter((g) => goalNames.value.has(g.name))
+				.map((g) => g.name),
+			...list.map((g) => g.name),
+		]),
+});
+const otherLogsCount = computed(() => loggedTiles.value.reduce((sum, g) => sum + g.count, 0));
+
+const loggedHeading = computed(() => {
+	if (goalNames.value.size > 0) return "Also logged";
+	return habbitsStore.isSelectedToday ? "Logged today" : "Logged that day";
+});
+const loggedEmptyText = computed(() => {
+	if (goalNames.value.size > 0) return "Did something else nice? Tap + to add it.";
+	return habbitsStore.isSelectedToday
+		? "Nothing logged yet. Tap + and add the first little win of your day 🌱"
+		: "Nothing was logged that day. You can still add it now.";
 });
 
-const addDialogMode = ref("");
-const selectedTaskToDelete = ref<Habbit | null>(null);
-const selectedGoalToDelete = ref<Habbit | null>(null);
-
-// Multi-select session tracking — tracks names of habits added while dialog is open
-const addedInSession = ref<string[]>([]);
-
-const headerText = computed(() =>
-	addDialogMode.value === "habbit" ? "Add daily habit" : "Add goal to complete",
+const countBump = ref(false);
+watch(
+	() => otherLogsCount.value,
+	(next, prev) => {
+		if (next > (prev ?? 0)) {
+			countBump.value = true;
+			setTimeout(() => (countBump.value = false), 400);
+		}
+	},
 );
-const editMode = ref(false);
 
-function openAddHabbitDialog() {
-	addDialogMode.value = "habbit";
-	addedInSession.value = [];
-	showHabbitDialog.value = true;
-}
+const stepperRef = ref<InstanceType<typeof Popover> | null>(null);
+const stepperFor = ref<string | null>(null);
+const stepperGroup = computed(() =>
+	habbitsStore.groupedSelectedDayHabbits.find((g) => g.name === stepperFor.value),
+);
 
-function openaddDailyGoalDialog() {
-	addDialogMode.value = "goal";
-	addedInSession.value = [];
-	showHabbitDialog.value = true;
-}
-
-function handleHabbitSelect(habbit: Habbit) {
-	if (addDialogMode.value === "habbit") {
-		habbitsStore.addHabbitToSelectedDay(habbit);
-		showCompliment();
-	} else if (addDialogMode.value === "goal") {
-		habbitsStore.addDailyGoal(habbit);
+function openStepper(name: string, event: MouseEvent) {
+	if (stepperFor.value === name) {
+		stepperRef.value?.hide();
+		return;
 	}
-
-	// Track the added habit — dialog stays open for multi-select
-	if (!addedInSession.value.includes(habbit.name)) {
-		addedInSession.value.push(habbit.name);
-	}
+	stepperFor.value = name;
+	stepperRef.value?.show(event, event.currentTarget as HTMLElement);
 }
 
-function deleteSelectedTask() {
-	if (selectedTaskToDelete.value) {
-		habbitsStore.deleteHabbitFromSelectedDay(selectedTaskToDelete.value);
-	}
-}
-const onReachGoal = (goal: Goal) => {
-	const wasCompleted = habbitsStore.getGoalSeverity(goal) !== "empty";
-	habbitsStore.onGoalClick(goal);
-	if (!wasCompleted) showCompliment();
-};
-
-function toggleEditMode() {
-	editMode.value = !editMode.value;
+async function stepUp() {
+	const group = stepperGroup.value;
+	if (!group) return;
+	markTap();
+	playHabitCheck();
+	habbitsStore.logHabbit(group.habbit);
 }
 
-const markedGoalToDelete = ref<string | null>(null);
-const goalsContainerRef = ref<Node | null>(null);
-
-function handleClickOutside(event: MouseEvent) {
-	if (
-		goalsContainerRef.value &&
-		!goalsContainerRef.value.contains(event.target as Node)
-	) {
-		markedGoalToDelete.value = null;
-	}
+async function stepDown() {
+	const group = stepperGroup.value;
+	if (!group) return;
+	playUncheck();
+	const name = group.name;
+	const removed = habbitsStore.unlogHabbit(name);
+	if (!removed) return;
+	if (!stepperGroup.value) stepperRef.value?.hide();
+	toast.undoable(`Removed ${displayName(group.habbit)}`, () =>
+		habbitsStore.restoreLogs([removed]),
+	);
 }
 
-function toggleMarkGoal(goal: Goal) {
-	if (markedGoalToDelete.value === goal.id) {
-		habbitsStore.deleteDailyGoal(goal);
-		markedGoalToDelete.value = null; // reset selection
-		document.removeEventListener("mousedown", handleClickOutside);
-	} else {
-		if (goal.id) {
-			markedGoalToDelete.value = goal.id;
-		}
-		// Wait for DOM update to ensure ref is set
-		nextTick(() => {
-			document.addEventListener("mousedown", handleClickOutside);
-		});
-	}
+async function removeAll() {
+	const group = stepperGroup.value;
+	if (!group) return;
+	stepperRef.value?.hide();
+	playUncheck();
+	const removed = habbitsStore.removeAllLogs(group.name);
+	if (removed.length)
+		toast.undoable(`Removed ${displayName(group.habbit)} ×${removed.length}`, () =>
+			habbitsStore.restoreLogs(removed),
+		);
 }
 
-// Clean up event listener on unmount
-onBeforeUnmount(() => {
-	document.removeEventListener("mousedown", handleClickOutside);
-});
+// Zmiana dnia zamyka stepper
+watch(
+	() => habbitsStore.selectedKey,
+	() => stepperRef.value?.hide(),
+);
 
-// POPRAWKA: Przekazujemy pełne dane dla ikon edycji, aby móc usuwać również cele historyczne
-function getGoalDisplayData(goal: Goal) {
-	const fullGoal = getFullGoalData(goal);
+// ==========================================================================
+// DIALOG DODAWANIA
+// ==========================================================================
+const dialogOpen = ref(false);
+const dialogMode = ref<"log" | "goal">("log");
 
-	if (editMode.value && markedGoalToDelete.value === goal.id) {
-		return {
-			...fullGoal,
-			icon: "delete",
-			severity: "danger",
-		};
-	}
-
-	return {
-		...fullGoal,
-		severity: "empty",
-	};
-}
-
-function getFullGoalData(goal: Goal) {
-	if (goal.display_name) return goal;
-	const original = allHabbitsList.value.find((h) => h.name === goal.name);
-	return original ? { ...original, ...goal } : goal;
-}
-
-function handleGlobalClick(event: MouseEvent) {
-	const container = goalsContainerRef.value;
-	if (
-		editMode.value &&
-		container &&
-		!container.contains(event.target as Node)
-	) {
-		markedGoalToDelete.value = null;
-	}
-}
-const markedHabbitToDelete = ref<string | null>(null);
-
-const { show: showCompliment } = useCompliment();
-
-function toggleMarkHabbit(habbit: Habbit) {
-	if (markedHabbitToDelete.value === habbit.id) {
-		habbitsStore.deleteHabbitFromSelectedDay(habbit);
-		markedHabbitToDelete.value = null;
-		document.removeEventListener("mousedown", handleHabbitClickOutside);
-	} else {
-		if (habbit.id) {
-			markedHabbitToDelete.value = habbit.id;
-		}
-		nextTick(() => {
-			document.addEventListener("mousedown", handleHabbitClickOutside);
-		});
-	}
-}
-
-function handleHabbitClickOutside(event: MouseEvent) {
-	// Używamy referencji zamiast document.querySelector
-	if (
-		tasksContainerRef.value &&
-		!tasksContainerRef.value.contains(event.target as Node)
-	) {
-		markedHabbitToDelete.value = null;
-		document.removeEventListener("mousedown", handleHabbitClickOutside);
-	}
-}
-
-onBeforeUnmount(() => {
-	document.removeEventListener("mousedown", handleClickOutside);
-	document.removeEventListener("mousedown", handleHabbitClickOutside);
-});
-
-function getHabbitDisplayData(habbit: Habbit) {
-	if (markedHabbitToDelete.value === habbit.id) {
-		return {
-			...habbit,
-			icon: "delete",
-			severity: "danger",
-		};
-	}
-	return getFullHabbitData(habbit);
-}
-
-function getFullHabbitData(habbit: Habbit) {
-	if (habbit.display_name) return habbit;
-	const original = allHabbitsList.value.find((h) => h.name === habbit.name);
-	return original ? { ...original, ...habbit } : habbit;
+function openDialog(mode: "log" | "goal") {
+	markTap();
+	dialogMode.value = mode;
+	dialogOpen.value = true;
 }
 </script>
+
 <style scoped>
-.card-root {
+.today {
 	display: flex;
 	flex-direction: column;
-}
-@media (max-width: 640px), (orientation: landscape) and (max-width: 1024px) and (hover: none) and (pointer: coarse) {
-	.card-root {
-		flex: 1;
-		min-height: 0;
-		height: 100%;
-	}
-	.hc-inner {
-		flex: 1;
-		min-height: 0;
-		width: 100% !important;
-		height: 100%;
-		max-height: 100%;
-		overflow-y: auto !important;
-		-webkit-overflow-scrolling: touch;
-		overscroll-behavior: contain;
-	}
-}
-.card-root[data-active="false"] {
-	pointer-events: none;
-	user-select: none;
-	opacity: 0.7;
-}
-
-/* ==========================================================================
-   Habit Search Dialog — cozy redesign
-   ========================================================================== */
-
-/* Softer, warmer backdrop with more presence */
-:deep(.hs-dialog-mask) {
-	background: color-mix(in srgb, #3a2216 32%, transparent) !important;
-	backdrop-filter: blur(6px);
-	-webkit-backdrop-filter: blur(6px);
-}
-:where(.my-app-dark, .my-app-dark *) :deep(.hs-dialog-mask) {
-	background: rgba(0, 0, 0, 0.55) !important;
-}
-
-/* Remove PrimeVue's default header + content padding */
-:deep(.hs-dialog .p-dialog-header) {
-	display: none !important;
-}
-:deep(.hs-dialog .p-dialog-content) {
-	padding: 0 !important;
-	background: transparent !important;
-}
-
-/* Dialog root — warm cream shell with warm layered shadow */
-:deep(.hs-dialog.p-dialog) {
-	border-radius: 1.5rem !important;
-	overflow: hidden !important;
-	border: none !important;
-	outline: none !important;
-	background: color-mix(in srgb, var(--p-orange-50) 65%, white) !important;
-	box-shadow:
-		0 2px 6px rgba(251, 146, 60, 0.08),
-		0 12px 32px -8px rgba(120, 53, 15, 0.18),
-		0 32px 80px -20px rgba(251, 146, 60, 0.3) !important;
-}
-:where(.my-app-dark, .my-app-dark *) :deep(.hs-dialog.p-dialog) {
-	background: var(--p-gray-800) !important;
-	box-shadow:
-		0 12px 32px -8px rgba(0, 0, 0, 0.5),
-		0 32px 80px -20px rgba(0, 0, 0, 0.6) !important;
-}
-
-/* Vertical flex shell — positioning context for floating CTA */
-.hs-dialog-shell {
-	position: relative;
-	display: flex;
-	flex-direction: column;
-	max-height: 85vh;
-	background: transparent;
-}
-
-/* ==========================================================================
-   HEADER — flat row. Emoji chip carries mode identity via tint.
-   ========================================================================== */
-.hs-dialog-header {
-	display: flex;
-	align-items: center;
-	gap: 0.85rem;
-	padding: 1.1rem 1.25rem 0.7rem;
-	flex-shrink: 0;
-}
-.hs-dialog-emoji {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 2.6rem;
-	height: 2.6rem;
-	border-radius: 0.9rem;
-	font-size: 1.4rem;
-	line-height: 1;
-	flex-shrink: 0;
-	background: color-mix(in srgb, var(--p-green-100) 70%, white);
-	box-shadow:
-		0 2px 8px color-mix(in srgb, var(--p-green-300) 30%, transparent),
-		inset 0 0 0 1px rgba(255, 255, 255, 0.85);
-}
-.hs-dialog-emoji.mode-goal {
-	background: color-mix(in srgb, var(--p-yellow-100) 80%, white);
-	box-shadow:
-		0 2px 8px color-mix(in srgb, var(--p-yellow-300) 40%, transparent),
-		inset 0 0 0 1px rgba(255, 255, 255, 0.85);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-dialog-emoji {
-	background: color-mix(in srgb, var(--p-green-900) 55%, transparent);
-	box-shadow:
-		0 2px 8px rgba(0, 0, 0, 0.35),
-		inset 0 0 0 1px color-mix(in srgb, var(--p-green-600) 40%, transparent);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-dialog-emoji.mode-goal {
-	background: color-mix(in srgb, var(--p-yellow-900) 60%, transparent);
-	box-shadow:
-		0 2px 8px rgba(0, 0, 0, 0.35),
-		inset 0 0 0 1px color-mix(in srgb, var(--p-yellow-600) 40%, transparent);
-}
-
-.hs-dialog-header-text {
-	flex: 1;
-	min-width: 0;
-	display: flex;
-	flex-direction: column;
-	gap: 0.15rem;
-}
-.hs-dialog-title {
-	font-family: "Lora", serif;
-	font-size: 1.15rem;
-	font-weight: 700;
-	color: var(--p-gray-800);
-	margin: 0;
-	line-height: 1.2;
-	letter-spacing: -0.01em;
-}
-:where(.my-app-dark, .my-app-dark *) .hs-dialog-title {
-	color: var(--p-gray-50);
-}
-.hs-dialog-subtitle {
-	font-family: "Lora", serif;
-	font-size: 0.82rem;
-	font-style: italic;
-	color: var(--p-gray-500);
-	margin: 0;
-	line-height: 1.3;
-}
-:where(.my-app-dark, .my-app-dark *) .hs-dialog-subtitle {
-	color: var(--p-gray-400);
-}
-
-/* Close button — minimal ghost, rotates on hover */
-.hs-dialog-close {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 2.25rem;
-	height: 2.25rem;
-	border-radius: 50%;
-	border: none;
-	background: transparent;
-	color: var(--p-gray-400);
-	cursor: pointer;
-	transition: all 0.2s ease;
-	flex-shrink: 0;
-	-webkit-tap-highlight-color: transparent;
-}
-.hs-dialog-close:hover {
-	background: color-mix(in srgb, var(--p-orange-100) 70%, transparent);
-	color: var(--p-orange-700);
-	transform: rotate(90deg);
-}
-.hs-dialog-close:active {
-	transform: rotate(90deg) scale(0.9);
-}
-.hs-dialog-close i {
-	font-size: 0.85rem;
-}
-:where(.my-app-dark, .my-app-dark *) .hs-dialog-close {
-	color: var(--p-gray-400);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-dialog-close:hover {
-	background: color-mix(in srgb, var(--p-orange-900) 40%, transparent);
-	color: var(--p-orange-300);
-}
-
-/* ==========================================================================
-   BODY — HabbitSearch fills this, no visible boundary
-   ========================================================================== */
-.hs-dialog-body {
-	flex: 1;
+	gap: 1rem;
+	width: 100%;
+	height: 100%;
 	min-height: 0;
-	padding: 0.4rem 1.25rem 1.25rem;
-	display: flex;
-	flex-direction: column;
 	overflow: hidden;
 }
-
-/* ==========================================================================
-   BOTTOM CTA DOCK — floating pill that pops when items added
-   ========================================================================== */
-.hs-cta-dock {
-	position: absolute;
-	left: 0;
-	right: 0;
-	bottom: 1rem;
-	display: flex;
-	justify-content: center;
+@media (min-width: 641px) {
+	.today {
+		width: 30rem;
+	}
+}
+.today.is-inactive {
 	pointer-events: none;
-	z-index: 10;
-	padding: 0 1rem;
-}
-.hs-cta-pill {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.65rem;
-	padding: 0.4rem 0.5rem 0.4rem 1rem;
-	background: white;
-	border-radius: 9999px;
-	box-shadow:
-		0 4px 12px rgba(120, 53, 15, 0.18),
-		0 12px 28px -6px rgba(251, 146, 60, 0.35);
-	pointer-events: auto;
-	max-width: 95%;
-}
-:where(.my-app-dark, .my-app-dark *) .hs-cta-pill {
-	background: var(--p-gray-700);
-	box-shadow:
-		0 4px 12px rgba(0, 0, 0, 0.35),
-		0 12px 28px -6px rgba(0, 0, 0, 0.5);
+	user-select: none;
 }
 
-.hs-cta-count {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	min-width: 1.6rem;
-	height: 1.6rem;
-	padding: 0 0.45rem;
-	border-radius: 9999px;
-	background: color-mix(in srgb, var(--p-green-100) 80%, white);
-	color: var(--p-green-700);
-	font-family: "Lora", serif;
-	font-size: 0.85rem;
-	font-weight: 700;
-	line-height: 1;
-	font-variant-numeric: tabular-nums;
-}
-:where(.my-app-dark, .my-app-dark *) .hs-cta-count {
-	background: color-mix(in srgb, var(--p-green-900) 60%, transparent);
-	color: var(--p-green-300);
-}
-
-.hs-cta-label {
-	font-family: "Lora", serif;
-	font-size: 0.82rem;
-	color: var(--p-gray-600);
-	line-height: 1;
-	white-space: nowrap;
-}
-:where(.my-app-dark, .my-app-dark *) .hs-cta-label {
-	color: var(--p-gray-300);
-}
-
-.hs-cta-done {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	padding: 0.55rem 1.35rem;
-	border-radius: 9999px;
-	border: none;
-	background: var(--p-orange-500);
-	color: white;
-	font-family: "Lora", serif;
-	font-size: 0.85rem;
-	font-weight: 600;
-	cursor: pointer;
-	line-height: 1;
-	transition: all 0.2s ease;
-	-webkit-tap-highlight-color: transparent;
-	box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.08);
-}
-.hs-cta-done:hover {
-	background: var(--p-orange-600);
-	transform: translateY(-1px);
-}
-.hs-cta-done:active {
-	transform: translateY(0) scale(0.97);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-cta-done {
-	background: var(--p-orange-500);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-cta-done:hover {
-	background: var(--p-orange-400);
-}
-
-/* Springy pop from bottom */
-.hs-cta-enter-active {
-	transition:
-		transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-		opacity 0.3s ease;
-}
-.hs-cta-leave-active {
-	transition:
-		transform 0.25s ease,
-		opacity 0.25s ease;
-}
-.hs-cta-enter-from {
-	opacity: 0;
-	transform: translateY(28px) scale(0.9);
-}
-.hs-cta-leave-to {
-	opacity: 0;
-	transform: translateY(20px) scale(0.9);
-}
-
-/* ==========================================================================
-   PLAIN CLOSE — subtle bottom-centered link when nothing added
-   ========================================================================== */
-.hs-dialog-plain-close {
-	align-self: center;
-	margin: 0 0 0.85rem;
-	padding: 0.4rem 1.1rem;
-	background: transparent;
-	border: none;
-	color: var(--p-gray-400);
-	font-family: "Lora", serif;
-	font-size: 0.82rem;
-	font-weight: 500;
-	cursor: pointer;
-	border-radius: 9999px;
-	transition: all 0.2s ease;
-	-webkit-tap-highlight-color: transparent;
-}
-.hs-dialog-plain-close:hover {
-	background: color-mix(in srgb, var(--p-orange-100) 55%, transparent);
-	color: var(--p-orange-700);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-dialog-plain-close {
-	color: var(--p-gray-400);
-}
-:where(.my-app-dark, .my-app-dark *) .hs-dialog-plain-close:hover {
-	background: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
-	color: var(--p-gray-100);
-}
-
-/* ==========================================================================
-   RESPONSIVE
-   ========================================================================== */
-@media (max-width: 640px) {
-	:deep(.hs-dialog.p-dialog) {
-		border-radius: 1.35rem !important;
-	}
-	.hs-dialog-shell {
-		max-height: 92vh;
-	}
-	.hs-dialog-header {
-		padding: 0.9rem 1rem 0.5rem;
-		gap: 0.7rem;
-	}
-	.hs-dialog-emoji {
-		width: 2.3rem;
-		height: 2.3rem;
-		font-size: 1.25rem;
-	}
-	.hs-dialog-title {
-		font-size: 1.05rem;
-	}
-	.hs-dialog-subtitle {
-		font-size: 0.75rem;
-	}
-	.hs-dialog-body {
-		padding: 0.4rem 0.9rem 1rem;
-	}
-	.hs-cta-dock {
-		bottom: 0.85rem;
-	}
-	.hs-cta-pill {
-		padding: 0.35rem 0.45rem 0.35rem 0.85rem;
-		gap: 0.55rem;
-	}
-	.hs-cta-label {
-		font-size: 0.78rem;
-	}
-}
-
-/* ====== Greeting Area ====== */
-.hc-greeting-area {
+.today-head {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: space-between;
-	margin-bottom: 0.5rem;
+	gap: 0.75rem;
 }
-.hc-greeting-hello {
-	font-size: 1.25rem;
-	line-height: 1;
-	margin-right: 0.3rem;
-	vertical-align: middle;
+.today-greeting {
+	min-width: 0;
 }
-.hc-greeting-text {
-	font-family: "Lora", serif;
-	font-size: 1.05rem;
-	font-weight: 600;
-	color: var(--p-gray-700);
-	margin: 0;
-	display: inline;
-	vertical-align: middle;
+.today-title {
+	font-size: var(--dt-text-lg);
+	font-weight: 700;
+	line-height: 1.25;
 }
-:where(.my-app-dark, .my-app-dark *) .hc-greeting-text {
-	color: var(--p-gray-200);
+.today-sub {
+	margin: 0.2rem 0 0;
+	font-size: var(--dt-text-sm);
+	color: var(--dt-text-3);
+	font-style: italic;
+	line-height: 1.4;
 }
 
-/* Streak badge */
-.hc-streak {
-	display: flex;
+.streak-chip {
+	display: inline-flex;
 	align-items: center;
 	gap: 0.2rem;
-	padding: 0.25rem 0.6rem;
-	border-radius: 9999px;
-	background: color-mix(in srgb, var(--p-orange-100) 60%, transparent);
-	cursor: default;
-	user-select: none;
-	transition: transform 0.2s ease;
-}
-.hc-streak:hover {
-	transform: scale(1.06);
-}
-:where(.my-app-dark, .my-app-dark *) .hc-streak {
-	background: color-mix(in srgb, var(--p-orange-900) 30%, transparent);
-}
-.hc-streak-fire {
-	font-size: 0.9rem;
-	line-height: 1;
-}
-.hc-streak-num {
-	font-family: "Lora", serif;
-	font-size: 0.85rem;
+	padding: 0.2rem 0.7rem 0.2rem 0.4rem;
+	border-radius: var(--dt-radius-pill);
+	background: var(--dt-accent-soft);
+	color: var(--dt-accent-ink);
 	font-weight: 700;
-	color: var(--p-orange-600);
-	line-height: 1;
+	font-size: var(--dt-text-md);
+	font-variant-numeric: tabular-nums;
+	flex-shrink: 0;
 }
-:where(.my-app-dark, .my-app-dark *) .hc-streak-num {
-	color: var(--p-orange-400);
+.streak-chip.at-risk {
+	background: var(--dt-surface-sunken);
+	color: var(--dt-text-2);
+	animation: streak-nudge 2.4s ease-in-out infinite;
+}
+@keyframes streak-nudge {
+	0%,
+	85%,
+	100% {
+		transform: rotate(0);
+	}
+	90% {
+		transform: rotate(-6deg);
+	}
+	95% {
+		transform: rotate(6deg);
+	}
 }
 
-/* ====== Habits Counter ====== */
-.hc-header {
-	text-align: center;
-	padding: 0.25rem 0;
-}
-.hc-count {
-	font-family: "Lora", serif;
-	font-size: 1.6rem;
-	font-weight: 700;
-	color: var(--p-orange-500);
-	line-height: 1;
-}
-:where(.my-app-dark, .my-app-dark *) .hc-count {
-	color: var(--p-orange-400);
-}
-.hc-count-label {
-	font-family: "Lora", serif;
-	font-size: 0.82rem;
-	font-weight: 500;
-	color: var(--p-gray-500);
-	margin-left: 0.35rem;
-}
-:where(.my-app-dark, .my-app-dark *) .hc-count-label {
-	color: var(--p-gray-400);
-}
-.hc-encourage {
-	font-family: "Lora", serif;
-	font-size: 0.85rem;
-	color: var(--p-gray-400);
-	font-style: italic;
-	margin: 0;
-}
-:where(.my-app-dark, .my-app-dark *) .hc-encourage {
-	color: var(--p-gray-500);
-}
-.hc-plus-badge {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 1.2rem;
-	height: 1.2rem;
-	border-radius: 0.35rem;
-	border: 1.5px dashed var(--p-orange-300);
-	color: var(--p-orange-400);
-	font-size: 0.75rem;
-	font-weight: 600;
-	font-style: normal;
-	vertical-align: middle;
-	margin: 0 0.15rem;
-}
-
-/* ====== Goals Section ====== */
-.hc-goals-section {
-	margin-top: 1.25rem;
-	padding: 0.75rem 0.85rem;
-	border-radius: 0.85rem;
-	background: color-mix(in srgb, var(--p-orange-50) 40%, transparent);
-	border: 1px solid color-mix(in srgb, var(--p-orange-100) 50%, transparent);
+.today-scroll {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
 	display: flex;
 	flex-direction: column;
-	gap: 0.55rem;
+	gap: 1.25rem;
+	margin: 0 -0.35rem;
+	padding: 0.35rem 0.35rem 0.5rem;
+	overscroll-behavior: contain;
 }
-:where(.my-app-dark, .my-app-dark *) .hc-goals-section {
-	background: color-mix(in srgb, var(--p-gray-700) 30%, transparent);
-	border-color: color-mix(in srgb, var(--p-gray-600) 30%, transparent);
-}
-.hc-goals-header {
+
+.panel-head {
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
+	gap: 0.65rem;
+	margin-bottom: 0.75rem;
 }
-.hc-goals-header-left {
+.panel-title-wrap {
+	flex: 1;
+	min-width: 0;
+}
+.panel-hint {
+	margin: 0.1rem 0 0;
+	font-size: var(--dt-text-xs);
+	color: var(--dt-text-3);
+}
+
+.goals {
+	transition:
+		background-color 0.4s ease,
+		border-color 0.4s ease;
+}
+.goals.is-complete {
+	background: color-mix(in srgb, var(--dt-success-soft) 70%, var(--dt-surface-soft));
+	border-color: color-mix(in srgb, var(--dt-success-fill) 35%, transparent);
+}
+.goals-banner {
+	margin: -0.25rem 0 0.75rem;
+	padding: 0.5rem 0.85rem;
+	border-radius: var(--dt-radius);
+	background: var(--dt-surface);
+	color: var(--dt-success);
+	font-size: var(--dt-text-sm);
+	font-weight: 700;
+	text-align: center;
+	box-shadow: var(--dt-shadow-sm);
+}
+.goals-empty {
 	display: flex;
+	flex-direction: column;
 	align-items: center;
 	gap: 0.5rem;
+	text-align: center;
+	padding: 0.25rem 0.5rem 0.35rem;
 }
-
-/* ====== Goals Progress Ring ====== */
-@property --ring-pct {
-	syntax: "<number>";
-	inherits: false;
-	initial-value: 0;
-}
-.hc-goals-ring {
-	width: 2rem;
-	height: 2rem;
-	border-radius: 9999px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	background: conic-gradient(
-		var(--ring-color, var(--p-orange-400)) calc(var(--ring-pct) * 1%),
-		color-mix(in srgb, var(--p-gray-200) 60%, transparent)
-			calc(var(--ring-pct) * 1%)
-	);
-	transition:
-		--ring-pct 0.5s ease,
-		--ring-color 0.4s ease;
-}
-.hc-goals-ring-inner {
-	width: 1.45rem;
-	height: 1.45rem;
-	border-radius: 9999px;
-	background: color-mix(in srgb, var(--p-orange-50) 40%, white);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-:where(.my-app-dark, .my-app-dark *) .hc-goals-ring-inner {
-	background: color-mix(in srgb, var(--p-gray-700) 80%, var(--p-gray-800));
-}
-.hc-goals-ring-text {
-	font-family: "Lora", serif;
-	font-size: 0.48rem;
-	font-weight: 700;
-	color: var(--p-gray-600);
-	line-height: 1;
-	letter-spacing: -0.02em;
-}
-:where(.my-app-dark, .my-app-dark *) .hc-goals-ring-text {
-	color: var(--p-gray-300);
-}
-
-.hc-goals-title {
-	font-family: "Lora", serif;
-	font-size: 0.85rem;
-	font-weight: 600;
-	color: var(--p-gray-700);
+.goals-empty p {
 	margin: 0;
-}
-:where(.my-app-dark, .my-app-dark *) .hc-goals-title {
-	color: var(--p-gray-200);
-}
-.hc-edit-pill {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.3rem;
-	padding: 0.25rem 0.65rem;
-	border-radius: 9999px;
-	border: 1px solid var(--p-orange-200);
-	background: white;
-	color: var(--p-gray-500);
-	font-family: "Lora", serif;
-	font-size: 0.7rem;
-	font-weight: 500;
-	cursor: pointer;
-	transition: all 0.2s ease;
-	user-select: none;
-}
-.hc-edit-pill:hover {
-	border-color: var(--p-orange-300);
-	color: var(--p-orange-600);
-	background: var(--p-orange-50);
-}
-.hc-edit-pill.active {
-	background: var(--p-green-50);
-	border-color: var(--p-green-300);
-	color: var(--p-green-600);
-}
-.hc-edit-pill.active:hover {
-	background: var(--p-green-100);
-}
-:where(.my-app-dark, .my-app-dark *) .hc-edit-pill {
-	border-color: var(--p-gray-600);
-	background: transparent;
-	color: var(--p-gray-400);
-}
-:where(.my-app-dark, .my-app-dark *) .hc-edit-pill:hover {
-	border-color: var(--p-gray-500);
-	color: var(--p-gray-200);
-}
-:where(.my-app-dark, .my-app-dark *) .hc-edit-pill.active {
-	background: color-mix(in srgb, var(--p-green-900) 30%, transparent);
-	border-color: var(--p-green-700);
-	color: var(--p-green-400);
+	font-size: var(--dt-text-sm);
+	color: var(--dt-text-2);
+	line-height: 1.5;
+	max-width: 22rem;
 }
 
-/* ====== Goals Empty State ====== */
-.hc-goals-empty {
+.tile-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.85rem 0.75rem;
+}
+.contents {
+	display: contents;
+}
+.tile-ghost {
+	opacity: 0.35;
+}
+
+.logged .panel-head {
+	margin-bottom: 0.65rem;
+}
+.logged-count {
+	display: inline-grid;
+	place-items: center;
+	min-width: 1.6rem;
+	height: 1.6rem;
+	padding: 0 0.4rem;
+	border-radius: var(--dt-radius-pill);
+	background: var(--dt-accent-soft);
+	color: var(--dt-accent-ink);
+	font-size: var(--dt-text-sm);
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+.logged-count.bump {
+	animation: bump 0.4s var(--dt-spring);
+}
+@keyframes bump {
+	50% {
+		transform: scale(1.35);
+	}
+}
+.logged-empty {
+	margin: 0.75rem 0 0;
+	font-size: var(--dt-text-sm);
+	color: var(--dt-text-3);
+	line-height: 1.5;
+}
+
+.add-tile {
+	display: grid;
+	place-items: center;
+	width: 3.4rem;
+	height: 3.4rem;
+	border-radius: 1rem;
+	border: 2px dashed color-mix(in srgb, var(--dt-accent) 55%, var(--dt-border-strong));
+	background: transparent;
+	color: var(--dt-accent-ink);
+	cursor: pointer;
+	transition:
+		background-color 0.18s ease,
+		transform 0.22s var(--dt-spring);
+}
+.add-tile:hover {
+	background: var(--dt-accent-softer);
+	transform: translateY(-2px);
+}
+.add-tile:active {
+	transform: scale(0.93);
+}
+.add-tile i {
+	font-size: 1.1rem;
+	font-weight: 700;
+}
+
+/* Stepper */
+.stepper {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	padding: 0.6rem 0.5rem;
+	gap: 0.5rem;
+	padding: 0.25rem;
+	min-width: 10rem;
+}
+.stepper-name {
+	margin: 0;
+	font-size: var(--dt-text-sm);
+	font-weight: 700;
+	color: var(--dt-text);
 	text-align: center;
 }
-.hc-goals-empty-emoji {
-	font-size: 1.15rem;
-	margin-bottom: 0.2rem;
-	opacity: 0.5;
-}
-.hc-goals-empty-text {
-	font-family: "Lora", serif;
-	font-size: 0.72rem;
-	color: var(--p-gray-400);
-	margin: 0 0 0.35rem 0;
-}
-:where(.my-app-dark, .my-app-dark *) .hc-goals-empty-text {
-	color: var(--p-gray-500);
-}
-.hc-goals-empty-btn {
-	display: inline-flex;
+.stepper-row {
+	display: flex;
 	align-items: center;
-	gap: 0.25rem;
-	padding: 0.3rem 0.75rem;
-	border-radius: 0.5rem;
-	border: 1px dashed var(--p-orange-300);
-	background: transparent;
-	color: var(--p-orange-500);
-	font-family: "Lora", serif;
-	font-size: 0.72rem;
-	font-weight: 600;
+	gap: 0.75rem;
+}
+.stepper-btn {
+	display: grid;
+	place-items: center;
+	width: 2.6rem;
+	height: 2.6rem;
+	border-radius: 50%;
+	border: 1px solid var(--dt-border-strong);
+	background: var(--dt-surface);
+	color: var(--dt-text-2);
 	cursor: pointer;
+	transition: transform 0.18s var(--dt-spring);
+}
+.stepper-btn:active {
+	transform: scale(0.9);
+}
+.stepper-btn.is-plus {
+	background: var(--dt-accent-strong);
+	border-color: transparent;
+	color: var(--dt-on-accent);
+}
+.stepper-count {
+	min-width: 2.5rem;
+	text-align: center;
+	font-size: 1.2rem;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+.stepper-clear {
+	color: var(--dt-danger);
+}
+
+.banner-enter-active {
+	transition: all 0.4s var(--dt-spring);
+}
+.banner-leave-active {
 	transition: all 0.2s ease;
 }
-.hc-goals-empty-btn:hover {
-	background: var(--p-orange-50);
-	border-style: solid;
-}
-:where(.my-app-dark, .my-app-dark *) .hc-goals-empty-btn {
-	border-color: var(--p-gray-500);
-	color: var(--p-orange-400);
-}
-:where(.my-app-dark, .my-app-dark *) .hc-goals-empty-btn:hover {
-	background: color-mix(in srgb, var(--p-gray-700) 50%, transparent);
-}
-
-/* Feature 3: animacja licznika habitów */
-@keyframes hc-count-bump {
-	0% {
-		transform: scale(1);
-	}
-	50% {
-		transform: scale(1.38);
-		color: var(--p-orange-500);
-	}
-	100% {
-		transform: scale(1);
-	}
-}
-.hc-count-bump {
-	animation: hc-count-bump 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
-	display: inline-block;
-}
-
-/* Feature 5: dobra passa baner */
-.hc-banner {
-	margin: 0.4rem 0 0.5rem;
-	padding: 0.5rem 1rem;
-	border-radius: 0.9rem;
-	background: color-mix(in srgb, var(--p-green-100) 70%, var(--p-orange-50));
-	border: 1.5px solid var(--p-green-200);
-	text-align: center;
-	font-family: "Lora", serif;
-	font-size: 0.8rem;
-	font-weight: 600;
-	color: var(--p-green-700);
-	box-shadow: 0 2px 12px color-mix(in srgb, var(--p-green-300) 30%, transparent);
-	animation: hc-banner-pulse 2.2s ease-in-out infinite;
-}
-:where(.my-app-dark, .my-app-dark *) .hc-banner {
-	background: color-mix(in srgb, var(--p-green-900) 40%, var(--p-gray-800));
-	border-color: var(--p-green-800);
-	color: var(--p-green-400);
-	box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
-}
-@keyframes hc-banner-pulse {
-	0%,
-	100% {
-		box-shadow: 0 2px 12px
-			color-mix(in srgb, var(--p-green-300) 30%, transparent);
-	}
-	50% {
-		box-shadow: 0 2px 18px
-			color-mix(in srgb, var(--p-green-300) 55%, transparent);
-	}
-}
-.hc-banner-fade-enter-active {
-	transition: all 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.hc-banner-fade-leave-active {
-	transition: all 0.25s ease;
-}
-.hc-banner-fade-enter-from {
+.banner-enter-from,
+.banner-leave-to {
 	opacity: 0;
-	transform: translateY(8px) scale(0.94);
+	transform: translateY(6px) scale(0.96);
 }
-.hc-banner-fade-leave-to {
-	opacity: 0;
-	transform: translateY(-4px) scale(0.97);
+</style>
+
+<style>
+.fly-emoji {
+	position: fixed;
+	z-index: 1300;
+	font-size: 1.9rem;
+	pointer-events: none;
+	animation: fly-emoji 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+@keyframes fly-emoji {
+	from {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(-120px) scale(1.7);
+	}
+}
+.stepper-pop.p-popover {
+	border-radius: var(--dt-radius-lg);
+	border: 1px solid var(--dt-border);
+	box-shadow: var(--dt-shadow-lg);
 }
 </style>

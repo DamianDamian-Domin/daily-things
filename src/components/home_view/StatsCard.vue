@@ -1,1407 +1,790 @@
 <template>
-	<div
-		class="sc-card card-a sm:w-[480px] surface-content w-full h-full min-h-0 sm:min-h-[30rem] max-h-full sm:max-h-[50rem] overflow-hidden">
-		<div
-			class="sc-inner"
-			:class="!isActive && 'pointer-events-none'">
-			<!-- Header -->
-			<div class="sc-top">
-				<h3 class="sc-title">Summary 📊</h3>
-				<!-- Period toggle: Week / Month -->
-				<div class="sc-period-toggle">
-					<button
-						class="sc-period-btn"
-						:class="period === 'week' && 'sc-period-active'"
-						@click="setPeriod('week')">
-						Week
-					</button>
-					<button
-						class="sc-period-btn"
-						:class="period === 'month' && 'sc-period-active'"
-						@click="setPeriod('month')">
-						Month
-					</button>
-				</div>
-			</div>
-
-			<!-- Period navigator -->
-			<div class="sc-navigator">
-				<button
-					class="sc-nav-btn"
-					@click="offset--"
-					v-tooltip.bottom="'Previous'">
-					<i
-						class="pi pi-chevron-left"
-						style="font-size: 0.65rem"></i>
-				</button>
-				<span class="sc-nav-label">{{ periodLabel }}</span>
-				<button
-					class="sc-nav-btn"
-					:disabled="offset >= 0"
-					@click="offset++"
-					v-tooltip.bottom="'Next'">
-					<i
-						class="pi pi-chevron-right"
-						style="font-size: 0.65rem"></i>
-				</button>
-			</div>
-
-			<!-- View mode toggle -->
-			<div class="sc-view-toggle">
-				<button
-					class="sc-view-btn"
-					:class="viewMode === 'calendar' && 'sc-view-active'"
-					@click="viewMode = 'calendar'">
-					<i
-						class="pi pi-calendar"
-						style="font-size: 0.75rem"></i>
-					Calendar
-				</button>
-				<button
-					class="sc-view-btn"
-					:class="viewMode === 'chart' && 'sc-view-active'"
-					@click="viewMode = 'chart'">
-					<i
-						class="pi pi-chart-bar"
-						style="font-size: 0.75rem"></i>
-					Chart
-				</button>
-			</div>
-
-			<!-- ====== CALENDAR VIEW ====== -->
+	<section
+		class="stats dt-card"
+		:class="{ 'is-inactive': !isActive }"
+		aria-labelledby="stats-title">
+		<header class="stats-head">
+			<h2
+				id="stats-title"
+				class="stats-title">
+				Your progress <span aria-hidden="true">📊</span>
+			</h2>
 			<div
-				v-if="viewMode === 'calendar'"
-				ref="scrollContainer"
-				class="sc-scroll">
-				<!-- Sub-toggle: Habits / Categories -->
-				<div class="sc-sub-toggle">
-					<button
-						class="sc-sub-btn"
-						:class="calendarMode === 'habits' && 'sc-sub-active'"
-						@click="calendarMode = 'habits'">
-						Habits
-					</button>
-					<button
-						class="sc-sub-btn"
-						:class="calendarMode === 'categories' && 'sc-sub-active'"
-						@click="calendarMode = 'categories'">
-						Categories
-					</button>
+				class="dt-segmented"
+				role="group"
+				aria-label="Period">
+				<button
+					type="button"
+					:aria-pressed="period === 'week'"
+					@click="setPeriod('week')">
+					Week
+				</button>
+				<button
+					type="button"
+					:aria-pressed="period === 'month'"
+					@click="setPeriod('month')">
+					Month
+				</button>
+			</div>
+		</header>
+
+		<div class="stats-nav">
+			<button
+				type="button"
+				class="dt-icon-btn"
+				:aria-label="`Previous ${period}`"
+				@click="offset--">
+				<i
+					class="pi pi-chevron-left"
+					aria-hidden="true"></i>
+			</button>
+			<p
+				class="stats-range"
+				aria-live="polite">
+				{{ periodLabel }}
+			</p>
+			<button
+				type="button"
+				class="dt-icon-btn"
+				:aria-label="`Next ${period}`"
+				:disabled="offset >= 0"
+				@click="offset++">
+				<i
+					class="pi pi-chevron-right"
+					aria-hidden="true"></i>
+			</button>
+		</div>
+
+		<div class="stats-scroll">
+			<!-- KPI -->
+			<dl class="kpis">
+				<div class="kpi">
+					<PixelIcon
+						icon="local_fire_department"
+						palette="orange"
+						:size="30" />
+					<dt>Current streak</dt>
+					<dd>
+						{{ habbitsStore.streak }} <small>{{ habbitsStore.streak === 1 ? "day" : "days" }}</small>
+					</dd>
 				</div>
+				<div class="kpi">
+					<PixelIcon
+						icon="trophy"
+						palette="yellow"
+						:size="30" />
+					<dt>Perfect days</dt>
+					<dd>
+						{{ summary.perfectDays }} <small>/ {{ summary.elapsedDays }}</small>
+					</dd>
+				</div>
+				<div class="kpi">
+					<PixelIcon
+						icon="check_circle"
+						palette="green"
+						:size="30" />
+					<dt>Habits logged</dt>
+					<dd>{{ summary.positive }}</dd>
+				</div>
+			</dl>
 
-				<div
-					v-for="day in calendarDaysSorted"
-					:key="day.dateKey"
-					class="sc-day"
-					:class="{
-						'sc-day--gold':
-							day.goalsTotal > 0 && day.goalsCompleted === day.goalsTotal,
-					}">
-					<!-- Day header -->
-					<span class="sc-day-medal-col">
-						<span
-							v-if="day.goalsTotal > 0 && day.goalsCompleted === day.goalsTotal"
-							class="sc-day-medal"
-							v-tooltip.right="'All goals completed! 🎉'"
-							>🏅</span
-						>
-					</span>
-					<div class="sc-day-header">
-						<span class="sc-day-name">{{ day.dayName }}</span>
-						<span class="sc-day-date">{{ day.dateLabel }}</span>
-					</div>
-
-					<!-- Habits mode -->
-					<template v-if="calendarMode === 'habits'">
-						<div
-							v-if="day.groups.length > 0"
-							class="sc-tiles">
-							<div
-								v-for="g in day.groups"
-								:key="g.displayName"
-								class="sc-tile"
-								v-tooltip.bottom="
-									g.displayName + (g.count > 1 ? ' ×' + g.count : '')
-								">
-								<span class="material-symbols-outlined sc-tile-icon">{{
-									g.icon
-								}}</span>
+			<!-- TYDZIEŃ: dzień po dniu -->
+			<section
+				v-if="period === 'week'"
+				class="stats-section"
+				aria-label="Days">
+				<ul class="day-list">
+					<li
+						v-for="day in weekDays"
+						:key="day.key">
+						<button
+							type="button"
+							class="day-row"
+							:class="{ perfect: day.perfect, future: day.future }"
+							:disabled="day.future"
+							:aria-label="`${day.name} ${day.date}: ${day.total} logged${day.perfect ? ', all goals done' : ''}. Open day`"
+							@click="openDay(day.key)">
+							<span class="day-when">
+								<span class="day-name">{{ day.name }}</span>
+								<span class="day-date">{{ day.date }}</span>
+							</span>
+							<span class="day-tiles">
+								<template v-if="day.groups.length">
+									<span
+										v-for="g in day.groups.slice(0, 7)"
+										:key="g.name"
+										class="mini-tile">
+										<PixelIcon
+											:icon="g.habbit.icon"
+											:palette="paletteFor(g.habbit)"
+											:size="24" />
+										<span
+											v-if="g.count > 1"
+											class="mini-count"
+											>{{ g.count }}</span
+										>
+									</span>
+									<span
+										v-if="day.groups.length > 7"
+										class="mini-more"
+										>+{{ day.groups.length - 7 }}</span
+									>
+								</template>
 								<span
-									v-if="g.count > 1"
-									class="sc-tile-badge"
-									>{{ g.count }}</span
+									v-else
+									class="day-empty"
+									>{{ day.future ? "" : "—" }}</span
 								>
-							</div>
-						</div>
-						<span
-							v-else
-							class="sc-day-empty"
-							>No habits</span
-						>
-					</template>
-
-					<!-- Categories mode -->
-					<template v-else>
-						<div
-							v-if="day.cats.length > 0"
-							class="sc-day-cats">
-							<div
-								v-for="cat in day.cats"
-								:key="cat.name"
-								class="sc-day-cat-pill"
-								:class="'sc-day-cat-pill-' + cat.name"
-								v-tooltip.bottom="cat.name + ': ' + cat.count + '×'">
-								<span
-									class="sc-day-cat-dot"
-									:class="'sc-cat-' + cat.name"></span>
-								<span class="sc-day-cat-label">{{ cat.name }}</span>
-								<span class="sc-day-cat-count">{{ cat.count }}</span>
-							</div>
-						</div>
-						<span
-							v-else
-							class="sc-day-empty"
-							>No habits</span
-						>
-					</template>
-				</div>
-
-				<!-- Empty state -->
-				<div
-					v-if="calendarDays.length === 0"
-					class="sc-empty">
-					<span class="sc-empty-emoji">📭</span>
-					<p class="sc-empty-text">No data for this period</p>
-				</div>
-			</div>
-
-			<!-- ====== CHART VIEW ====== -->
-			<div
-				v-if="viewMode === 'chart'"
-				ref="scrollContainer"
-				class="sc-scroll">
-				<!-- Goals completed tile -->
-				<div class="sc-sub-toggle">
-					<button
-						class="sc-sub-btn"
-						:class="chartMode === 'habits' && 'sc-sub-active'"
-						@click="chartMode = 'habits'">
-						Habits
-					</button>
-					<button
-						class="sc-sub-btn"
-						:class="chartMode === 'categories' && 'sc-sub-active'"
-						@click="chartMode = 'categories'">
-						Categories
-					</button>
-				</div>
-				<div class="sc-medal-tile">
-					<span class="sc-medal-tile-emoji">🏅</span>
-					<div class="sc-medal-tile-text">
-						<span class="sc-medal-tile-count">
-							{{ goalsCompletedCount }}
-							<span style="font-size: 0.6em; opacity: 0.7"
-								>/ {{ totalDaysInPeriod }}</span
-							>
-						</span>
-						<span class="sc-medal-tile-label">{{ perfectDaysLabel }}</span>
-					</div>
-				</div>
-				<!-- Sub-toggle: Habits / Categories -->
-
-				<!-- By habit -->
-				<template v-if="chartMode === 'habits'">
-					<div
-						v-for="h in chartData"
-						:key="h.name"
-						class="sc-bar-row">
-						<div
-							class="sc-bar-tile"
-							v-tooltip.bottom="h.displayName">
-							<span class="material-symbols-outlined sc-bar-tile-icon">{{
-								h.icon
-							}}</span>
-						</div>
-						<div class="sc-bar-track">
-							<div
-								class="sc-bar-fill"
-								:style="{ width: h.pct + '%' }"></div>
-						</div>
-						<span class="sc-bar-count">{{ h.count }}×</span>
-					</div>
-					<div
-						v-if="chartData.length === 0"
-						class="sc-empty">
-						<span class="sc-empty-emoji">📭</span>
-						<p class="sc-empty-text">No data for this period</p>
-					</div>
-				</template>
-
-				<!-- By category -->
-				<template v-else>
-					<div
-						v-for="cat in categoryData"
-						:key="cat.name"
-						class="sc-cat-row">
-						<div class="sc-cat-header">
+							</span>
 							<span
-								class="sc-cat-dot"
-								:class="'sc-cat-' + cat.name"></span>
-							<span class="sc-cat-name">{{ cat.name }}</span>
-							<div class="sc-bar-track sc-cat-track">
-								<div
-									class="sc-bar-fill sc-cat-fill"
-									:class="'sc-cat-fill-' + cat.name"
-									:style="{ width: cat.pct + '%' }"></div>
-							</div>
-							<span class="sc-bar-count">{{ cat.count }}×</span>
-						</div>
-						<div class="sc-cat-habits">
-							<div
-								v-for="h in cat.habits"
-								:key="h.name"
-								class="sc-tile"
-								v-tooltip.bottom="
-									h.displayName + (h.count > 1 ? ' ×' + h.count : '')
-								">
-								<span class="material-symbols-outlined sc-tile-icon">{{
-									h.icon
-								}}</span>
-								<span
-									v-if="h.count > 1"
-									class="sc-tile-badge"
-									>{{ h.count }}</span
-								>
-							</div>
-						</div>
-					</div>
-					<div
-						v-if="categoryData.length === 0"
-						class="sc-empty">
-						<span class="sc-empty-emoji">📭</span>
-						<p class="sc-empty-text">No data for this period</p>
-					</div>
-				</template>
+								v-if="day.perfect"
+								class="day-medal"
+								aria-hidden="true"
+								>🏅</span
+							>
+						</button>
+					</li>
+				</ul>
+			</section>
+
+			<!-- MIESIĄC: mapa ciepła -->
+			<section
+				v-else
+				class="stats-section"
+				aria-label="Month overview">
+				<div
+					class="heat-week"
+					aria-hidden="true">
+					<span
+						v-for="(d, i) in ['M', 'T', 'W', 'T', 'F', 'S', 'S']"
+						:key="i"
+						>{{ d }}</span
+					>
+				</div>
+				<div class="heat-grid">
+					<span
+						v-for="n in monthLeadingBlanks"
+						:key="'b' + n"
+						aria-hidden="true"></span>
+					<button
+						v-for="day in monthDays"
+						:key="day.key"
+						type="button"
+						class="heat-cell"
+						:class="[`lvl-${day.level}`, { perfect: day.perfect, today: day.isToday }]"
+						:disabled="day.future"
+						:aria-label="`${day.date}: ${day.total} logged${day.perfect ? ', all goals done' : ''}`"
+						v-tooltip.top="day.future ? undefined : `${day.date} · ${day.total} logged`"
+						@click="openDay(day.key)">
+						{{ day.dayNum }}
+					</button>
+				</div>
+				<p class="heat-legend">
+					<span>Less</span>
+					<span
+						v-for="l in 5"
+						:key="l"
+						class="heat-swatch"
+						:class="`lvl-${l - 1}`"
+						aria-hidden="true"></span>
+					<span>More</span>
+					<span class="heat-gold">🏅 = all goals</span>
+				</p>
+			</section>
+
+			<!-- TOP HABITY -->
+			<section
+				v-if="topHabbits.length"
+				class="stats-section"
+				aria-labelledby="top-title">
+				<h3
+					id="top-title"
+					class="dt-section-title">
+					Most logged
+				</h3>
+				<ul class="bars">
+					<li
+						v-for="h in topHabbits"
+						:key="h.name"
+						class="bar-row">
+						<PixelIcon
+							:icon="h.habbit.icon"
+							:palette="paletteFor(h.habbit)"
+							:size="26" />
+						<span class="bar-name">{{ h.habbit.display_name }}</span>
+						<span
+							class="bar-track"
+							aria-hidden="true">
+							<span
+								class="bar-fill"
+								:class="{ negative: h.habbit.severity === 'danger' }"
+								:style="{ width: `${h.pct}%` }"></span>
+						</span>
+						<span class="bar-count">{{ h.count }}×</span>
+					</li>
+				</ul>
+			</section>
+
+			<!-- KATEGORIE -->
+			<section
+				v-if="categoryShares.length"
+				class="stats-section"
+				aria-labelledby="cat-title">
+				<h3
+					id="cat-title"
+					class="dt-section-title">
+					Where your energy went
+				</h3>
+				<div
+					class="cat-bar"
+					aria-hidden="true">
+					<span
+						v-for="c in categoryShares"
+						:key="c.key"
+						:style="{ width: `${c.pct}%`, background: c.color }"></span>
+				</div>
+				<ul class="cat-legend">
+					<li
+						v-for="c in categoryShares"
+						:key="c.key">
+						<span
+							class="cat-dot"
+							:style="{ background: c.color }"
+							aria-hidden="true"></span>
+						{{ c.emoji }} {{ c.label }} <strong>{{ c.pct }}%</strong>
+					</li>
+				</ul>
+			</section>
+
+			<div
+				v-if="summary.total === 0"
+				class="dt-empty">
+				<PixelIcon
+					icon="potted_plant"
+					palette="green"
+					:size="40" />
+				<p>Nothing here yet. Every logged habit grows this garden of stats 🌱</p>
 			</div>
 		</div>
-	</div>
+	</section>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, nextTick } from "vue";
-import { storeToRefs } from "pinia";
+import { computed, ref, watch } from "vue";
+import type { Habbit } from "@/libs/types";
 import { useHabbitsStore } from "@/stores/habbits";
-import { toDateKey } from "@/utils/timeUtils";
+import { useCarouselStore } from "@/stores/useCarouselStore";
+import {
+	addDays,
+	daysInRange,
+	formatMonth,
+	formatShortDate,
+	isoWeek,
+	startOfDay,
+	startOfWeek,
+	toDateKey,
+	weekdayName,
+} from "@/utils/date";
+import { CUSTOM_CATEGORY, isNegative, paletteFor, superCategoryOf } from "@/utils/habitCatalog";
+import { PALETTES } from "@/utils/pixelIcons";
+import PixelIcon from "@/components/ui/PixelIcon.vue";
 
 defineProps<{ isActive: boolean }>();
 
 const habbitsStore = useHabbitsStore();
-const { userHabbitsList, allHabbitsList, tag_categories, dailyGoalsList } =
-	storeToRefs(habbitsStore);
+const carouselStore = useCarouselStore();
 
 const period = ref<"week" | "month">("week");
-const offset = ref(0); // 0 = bieżący tydzień/miesiąc, -1 = poprzedni itd.
-const viewMode = ref<"calendar" | "chart">("calendar");
-const chartMode = ref<"habits" | "categories">("habits");
-const calendarMode = ref<"habits" | "categories">("habits");
-const scrollContainer = ref<HTMLElement | null>(null);
+const offset = ref(0);
 
 function setPeriod(p: "week" | "month") {
 	period.value = p;
 	offset.value = 0;
 }
 
-// Oblicza zakres dat dla aktualnego okresu + offset
-const periodRange = computed(() => {
-	const now = new Date();
-	// Używamy UTC aby być spójnym z toDateKey
-	const utcYear = now.getUTCFullYear();
-	const utcMonth = now.getUTCMonth();
-	const utcDay = now.getUTCDate();
-	const utcDow = now.getUTCDay();
+const range = computed(() => {
+	const today = startOfDay();
 	if (period.value === "week") {
-		// Poniedziałek jako pierwszy dzień tygodnia (UTC)
-		const dow = (utcDow + 6) % 7; // 0=pon, 6=nie
-		const monday = new Date(
-			Date.UTC(utcYear, utcMonth, utcDay - dow + offset.value * 7),
-		);
-		const sunday = new Date(
-			Date.UTC(
-				monday.getUTCFullYear(),
-				monday.getUTCMonth(),
-				monday.getUTCDate() + 6,
-			),
-		);
-		return { start: monday, end: sunday };
-	} else {
-		const month = utcMonth + offset.value;
-		const start = new Date(Date.UTC(utcYear, month, 1));
-		const end = new Date(Date.UTC(utcYear, month + 1, 0));
-		return { start, end };
+		const start = addDays(startOfWeek(today), offset.value * 7);
+		return { start, end: addDays(start, 6) };
 	}
+	const start = new Date(today.getFullYear(), today.getMonth() + offset.value, 1);
+	return { start, end: new Date(start.getFullYear(), start.getMonth() + 1, 0) };
 });
 
-// Etykieta tygodnia/miesiąca
 const periodLabel = computed(() => {
-	const { start, end } = periodRange.value;
-	if (period.value === "week") {
-		const weekNum = getISOWeek(start);
-		const sLabel =
-			String(start.getDate()).padStart(2, "0") +
-			"." +
-			String(start.getMonth() + 1).padStart(2, "0");
-		const eLabel =
-			String(end.getDate()).padStart(2, "0") +
-			"." +
-			String(end.getMonth() + 1).padStart(2, "0");
-		return `W${weekNum}  ${sLabel} – ${eLabel}`;
-	} else {
-		return start.toLocaleDateString("en-GB", {
-			month: "long",
-			year: "numeric",
-		});
-	}
+	const { start, end } = range.value;
+	if (period.value === "month") return formatMonth(start);
+	if (offset.value === 0) return `This week · ${formatShortDate(start)} – ${formatShortDate(end)}`;
+	if (offset.value === -1) return `Last week · ${formatShortDate(start)} – ${formatShortDate(end)}`;
+	return `Week ${isoWeek(start)} · ${formatShortDate(start)} – ${formatShortDate(end)}`;
 });
 
-function getISOWeek(date: Date): number {
-	const d = new Date(
-		Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
-	);
-	d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-	const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-	return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-}
-
-function resetScroll() {
-	nextTick(() => {
-		if (scrollContainer.value) scrollContainer.value.scrollTop = 0;
-	});
-}
-
-onMounted(() => {
-	ensureDataLoaded();
-});
-watch(periodRange, () => {
-	ensureDataLoaded();
-	resetScroll();
-});
-watch(viewMode, () => {
-	resetScroll();
-});
-
-async function ensureDataLoaded() {
-	const { start, end } = periodRange.value;
-	await habbitsStore.getDailyHabbitsInRange(start, end);
-}
-
-// Nazwy dni tygodnia
-const dayNames = [
-	"Sunday",
-	"Monday",
-	"Tuesday",
-	"Wednesday",
-	"Thursday",
-	"Friday",
-	"Saturday",
-];
-
-// ========================
-// CALENDAR VIEW DATA
-// ========================
-type CalendarGroup = {
-	name: string;
-	displayName: string;
-	icon: string;
-	count: number;
-};
-
-type CalendarDay = {
-	dateKey: string;
-	dayName: string;
-	dateLabel: string;
-	groups: CalendarGroup[];
-	cats: Array<{ name: string; count: number }>;
-	goalsCompleted: number;
-	goalsTotal: number;
-};
-
-const calendarDays = computed<CalendarDay[]>(() => {
-	const { start, end } = periodRange.value;
-	const result: CalendarDay[] = [];
-
-	const now = new Date();
-	const todayKey = toDateKey(now);
-	const yesterdayKey = toDateKey(
-		new Date(
-			Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1),
-		),
-	);
-
-	const days: Date[] = [];
-	for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
-		days.push(new Date(d));
-	}
-
-	for (const d of days) {
-		const key = toDateKey(d);
-		const entry = userHabbitsList.value.find((e) => e.date === key);
-		const habbits = entry?.habbits ?? [];
-
-		const grouped = new Map<string, CalendarGroup>();
-		for (const h of habbits) {
-			const existing = grouped.get(h.name);
-			if (existing) {
-				existing.count++;
-			} else {
-				grouped.set(h.name, {
-					name: h.name,
-					displayName: h.display_name || h.name,
-					icon: h.icon,
-					count: 1,
-				});
-			}
-		}
-
-		const catMap = new Map<string, number>();
-		for (const h of habbits) {
-			const cat = getHabitCategory(h.name);
-			catMap.set(cat, (catMap.get(cat) ?? 0) + 1);
-		}
-		const cats = Array.from(catMap.entries())
-			.map(([name, count]) => ({ name, count }))
-			.sort((a, b) => b.count - a.count);
-
-		// Postęp celów (z poprawką na migawki!)
-		const habitCounts: Record<string, number> = {};
-		for (const h of habbits)
-			habitCounts[h.name] = (habitCounts[h.name] ?? 0) + 1;
-
-		const goalCounters: Record<string, number> = {};
-		let completedGoals = 0;
-
-		const snapshot =
-			key === todayKey ? dailyGoalsList.value : entry?.goalsSnapshot || [];
-
-		for (const goal of snapshot) {
-			goalCounters[goal.name] = (goalCounters[goal.name] ?? 0) + 1;
-			if (goalCounters[goal.name] <= (habitCounts[goal.name] ?? 0))
-				completedGoals++;
-		}
-
-		const dTime = d.getTime();
-		const dayName =
-			key === todayKey
-				? "Today"
-				: key === yesterdayKey
-					? "Yesterday"
-					: dayNames[d.getDay()];
-		const dateLabel =
-			String(d.getDate()).padStart(2, "0") +
-			"." +
-			String(d.getMonth() + 1).padStart(2, "0");
-
-		result.push({
-			dateKey: key,
-			dayName,
-			dateLabel,
-			groups: Array.from(grouped.values()),
-			cats,
-			goalsCompleted: completedGoals,
-			goalsTotal: snapshot.length,
-		});
-	}
-	return result;
-});
-
-// Globalna kolejność habitów w kalendarzu: sortowanie wg częstości w całym okresie
-const globalHabitOrder = computed(() => {
-	const freq = new Map<string, number>();
-	for (const day of calendarDays.value) {
-		for (const g of day.groups) {
-			freq.set(g.name, (freq.get(g.name) ?? 0) + g.count);
-		}
-	}
-	const sorted = Array.from(freq.entries())
-		.sort((a, b) => b[1] - a[1])
-		.map(([name]) => name);
-	const order: Record<string, number> = {};
-	sorted.forEach((name, i) => {
-		order[name] = i;
-	});
-	return order;
-});
-
-const calendarDaysSorted = computed(() =>
-	calendarDays.value.map((day) => ({
-		...day,
-		groups: [...day.groups].sort(
-			(a, b) =>
-				(globalHabitOrder.value[a.name] ?? 999) -
-				(globalHabitOrder.value[b.name] ?? 999),
-		),
-	})),
+// Doczytujemy tylko brakujące miesiące (store cache'uje je na całą sesję)
+watch(
+	[range, () => habbitsStore.dailyGoalsList],
+	() => habbitsStore.ensureRange(range.value.start, range.value.end),
+	{ immediate: true },
 );
 
-// ========================
-// CHART VIEW DATA
-// ========================
-const chartData = computed(() => {
-	const { start, end } = periodRange.value;
-	const totals = new Map<
-		string,
-		{ displayName: string; icon: string; count: number }
-	>();
+// ==========================================
+// DANE DNI
+// ==========================================
+const todayKey = computed(() => habbitsStore.todayKey);
 
-	for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-		const key = toDateKey(d);
-		const entry = userHabbitsList.value.find((e) => e.date === key);
-		if (!entry) continue;
-		for (const h of entry.habbits) {
-			const existing = totals.get(h.name);
-			if (existing) {
-				existing.count++;
-			} else {
-				totals.set(h.name, {
-					displayName: h.display_name || h.name,
-					icon: h.icon,
-					count: 1,
-				});
-			}
-		}
+const days = computed(() =>
+	daysInRange(range.value.start, range.value.end).map((date) => {
+		const key = toDateKey(date);
+		const logs = habbitsStore.logsOn(key);
+		const goals = habbitsStore.dayGoalsProgress(key);
+		return {
+			key,
+			dateObj: date,
+			date: formatShortDate(date),
+			name: key === todayKey.value ? "Today" : weekdayName(date, "short"),
+			dayNum: date.getDate(),
+			future: key > todayKey.value,
+			isToday: key === todayKey.value,
+			total: logs.length,
+			perfect: goals.perfect,
+			groups: habbitsStore.groupLogs(logs).sort((a, b) => b.count - a.count),
+		};
+	}),
+);
+
+// Przyszłe dni bieżącego tygodnia tylko zajmowałyby miejsce
+const weekDays = computed(() => days.value.filter((d) => !d.future).reverse());
+
+const monthDays = computed(() => {
+	const max = Math.max(1, ...days.value.map((d) => d.total));
+	return days.value.map((d) => ({
+		...d,
+		level: d.total === 0 ? 0 : Math.min(4, Math.ceil((d.total / max) * 4)),
+	}));
+});
+const monthLeadingBlanks = computed(() => (range.value.start.getDay() + 6) % 7);
+
+const summary = computed(() => {
+	let total = 0;
+	let positive = 0;
+	let perfectDays = 0;
+	let elapsedDays = 0;
+	for (const d of days.value) {
+		if (d.future) continue;
+		elapsedDays++;
+		total += d.total;
+		if (d.perfect) perfectDays++;
+		for (const g of d.groups) if (!isNegative(g.habbit)) positive += g.count;
 	}
-
-	const arr = Array.from(totals.entries())
-		.map(([name, data]) => ({ name, ...data, pct: 0 }))
-		.sort((a, b) => b.count - a.count);
-	const max = arr.length > 0 ? arr[0].count : 1;
-	for (const item of arr) item.pct = Math.round((item.count / max) * 100);
-	return arr;
+	return { total, positive, perfectDays, elapsedDays };
 });
 
-// ========================
-// PERFECT DAYS (SKANER)
-// ========================
-
-// 1. Liczy ile było idealnych dni w wybranym oknie czasowym
-const goalsCompletedCount = computed(() => {
-	const { start, end } = periodRange.value;
-	let count = 0;
-
-	for (let d = new Date(start); d <= end; d.setUTCDate(d.getUTCDate() + 1)) {
-		const key = toDateKey(d);
-		const entry = userHabbitsList.value.find((e) => e.date === key);
-
-		if (!entry) continue;
-
-		const habbits = entry.habbits ?? [];
-		const snapshot =
-			key === toDateKey(new Date())
-				? dailyGoalsList.value
-				: entry.goalsSnapshot || [];
-
-		if (snapshot.length === 0) continue;
-
-		const habitCounts: Record<string, number> = {};
-		for (const h of habbits) {
-			habitCounts[h.name] = (habitCounts[h.name] ?? 0) + 1;
-		}
-
-		const goalCounters: Record<string, number> = {};
-		let completed = 0;
-
-		for (const goal of snapshot) {
-			goalCounters[goal.name] = (goalCounters[goal.name] ?? 0) + 1;
-			if (goalCounters[goal.name] <= (habitCounts[goal.name] ?? 0)) {
-				completed++;
-			}
-		}
-
-		if (completed === snapshot.length) {
-			count++;
+// ==========================================
+// TOP I KATEGORIE
+// ==========================================
+const totals = computed(() => {
+	const map = new Map<string, { name: string; habbit: Habbit; count: number }>();
+	for (const d of days.value) {
+		for (const g of d.groups) {
+			const entry = map.get(g.name);
+			if (entry) entry.count += g.count;
+			else map.set(g.name, { name: g.name, habbit: g.habbit, count: g.count });
 		}
 	}
-	return count;
+	return [...map.values()].sort((a, b) => b.count - a.count);
 });
 
-// 2. Liczy ile ogólnie DNI w okresie (mianownik) - pozwala na wyświetlenie np. 5 / 7
-const totalDaysInPeriod = computed(() => {
-	if (period.value === "week") {
-		return 7;
-	} else {
-		const { start, end } = periodRange.value;
-		return new Date(
-			Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()),
-		).getUTCDate();
-	}
+const topHabbits = computed(() => {
+	const top = totals.value.slice(0, 8);
+	const max = top[0]?.count ?? 1;
+	return top.map((t) => ({ ...t, pct: Math.max(6, Math.round((t.count / max) * 100)) }));
 });
 
-// 3. Generuje inteligentny tekst (np. "perfect days this week" lub "perfect days in April")
-const perfectDaysLabel = computed(() => {
-	const isCurrentPeriod = offset.value === 0;
-
-	if (period.value === "week") {
-		return isCurrentPeriod
-			? "perfect days this week"
-			: "perfect days that week";
-	} else {
-		if (isCurrentPeriod) {
-			return "perfect days this month";
-		} else {
-			const monthName = periodRange.value.start.toLocaleDateString("en-US", {
-				month: "long",
+const categoryShares = computed(() => {
+	const map = new Map<string, { key: string; label: string; emoji: string; color: string; count: number }>();
+	let sum = 0;
+	for (const t of totals.value) {
+		if (isNegative(t.habbit)) continue;
+		const cat = superCategoryOf(t.habbit) ?? CUSTOM_CATEGORY;
+		const entry = map.get(cat.key);
+		if (entry) entry.count += t.count;
+		else
+			map.set(cat.key, {
+				key: cat.key,
+				label: cat.label,
+				emoji: cat.emoji,
+				color: PALETTES[cat.palette].f,
+				count: t.count,
 			});
-			return `perfect days in ${monthName}`;
-		}
+		sum += t.count;
 	}
+	return [...map.values()]
+		.sort((a, b) => b.count - a.count)
+		.map((c) => ({ ...c, pct: Math.round((c.count / sum) * 100) }))
+		.filter((c) => c.pct > 0);
 });
 
-// ========================
-// CATEGORY VIEW DATA
-// ========================
-function getHabitCategory(habitName: string): string {
-	const habit = allHabbitsList.value.find((h) => h.name === habitName);
-	if (!habit) return "other";
-	for (const [cat, tags] of Object.entries(tag_categories.value)) {
-		if (habit.tags?.some((t) => tags.includes(t))) return cat;
-	}
-	return "other";
+function openDay(key: string) {
+	const d = days.value.find((x) => x.key === key);
+	if (!d || d.future) return;
+	habbitsStore.setDate(d.dateObj);
+	carouselStore.setActiveCard("manage");
 }
-
-const categoryData = computed(() => {
-	const { start, end } = periodRange.value;
-	const catTotals = new Map<
-		string,
-		{
-			count: number;
-			habits: Map<
-				string,
-				{ name: string; displayName: string; icon: string; count: number }
-			>;
-		}
-	>();
-
-	for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-		const key = toDateKey(d);
-		const entry = userHabbitsList.value.find((e) => e.date === key);
-		if (!entry) continue;
-		for (const h of entry.habbits) {
-			const cat = getHabitCategory(h.name);
-			if (!catTotals.has(cat))
-				catTotals.set(cat, { count: 0, habits: new Map() });
-			const catEntry = catTotals.get(cat)!;
-			catEntry.count++;
-			const existing = catEntry.habits.get(h.name);
-			if (existing) {
-				existing.count++;
-			} else {
-				catEntry.habits.set(h.name, {
-					name: h.name,
-					displayName: h.display_name || h.name,
-					icon: h.icon,
-					count: 1,
-				});
-			}
-		}
-	}
-
-	const arr = Array.from(catTotals.entries())
-		.map(([name, data]) => ({
-			name,
-			count: data.count,
-			habits: Array.from(data.habits.values()).sort(
-				(a, b) => b.count - a.count,
-			),
-			pct: 0,
-		}))
-		.sort((a, b) => b.count - a.count);
-	const max = arr.length > 0 ? arr[0].count : 1;
-	for (const item of arr) item.pct = Math.round((item.count / max) * 100);
-	return arr;
-});
 </script>
 
 <style scoped>
-/* ====== CARD SHELL ====== */
-.sc-card {
+.stats {
 	display: flex;
 	flex-direction: column;
-	overflow: hidden;
-}
-.sc-inner {
-	display: flex;
-	flex-direction: column;
-	flex: 1;
+	gap: 0.75rem;
+	width: 100%;
+	height: 100%;
 	min-height: 0;
 	overflow: hidden;
 }
-@media (max-width: 640px), (orientation: landscape) and (max-width: 1024px) and (hover: none) and (pointer: coarse) {
-	.sc-card {
-		height: 100%;
-		min-height: 0;
-		max-height: 100%;
-		overflow: hidden;
-	}
-	.sc-inner {
-		overflow: hidden;
-		min-height: 0;
-	}
-	.sc-scroll {
-		overflow-y: auto;
-		min-height: 0;
-		-webkit-overflow-scrolling: touch;
-		overscroll-behavior: contain;
+@media (min-width: 641px) {
+	.stats {
+		width: 30rem;
 	}
 }
-
-/* ====== HEADER ====== */
-.sc-top {
+.stats.is-inactive {
+	pointer-events: none;
+	user-select: none;
+}
+.stats-head {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding-bottom: 0.6rem;
-	flex-shrink: 0;
+	gap: 0.75rem;
+	flex-wrap: wrap;
 }
-.sc-title {
-	font-family: "Lora", serif;
-	font-size: 1rem;
-	font-weight: 600;
-	color: var(--p-gray-700);
+.stats-title {
+	font-size: var(--dt-text-lg);
+	font-weight: 700;
+}
+.stats-nav {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	padding: 0.1rem;
+	border-radius: var(--dt-radius-pill);
+	background: var(--dt-surface-soft);
+	border: 1px solid var(--dt-border);
+}
+.stats-range {
 	margin: 0;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-title {
-	color: var(--p-gray-200);
-}
-
-/* Period toggle pills */
-.sc-period-toggle {
-	display: flex;
-	gap: 0.2rem;
-	background: color-mix(in srgb, var(--p-orange-100) 50%, transparent);
-	border-radius: 0.5rem;
-	padding: 0.15rem;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-period-toggle {
-	background: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
-}
-.sc-period-btn {
-	font-family: "Lora", serif;
-	font-size: 0.7rem;
-	font-weight: 500;
-	padding: 0.3rem 0.65rem;
-	border: none;
-	border-radius: 0.4rem;
-	background: transparent;
-	color: var(--p-gray-500);
-	cursor: pointer;
-	transition: all 0.2s ease;
-}
-.sc-period-btn:hover {
-	color: var(--p-gray-700);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-period-btn:hover {
-	color: var(--p-gray-300);
-}
-.sc-period-active {
-	background: white;
-	color: var(--p-orange-600) !important;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-period-active {
-	background: var(--p-gray-600);
-	color: var(--p-orange-400) !important;
-}
-
-/* View mode toggle */
-.sc-view-toggle {
-	display: flex;
-	gap: 0.35rem;
-	padding-bottom: 0.65rem;
-	flex-shrink: 0;
-}
-.sc-view-btn {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.3rem;
-	font-family: "Lora", serif;
-	font-size: 0.7rem;
-	font-weight: 500;
-	padding: 0.3rem 0.7rem;
-	border: 1.5px solid var(--p-orange-200);
-	border-radius: 0.5rem;
-	background: transparent;
-	color: var(--p-gray-500);
-	cursor: pointer;
-	transition: all 0.2s ease;
-}
-.sc-view-btn:hover {
-	border-color: var(--p-orange-300);
-	color: var(--p-gray-700);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-view-btn {
-	border-color: var(--p-gray-600);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-view-btn:hover {
-	border-color: var(--p-gray-500);
-	color: var(--p-gray-300);
-}
-.sc-view-active {
-	border-color: var(--p-orange-400) !important;
-	background: color-mix(in srgb, var(--p-orange-50) 60%, transparent);
-	color: var(--p-orange-600) !important;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-view-active {
-	border-color: var(--p-orange-500) !important;
-	background: color-mix(in srgb, var(--p-orange-900) 30%, transparent);
-	color: var(--p-orange-400) !important;
-}
-
-/* ====== PERIOD NAVIGATOR ====== */
-.sc-navigator {
-	display: flex;
-	align-items: center;
-	gap: 0.4rem;
-	margin-bottom: 0.5rem;
-	flex-shrink: 0;
-}
-.sc-nav-btn {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 1.6rem;
-	height: 1.6rem;
-	border-radius: 0.4rem;
-	border: 1.5px solid var(--p-orange-200);
-	background: transparent;
-	color: var(--p-orange-500);
-	cursor: pointer;
-	transition: all 0.15s ease;
-	flex-shrink: 0;
-}
-.sc-nav-btn:hover:not(:disabled) {
-	background: color-mix(in srgb, var(--p-orange-100) 60%, transparent);
-	border-color: var(--p-orange-400);
-}
-.sc-nav-btn:disabled {
-	opacity: 0.3;
-	cursor: default;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-nav-btn {
-	border-color: var(--p-gray-600);
-	color: var(--p-orange-400);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-nav-btn:hover:not(:disabled) {
-	background: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
-	border-color: var(--p-gray-500);
-}
-.sc-nav-label {
-	flex: 1;
-	text-align: center;
-	font-family: "Lora", serif;
-	font-size: 0.75rem;
+	font-size: var(--dt-text-sm);
 	font-weight: 600;
-	color: var(--p-gray-700);
-	white-space: nowrap;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-nav-label {
-	color: var(--p-gray-200);
+	color: var(--dt-text-2);
+	text-align: center;
 }
 
-/* ====== SCROLLABLE AREA ====== */
-.sc-scroll {
+.stats-scroll {
 	flex: 1;
 	min-height: 0;
 	overflow-y: auto;
-	scrollbar-width: thin;
-	scrollbar-color: var(--p-orange-200) transparent;
 	display: flex;
 	flex-direction: column;
-	gap: 0.1rem;
-	padding-right: 0.25rem;
-}
-.sc-scroll::-webkit-scrollbar {
-	width: 6px;
-}
-.sc-scroll::-webkit-scrollbar-thumb {
-	background: color-mix(in srgb, var(--p-orange-300) 90%, transparent);
-	border-radius: 999px;
-}
-.sc-scroll::-webkit-scrollbar-track {
-	background: transparent;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-scroll {
-	scrollbar-color: var(--p-gray-500) transparent;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-scroll::-webkit-scrollbar-thumb {
-	background: color-mix(in srgb, var(--p-gray-500) 85%, transparent);
+	gap: 1.25rem;
+	margin: 0 -0.35rem;
+	padding: 0.25rem 0.35rem 0.75rem;
+	overscroll-behavior: contain;
 }
 
-/* ====== CALENDAR VIEW — DAY ROW ====== */
-.sc-day {
+.kpis {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 0.5rem;
+	margin: 0;
+}
+.kpi {
 	display: flex;
+	flex-direction: column;
 	align-items: center;
 	gap: 0.15rem;
-	padding: 0.55rem 0.3rem;
-	border-bottom: 1px solid
-		color-mix(in srgb, var(--p-orange-100) 60%, transparent);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-day {
-	border-bottom-color: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
-}
-.sc-day--gold {
-	background: linear-gradient(
-		90deg,
-		color-mix(in srgb, var(--p-yellow-100) 55%, transparent),
-		transparent
-	);
-	border-radius: 0.5rem;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-day--gold {
-	background: linear-gradient(
-		90deg,
-		color-mix(in srgb, var(--p-yellow-900) 35%, transparent),
-		transparent
-	);
-}
-.sc-day-header {
-	flex-shrink: 0;
-	width: 5.5rem;
-	display: flex;
-	flex-direction: column;
-}
-.sc-day-medal-col {
-	width: 0.5rem;
-	flex-shrink: 0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	margin-right: 0.1rem;
-}
-.sc-day-text {
-	display: flex;
-	flex-direction: column;
-}
-.sc-day-name {
-	font-family: "Lora", serif;
-	font-size: 0.78rem;
-	font-weight: 600;
-	color: var(--p-gray-700);
-	line-height: 1.2;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-day-name {
-	color: var(--p-gray-200);
-}
-.sc-day-date {
-	font-family: "Lora", serif;
-	font-size: 0.65rem;
-	color: var(--p-gray-400);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-day-date {
-	color: var(--p-gray-500);
-}
-.sc-day-medal {
-	font-size: 0.75rem;
-	line-height: 1;
-}
-.sc-day-empty {
-	font-family: "Lora", serif;
-	font-size: 0.72rem;
-	font-style: italic;
-	color: var(--p-gray-300);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-day-empty {
-	color: var(--p-gray-600);
-}
-
-/* Habit tiles grid */
-.sc-tiles {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.35rem;
-}
-.sc-tile {
-	position: relative;
-	width: 2rem;
-	height: 2rem;
-	border-radius: 0.55rem;
-	background: color-mix(in srgb, var(--p-orange-100) 50%, transparent);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	cursor: default;
-	transition: transform 0.15s ease;
-}
-.sc-tile:hover {
-	transform: scale(1.1);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-tile {
-	background: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
-}
-.sc-tile-icon {
-	font-size: 1.1rem;
-	line-height: 1;
-}
-.sc-tile-badge {
-	position: absolute;
-	top: -0.25rem;
-	right: -0.25rem;
-	min-width: 0.95rem;
-	height: 0.95rem;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	border-radius: 50%;
-	background: var(--p-orange-500);
-	color: white;
-	font-family: "Lora", serif;
-	font-size: 0.5rem;
-	font-weight: 700;
-	line-height: 1;
-	padding: 0 0.15rem;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-tile-badge {
-	background: var(--p-orange-600);
-}
-
-/* ====== CHART VIEW — BAR ROWS ====== */
-.sc-bar-row {
-	display: flex;
-	align-items: center;
-	gap: 0.6rem;
-	padding: 0.45rem 0.3rem;
-}
-.sc-bar-tile {
-	width: 2rem;
-	height: 2rem;
-	border-radius: 0.55rem;
-	background: color-mix(in srgb, var(--p-orange-100) 50%, transparent);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
-	cursor: default;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-bar-tile {
-	background: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
-}
-.sc-bar-tile-icon {
-	font-size: 1.1rem;
-	line-height: 1;
-}
-.sc-bar-track {
-	flex: 1;
-	height: 0.55rem;
-	border-radius: 0.3rem;
-	background: color-mix(in srgb, var(--p-orange-100) 40%, transparent);
-	overflow: hidden;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-bar-track {
-	background: color-mix(in srgb, var(--p-gray-700) 50%, transparent);
-}
-.sc-bar-fill {
-	height: 100%;
-	border-radius: 0.3rem;
-	background: linear-gradient(90deg, var(--p-orange-400), var(--p-orange-500));
-	transition: width 0.5s ease;
-	min-width: 0.3rem;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-bar-fill {
-	background: linear-gradient(90deg, var(--p-orange-500), var(--p-orange-600));
-}
-.sc-bar-count {
-	font-family: "Lora", serif;
-	font-size: 0.72rem;
-	font-weight: 600;
-	color: var(--p-gray-600);
-	min-width: 2rem;
-	text-align: right;
-	flex-shrink: 0;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-bar-count {
-	color: var(--p-gray-400);
-}
-
-/* ====== EMPTY STATE ====== */
-.sc-empty {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	padding: 2.5rem 1rem;
+	padding: 0.7rem 0.4rem;
+	border-radius: var(--dt-radius-lg);
+	background: var(--dt-surface-soft);
+	border: 1px solid var(--dt-border);
 	text-align: center;
 }
-.sc-empty-emoji {
-	font-size: 1.5rem;
-	margin-bottom: 0.35rem;
-	opacity: 0.5;
+.kpi dt {
+	order: 3;
+	font-size: var(--dt-text-xs);
+	color: var(--dt-text-3);
+	line-height: 1.2;
 }
-.sc-empty-text {
-	font-family: "Lora", serif;
-	font-size: 0.78rem;
-	color: var(--p-gray-400);
-	margin: 0;
-	font-style: italic;
+.kpi dd {
+	order: 2;
+	margin: 0.2rem 0 0;
+	font-size: 1.3rem;
+	font-weight: 700;
+	color: var(--dt-text);
+	font-variant-numeric: tabular-nums;
+	line-height: 1;
 }
-:where(.my-app-dark, .my-app-dark *) .sc-empty-text {
-	color: var(--p-gray-500);
+.kpi dd small {
+	font-size: 0.7rem;
+	font-weight: 600;
+	color: var(--dt-text-3);
 }
 
-/* ====== GOALS MEDAL TILE ====== */
-.sc-medal-tile {
+.stats-section {
+	display: flex;
+	flex-direction: column;
+	gap: 0.6rem;
+}
+
+/* Tydzień */
+.day-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+}
+.day-row {
 	display: flex;
 	align-items: center;
 	gap: 0.75rem;
-	padding: 0.75rem 1rem;
-	margin-bottom: 0.75rem;
-	background: linear-gradient(135deg, #fef9c3, #fde68a);
-	border: 1px solid #fcd34d;
-	border-radius: 1rem;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-medal-tile {
-	background: linear-gradient(
-		135deg,
-		color-mix(in srgb, #92400e 40%, transparent),
-		color-mix(in srgb, #78350f 50%, transparent)
-	);
-	border-color: #b45309;
-}
-.sc-medal-tile-emoji {
-	font-size: 2rem;
-	line-height: 1;
-}
-.sc-medal-tile-text {
-	display: flex;
-	flex-direction: column;
-}
-.sc-medal-tile-count {
-	font-family: "Lora", serif;
-	font-size: 1.6rem;
-	font-weight: 700;
-	color: #92400e;
-	line-height: 1;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-medal-tile-count {
-	color: #fde68a;
-}
-.sc-medal-tile-label {
-	font-family: "Lora", serif;
-	font-size: 0.7rem;
-	color: #b45309;
-	margin-top: 0.1rem;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-medal-tile-label {
-	color: #fcd34d;
-}
-
-/* ====== CHART SUB-TOGGLE ====== */
-.sc-sub-toggle {
-	display: flex;
-	gap: 0.2rem;
-	background: color-mix(in srgb, var(--p-orange-100) 50%, transparent);
-	border-radius: 0.5rem;
-	padding: 0.15rem;
-	margin-bottom: 0.5rem;
-	align-self: flex-start;
-	flex-shrink: 0;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-sub-toggle {
-	background: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
-}
-.sc-sub-btn {
-	font-family: "Lora", serif;
-	font-size: 0.68rem;
-	font-weight: 500;
-	padding: 0.25rem 0.6rem;
-	border: none;
-	border-radius: 0.35rem;
+	width: 100%;
+	min-height: 3rem;
+	padding: 0.4rem 0.6rem;
+	border-radius: var(--dt-radius);
+	border: 1px solid transparent;
 	background: transparent;
-	color: var(--p-gray-500);
+	color: inherit;
+	text-align: left;
 	cursor: pointer;
-	transition: all 0.2s ease;
+	transition: background-color 0.18s ease;
 }
-.sc-sub-btn:hover {
-	color: var(--p-gray-700);
+.day-row:hover:not(:disabled) {
+	background: var(--dt-surface-soft);
 }
-:where(.my-app-dark, .my-app-dark *) .sc-sub-btn:hover {
-	color: var(--p-gray-300);
+.day-row.perfect {
+	background: color-mix(in srgb, var(--dt-gold) 12%, var(--dt-surface));
+	border-color: color-mix(in srgb, var(--dt-gold) 35%, transparent);
 }
-.sc-sub-active {
-	background: white;
-	color: var(--p-orange-600) !important;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+.day-row.future {
+	opacity: 0.45;
+	cursor: default;
 }
-:where(.my-app-dark, .my-app-dark *) .sc-sub-active {
-	background: var(--p-gray-600);
-	color: var(--p-orange-400) !important;
-}
-
-/* ====== CATEGORY ROWS ====== */
-.sc-cat-row {
-	padding: 0.55rem 0.3rem;
-	border-bottom: 1px solid
-		color-mix(in srgb, var(--p-orange-100) 60%, transparent);
+.day-when {
 	display: flex;
 	flex-direction: column;
-	gap: 0.4rem;
-}
-:where(.my-app-dark, .my-app-dark *) .sc-cat-row {
-	border-bottom-color: color-mix(in srgb, var(--p-gray-700) 60%, transparent);
-}
-.sc-cat-header {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-}
-.sc-cat-dot {
-	width: 0.55rem;
-	height: 0.55rem;
-	border-radius: 50%;
-	flex-shrink: 0;
-	background: var(--p-orange-400);
-}
-.sc-cat-dot.sc-cat-sport {
-	background: var(--p-green-400);
-}
-.sc-cat-dot.sc-cat-health {
-	background: var(--p-red-400);
-}
-.sc-cat-dot.sc-cat-work {
-	background: var(--p-blue-400);
-}
-.sc-cat-dot.sc-cat-learning {
-	background: var(--p-purple-400);
-}
-.sc-cat-dot.sc-cat-relax {
-	background: var(--p-teal-400);
-}
-.sc-cat-dot.sc-cat-negative {
-	background: var(--p-gray-400);
-}
-
-.sc-cat-name {
-	font-family: "Lora", serif;
-	font-size: 0.75rem;
-	font-weight: 600;
-	color: var(--p-gray-700);
-	text-transform: capitalize;
-	min-width: 4rem;
+	width: 3.2rem;
 	flex-shrink: 0;
 }
-:where(.my-app-dark, .my-app-dark *) .sc-cat-name {
-	color: var(--p-gray-200);
+.day-name {
+	font-size: var(--dt-text-sm);
+	font-weight: 700;
+	color: var(--dt-text);
 }
-
-.sc-cat-track {
-	margin: 0;
+.day-date {
+	font-size: var(--dt-text-xs);
+	color: var(--dt-text-3);
 }
-
-/* Category-specific fill colors */
-.sc-cat-fill {
-	background: linear-gradient(90deg, var(--p-orange-400), var(--p-orange-500));
-}
-.sc-cat-fill-sport {
-	background: linear-gradient(90deg, var(--p-green-300), var(--p-green-500));
-}
-.sc-cat-fill-health {
-	background: linear-gradient(90deg, var(--p-red-300), var(--p-red-500));
-}
-.sc-cat-fill-work {
-	background: linear-gradient(90deg, var(--p-blue-300), var(--p-blue-500));
-}
-.sc-cat-fill-learning {
-	background: linear-gradient(90deg, var(--p-purple-300), var(--p-purple-500));
-}
-.sc-cat-fill-relax {
-	background: linear-gradient(90deg, var(--p-teal-300), var(--p-teal-500));
-}
-.sc-cat-fill-negative {
-	background: linear-gradient(90deg, var(--p-gray-300), var(--p-gray-500));
-}
-
-.sc-cat-habits {
+.day-tiles {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.3rem;
-	padding-left: 1.05rem;
-}
-
-/* ====== CALENDAR CATEGORY PILLS ====== */
-.sc-day-cats {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.3rem;
-}
-.sc-day-cat-pill {
-	display: inline-flex;
 	align-items: center;
-	gap: 0.25rem;
-	padding: 0.18rem 0.45rem;
+	gap: 0.3rem;
+	flex: 1;
+	min-width: 0;
+}
+.mini-tile {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 2rem;
+	height: 2rem;
+	border-radius: 0.6rem;
+	background: var(--dt-surface-sunken);
+}
+.mini-count {
+	position: absolute;
+	top: -0.3rem;
+	right: -0.3rem;
+	min-width: 1rem;
+	height: 1rem;
+	padding: 0 0.2rem;
 	border-radius: 999px;
-	background: color-mix(in srgb, var(--p-orange-100) 55%, transparent);
-	cursor: default;
-	transition: transform 0.15s ease;
-}
-.sc-day-cat-pill:hover {
-	transform: scale(1.05);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill {
-	background: color-mix(in srgb, var(--p-gray-700) 55%, transparent);
-}
-.sc-day-cat-pill-sport {
-	background: color-mix(in srgb, var(--p-green-100) 55%, transparent);
-}
-.sc-day-cat-pill-health {
-	background: color-mix(in srgb, var(--p-red-100) 55%, transparent);
-}
-.sc-day-cat-pill-work {
-	background: color-mix(in srgb, var(--p-blue-100) 55%, transparent);
-}
-.sc-day-cat-pill-learning {
-	background: color-mix(in srgb, var(--p-purple-100) 55%, transparent);
-}
-.sc-day-cat-pill-relax {
-	background: color-mix(in srgb, var(--p-teal-100) 55%, transparent);
-}
-.sc-day-cat-pill-negative {
-	background: color-mix(in srgb, var(--p-gray-100) 55%, transparent);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-sport {
-	background: color-mix(in srgb, var(--p-green-900) 35%, transparent);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-health {
-	background: color-mix(in srgb, var(--p-red-900) 35%, transparent);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-work {
-	background: color-mix(in srgb, var(--p-blue-900) 35%, transparent);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-learning {
-	background: color-mix(in srgb, var(--p-purple-900) 35%, transparent);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-day-cat-pill-relax {
-	background: color-mix(in srgb, var(--p-teal-900) 35%, transparent);
-}
-.sc-day-cat-dot {
-	width: 0.45rem;
-	height: 0.45rem;
-	border-radius: 50%;
-	flex-shrink: 0;
-	background: var(--p-orange-400);
-}
-.sc-day-cat-label {
-	font-family: "Lora", serif;
-	font-size: 0.62rem;
-	font-weight: 600;
-	text-transform: capitalize;
-	color: var(--p-gray-700);
-}
-:where(.my-app-dark, .my-app-dark *) .sc-day-cat-label {
-	color: var(--p-gray-200);
-}
-.sc-day-cat-count {
-	font-family: "Lora", serif;
+	background: var(--dt-accent-strong);
+	color: var(--dt-on-accent);
 	font-size: 0.6rem;
 	font-weight: 700;
-	color: var(--p-gray-500);
+	display: grid;
+	place-items: center;
 }
-:where(.my-app-dark, .my-app-dark *) .sc-day-cat-count {
-	color: var(--p-gray-400);
+.mini-more,
+.day-empty {
+	font-size: var(--dt-text-xs);
+	color: var(--dt-text-3);
+	font-weight: 600;
+}
+.day-medal {
+	font-size: 1.1rem;
+}
+
+/* Miesiąc — mapa ciepła */
+.heat-week,
+.heat-grid {
+	display: grid;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 0.3rem;
+}
+.heat-week span {
+	text-align: center;
+	font-size: var(--dt-text-xs);
+	font-weight: 700;
+	color: var(--dt-text-3);
+}
+.heat-cell {
+	position: relative;
+	aspect-ratio: 1;
+	border-radius: 0.55rem;
+	border: 1px solid transparent;
+	font-size: var(--dt-text-xs);
+	font-weight: 600;
+	color: var(--dt-text-2);
+	cursor: pointer;
+	transition: transform 0.15s var(--dt-ease);
+}
+.heat-cell:hover:not(:disabled) {
+	transform: scale(1.08);
+}
+.heat-cell:disabled {
+	opacity: 0.35;
+	cursor: default;
+}
+.heat-cell.today {
+	border-color: var(--dt-accent);
+}
+.heat-cell.perfect::after {
+	content: "";
+	position: absolute;
+	top: 3px;
+	right: 3px;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: var(--dt-gold);
+	box-shadow: 0 0 0 1.5px var(--dt-surface);
+}
+.lvl-0 {
+	background: var(--dt-surface-sunken);
+}
+.lvl-1 {
+	background: color-mix(in srgb, var(--dt-accent) 22%, var(--dt-surface));
+}
+.lvl-2 {
+	background: color-mix(in srgb, var(--dt-accent) 42%, var(--dt-surface));
+}
+.lvl-3 {
+	background: color-mix(in srgb, var(--dt-accent) 64%, var(--dt-surface));
+	color: #3b2a20;
+}
+.lvl-4 {
+	background: var(--dt-accent);
+	color: #2b1508;
+}
+.heat-legend {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.3rem;
+	margin: 0;
+	font-size: var(--dt-text-xs);
+	color: var(--dt-text-3);
+}
+.heat-swatch {
+	width: 0.85rem;
+	height: 0.85rem;
+	border-radius: 0.25rem;
+}
+.heat-gold {
+	margin-left: auto;
+}
+
+/* Top habity */
+.bars {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.45rem;
+}
+.bar-row {
+	display: grid;
+	grid-template-columns: auto minmax(5rem, 8rem) 1fr auto;
+	align-items: center;
+	gap: 0.6rem;
+}
+.bar-name {
+	font-size: var(--dt-text-sm);
+	font-weight: 600;
+	color: var(--dt-text);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.bar-track {
+	height: 0.55rem;
+	border-radius: 999px;
+	background: var(--dt-surface-sunken);
+	overflow: hidden;
+}
+.bar-fill {
+	display: block;
+	height: 100%;
+	border-radius: inherit;
+	background: linear-gradient(90deg, var(--dt-accent), color-mix(in srgb, var(--dt-accent) 70%, #f3c64f));
+	transition: width 0.4s var(--dt-ease);
+}
+.bar-fill.negative {
+	background: #a86f8a;
+}
+.bar-count {
+	font-size: var(--dt-text-sm);
+	font-weight: 700;
+	color: var(--dt-text-2);
+	font-variant-numeric: tabular-nums;
+}
+
+/* Kategorie */
+.cat-bar {
+	display: flex;
+	height: 0.8rem;
+	border-radius: 999px;
+	overflow: hidden;
+	gap: 2px;
+	background: var(--dt-surface-sunken);
+}
+.cat-bar span {
+	display: block;
+	height: 100%;
+}
+.cat-legend {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem 0.9rem;
+	font-size: var(--dt-text-sm);
+	color: var(--dt-text-2);
+}
+.cat-legend li {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+}
+.cat-dot {
+	width: 0.6rem;
+	height: 0.6rem;
+	border-radius: 50%;
 }
 </style>
