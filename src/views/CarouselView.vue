@@ -9,10 +9,16 @@
 				:key="item.card.id"
 				class="carousel-card"
 				:class="`role-${item.role}`"
-				:inert="item.role !== 'active' || undefined">
-				<component
-					:is="cardComponentMap[item.card.id]"
-					:isActive="item.role === 'active'" />
+				@click="onCardClick(item.role)">
+				<!-- inert na środku karty, nie na niej samej: zawartość bocznej karty
+				     jest nieaktywna, ale kliknięcie w kartę przełącza karuzelę -->
+				<div
+					class="carousel-card-inner"
+					:inert="item.role !== 'active' || undefined">
+					<component
+						:is="cardComponentMap[item.card.id]"
+						:isActive="item.role === 'active'" />
+				</div>
 			</div>
 			<button
 				v-if="carouselStore.leftCard"
@@ -137,6 +143,12 @@ function goPrevWithAnimation() {
 	withAnimationLock(() => carouselStore.goPrev());
 }
 
+// Kliknięcie w widoczną część bocznej karty przenosi ją na środek
+function onCardClick(role: CarouselRole) {
+	if (role === "left") goPrevWithAnimation();
+	else if (role === "right") goNextWithAnimation();
+}
+
 function onDotClick(targetId: CarouselCardConfig["id"]) {
 	if (targetId === carouselStore.activeCardId) return;
 	withAnimationLock(() => carouselStore.setActiveCard(targetId));
@@ -230,6 +242,19 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 	opacity: 1;
 	filter: saturate(1);
 	z-index: 3;
+}
+.carousel-card-inner {
+	display: flex;
+	align-items: stretch;
+	height: 100%;
+}
+.role-left,
+.role-right {
+	cursor: pointer;
+}
+.role-left:hover,
+.role-right:hover {
+	--carousel-side-opacity: 0.78;
 }
 .role-left {
 	transform: translate(calc(-50% - var(--carousel-side-offset)), -50%) scale(var(--carousel-side-scale));

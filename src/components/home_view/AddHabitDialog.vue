@@ -567,16 +567,38 @@ async function deleteCustom(h: Habbit) {
 	background: var(--dt-surface-soft);
 }
 
+/* Na komputerze kategorie zawijają się w wiersze — przewijanie w poziomie
+   bez paska jest dla myszki niewidoczne i niedostępne */
 .add-cats {
 	display: flex;
+	flex-wrap: wrap;
 	gap: 0.4rem;
-	overflow-x: auto;
 	padding: 0.75rem 1.25rem 0.5rem;
-	scrollbar-width: none;
 	flex-shrink: 0;
 }
-.add-cats::-webkit-scrollbar {
-	display: none;
+.add-cats .dt-chip {
+	padding: 0.3rem 0.7rem;
+	font-size: var(--dt-text-sm);
+}
+/* Na telefonie jeden przewijany palcem rząd, z wygaszoną krawędzią
+   sugerującą, że jest więcej */
+@media (max-width: 640px), (hover: none) and (pointer: coarse) {
+	.add-cats {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		scrollbar-width: none;
+		overscroll-behavior-x: contain;
+		mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+		-webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
+	}
+	.add-cats::-webkit-scrollbar {
+		display: none;
+	}
+	/* Odstęp na końcu, żeby ostatni chip dało się w pełni przewinąć spod wygaszenia */
+	.add-cats::after {
+		content: "";
+		flex: 0 0 1.5rem;
+	}
 }
 
 .add-scroll {
