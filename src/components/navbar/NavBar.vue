@@ -135,10 +135,15 @@ function openAccount(tab: "profile" | "settings") {
 	background: var(--dt-surface-sunken);
 	cursor: pointer;
 	box-shadow: var(--dt-shadow-sm);
-	transition: transform 0.2s var(--dt-ease);
+	transition:
+		transform var(--dt-t) var(--dt-ease),
+		box-shadow var(--dt-t) ease;
 }
-.avatar-btn:hover {
-	transform: scale(1.05);
+@media (hover: hover) {
+	.avatar-btn:hover {
+		transform: translateY(var(--dt-lift));
+		box-shadow: var(--dt-shadow-hover);
+	}
 }
 .avatar-btn img {
 	width: 100%;

@@ -482,10 +482,15 @@ watch(
 	cursor: pointer;
 	flex-shrink: 0;
 	box-shadow: var(--dt-shadow-sm);
-	transition: transform 0.2s var(--dt-ease);
+	transition:
+		transform var(--dt-t) var(--dt-ease),
+		box-shadow var(--dt-t) ease;
 }
-.me-avatar:hover {
-	transform: scale(1.04);
+@media (hover: hover) {
+	.me-avatar:hover {
+		transform: translateY(var(--dt-lift));
+		box-shadow: var(--dt-shadow-hover);
+	}
 }
 .me-edit {
 	position: absolute;
@@ -710,11 +715,12 @@ watch(
 	color: inherit;
 	text-align: left;
 	cursor: pointer;
-	transition: background-color 0.18s ease;
+	transition: background-color var(--dt-t-fast) ease;
 }
-.friend-row:hover {
-	background: var(--dt-surface-soft);
-	border-color: var(--dt-border);
+@media (hover: hover) {
+	.friend-row:hover {
+		background: var(--dt-hover-bg);
+	}
 }
 .friend-main {
 	display: flex;

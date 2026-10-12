@@ -122,6 +122,14 @@ function onTab(id: TabId) {
 .tab-icon-wrap i {
 	font-size: 1.1rem;
 }
+@media (hover: hover) {
+	.tab:hover:not(.active) {
+		color: var(--dt-text-2);
+	}
+	.tab:hover:not(.active) .tab-icon-wrap {
+		background: var(--dt-hover-bg);
+	}
+}
 .tab.active {
 	color: var(--dt-accent-ink);
 }
