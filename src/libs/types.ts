@@ -88,7 +88,7 @@ export interface TodoItem {
 	subtasks?: Subtask[];
 }
 
-type CarouselCardId = "manage" | "textAdd" | "stats";
+type CarouselCardId = "manage" | "textAdd" | "stats" | "friends";
 
 export interface CarouselCardConfig {
 	id: CarouselCardId;
@@ -99,6 +99,9 @@ export interface UserPreferences {
 	isDarkMode: boolean;
 	soundEnabled: boolean;
 	animationsEnabled: boolean;
+	// Znajomi: udostępnianie postępów i nazw habitów (domyślnie włączone)
+	shareProgress: boolean;
+	shareHabits: boolean;
 }
 
 export type CookieConsentChoice =

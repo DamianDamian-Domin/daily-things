@@ -41,6 +41,8 @@ import { useTodosStore } from "@/stores/todos";
 import { usePreferencesStore } from "@/stores/userPreferences";
 import { useToastStore } from "@/stores/toast";
 import { useProfileStore } from "@/stores/profile";
+import { hasStoredInvite, loadFriends, loadProfileSync, peekFriends } from "@/stores/social";
+import { useCarouselStore } from "@/stores/useCarouselStore";
 import { fetchUserDoc } from "@/services/userData";
 import { isNativePlatform } from "@/utils/platform";
 import { useLayout } from "@/utils/useLayout";
@@ -62,6 +64,7 @@ const todosStore = useTodosStore();
 const preferencesStore = usePreferencesStore();
 const toast = useToastStore();
 const profileStore = useProfileStore();
+const carouselStore = useCarouselStore();
 
 // ==========================================
 // UKŁAD (mobile / desktop)
@@ -100,7 +103,10 @@ async function loadSession(uid: string) {
 		profileStore.hydrate(userDoc);
 		await habbitsStore.loadInitialHistory();
 		if (authStore.userUid !== uid) return;
+		// Od teraz profil dla znajomych może się publikować (seria jest już policzona)
 		profileStore.markReady();
+		// Konta: czy ktoś przybił piątkę / zaprosił (1 zapytanie, kod ładowany w tle)
+		if (!authStore.isGuest) loadFriends().then((friends) => friends.checkInbox());
 	} catch (err) {
 		console.error("Session load failed", err);
 		toast.error("We couldn't load your data. Check your connection.");
@@ -113,6 +119,7 @@ watch(
 		habbitsStore.clearData();
 		todosStore.clearData();
 		profileStore.clear();
+		peekFriends()?.clear();
 
 		if (!uid) {
 			if (isNativePlatform) {
@@ -131,6 +138,54 @@ watch(
 	{ immediate: true },
 );
 
+// ==========================================
+// ZNAJOMI — zaproszenie z linku i słuchacze tylko przy widocznej karcie
+// ==========================================
+// Link ?invite=KOD — usuwamy parametr z adresu przez router (inaczej
+// początkowa nawigacja przywróciłaby go w pasku adresu)
+router.isReady().then(() => {
+	const { invite, ...rest } = route.query;
+	if (typeof invite === "string" || hasStoredInvite()) {
+		loadFriends().then((friends) => friends.captureInvite(typeof invite === "string" ? invite : null));
+	}
+	if (invite !== undefined) router.replace({ query: rest, hash: route.hash });
+});
+
+// Publikacja profilu dla znajomych — tylko konta (również gość, który właśnie się zarejestrował)
+watch(
+	() => profileStore.ready && profileStore.isSocial,
+	(on) => {
+		if (on) loadProfileSync();
+	},
+	{ immediate: true },
+);
+
+const pageVisible = ref(typeof document === "undefined" || document.visibilityState === "visible");
+if (typeof document !== "undefined") {
+	document.addEventListener("visibilitychange", () => {
+		pageVisible.value = document.visibilityState === "visible";
+	});
+}
+const friendsLive = computed(
+	() =>
+		carouselStore.activeCardId === "friends" &&
+		pageVisible.value &&
+		profileStore.ready &&
+		profileStore.isSocial,
+);
+watch(
+	friendsLive,
+	(on) => {
+		if (on) {
+			loadFriends().then((friends) => {
+				if (friendsLive.value) friends.start();
+			});
+		} else {
+			peekFriends()?.stopSoon();
+		}
+	},
+	{ immediate: true },
+);
 </script>
 
 <style scoped>

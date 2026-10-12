@@ -115,6 +115,9 @@ import { useLayout } from "@/utils/useLayout";
 import ToDosCard from "../components/home_view/ToDosCard.vue";
 import StatsCard from "../components/home_view/StatsCard.vue";
 import HabbitsCard from "@/components/home_view/HabbitsCard.vue";
+// Karta Znajomi w osobnym pliku JS — pobierana dopiero, gdy ma się pokazać
+import { defineAsyncComponent } from "vue";
+const FriendsCard = defineAsyncComponent(() => import("@/components/home_view/FriendsCard.vue"));
 
 const carouselStore = useCarouselStore();
 const { isMobile } = useLayout();
@@ -126,12 +129,14 @@ const cardComponentMap = {
 	manage: HabbitsCard,
 	textAdd: ToDosCard,
 	stats: StatsCard,
+	friends: FriendsCard,
 } as const;
 
 const cardLabels: Record<CarouselCardConfig["id"], string> = {
 	textAdd: "To-do list",
 	manage: "Today's habits",
 	stats: "Progress",
+	friends: "Friends",
 };
 
 const visibleCards = computed<VisibleCarouselCard[]>(() => {
