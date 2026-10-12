@@ -46,8 +46,11 @@ export const db = initializeFirestore(app, {
 });
 
 if (useEmulators) {
-	connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
-	connectFirestoreEmulator(db, "127.0.0.1", 8080);
+	// Porty można nadpisać w .env.emulator.local (np. kilka instancji naraz)
+	const authPort = import.meta.env.VITE_EMULATOR_AUTH_PORT || "9099";
+	const firestorePort = Number(import.meta.env.VITE_EMULATOR_FIRESTORE_PORT || 8080);
+	connectAuthEmulator(auth, `http://127.0.0.1:${authPort}`, { disableWarnings: true });
+	connectFirestoreEmulator(db, "127.0.0.1", firestorePort);
 }
 
 export default app;
