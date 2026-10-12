@@ -247,11 +247,12 @@
 					<li
 						v-for="c in categoryShares"
 						:key="c.key">
-						<span
-							class="cat-dot"
-							:style="{ background: c.color }"
-							aria-hidden="true"></span>
-						{{ c.emoji }} {{ c.label }} <strong>{{ c.pct }}%</strong>
+						<!-- Pikselowa ikona kategorii w kolorze jej paska (zamiast kropki i emoji) -->
+						<PixelIcon
+							:icon="c.icon"
+							:palette="c.palette"
+							:size="26" />
+						{{ c.label }} <strong>{{ c.pct }}%</strong>
 					</li>
 				</ul>
 			</section>
@@ -286,7 +287,7 @@ import {
 	weekdayName,
 } from "@/utils/date";
 import { CUSTOM_CATEGORY, isNegative, paletteFor, superCategoryOf } from "@/utils/habitCatalog";
-import { PALETTES } from "@/utils/pixelIcons";
+import { PALETTES, type PaletteKey } from "@/utils/pixelIcons";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 
 defineProps<{ isActive: boolean }>();
@@ -401,7 +402,10 @@ const topHabbits = computed(() => {
 });
 
 const categoryShares = computed(() => {
-	const map = new Map<string, { key: string; label: string; emoji: string; color: string; count: number }>();
+	const map = new Map<
+		string,
+		{ key: string; label: string; icon: string; palette: PaletteKey; color: string; count: number }
+	>();
 	let sum = 0;
 	for (const t of totals.value) {
 		if (isNegative(t.habbit)) continue;
@@ -412,7 +416,8 @@ const categoryShares = computed(() => {
 			map.set(cat.key, {
 				key: cat.key,
 				label: cat.label,
-				emoji: cat.emoji,
+				icon: cat.icon,
+				palette: cat.palette,
 				color: PALETTES[cat.palette].f,
 				count: t.count,
 			});
@@ -787,18 +792,13 @@ function openDay(key: string) {
 	padding: 0;
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.35rem 0.9rem;
+	gap: 0.2rem 0.9rem;
 	font-size: var(--dt-text-sm);
 	color: var(--dt-text-2);
 }
 .cat-legend li {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.35rem;
-}
-.cat-dot {
-	width: 0.6rem;
-	height: 0.6rem;
-	border-radius: 50%;
+	gap: 0.3rem;
 }
 </style>
