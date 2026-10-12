@@ -568,8 +568,8 @@ body {
 	}
 	@media (hover: hover) {
 		.dt-segmented button:hover:not([aria-pressed="true"]) {
-			background: color-mix(in srgb, var(--dt-surface) 65%, transparent);
-			color: var(--dt-text);
+			background: color-mix(in srgb, var(--dt-accent) 12%, transparent);
+			color: var(--dt-accent-ink);
 		}
 	}
 
