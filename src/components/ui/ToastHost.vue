@@ -104,8 +104,10 @@ const toastStore = useToastStore();
 :where(.my-app-dark) .toast:not(.tone-error, .tone-success, .tone-celebrate) .toast-action {
 	background: rgba(0, 0, 0, 0.08);
 }
-.toast-action:hover {
-	background: rgba(255, 255, 255, 0.3);
+@media (hover: hover) {
+	.toast-action:hover {
+		background: rgba(255, 255, 255, 0.3);
+	}
 }
 
 .toast-close {
@@ -121,8 +123,10 @@ const toastStore = useToastStore();
 	cursor: pointer;
 	flex-shrink: 0;
 }
-.toast-close:hover {
-	opacity: 1;
+@media (hover: hover) {
+	.toast-close:hover {
+		opacity: 1;
+	}
 }
 .toast-close i {
 	font-size: 0.7rem;

@@ -68,6 +68,23 @@
 	/* Ruch */
 	--dt-ease: cubic-bezier(0.22, 1, 0.36, 1);
 	--dt-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+	--dt-t-fast: 0.16s;
+	--dt-t: 0.24s;
+
+	/* Interakcje — jeden język dla hover / fokus / naciśnięcia w całej aplikacji.
+	   Hover: ciepły odcień + lekkie uniesienie + miękki cień (tylko na urządzeniach
+	   z kursorem). Fokus z klawiatury: wyraźny obrys, nigdy nie mylony z hoverem. */
+	--dt-hover-bg: var(--dt-accent-softer);
+	--dt-hover-border: color-mix(in srgb, var(--dt-accent) 55%, var(--dt-border-strong));
+	--dt-shadow-hover: 0 12px 26px -14px rgba(120, 53, 15, 0.38), 0 2px 6px rgba(120, 53, 15, 0.06);
+	--dt-lift: -2px;
+	--dt-press: 0.95;
+	--dt-focus: var(--dt-accent-strong);
+
+	/* Kontrolki (checkbox) — ramka ≥ 3:1 do tła, pole „zrobione” w kolorze sukcesu */
+	--dt-control-border: #b0866a;
+	--dt-check-fill: var(--dt-success);
+	--dt-check-mark: #ffffff;
 
 	/* Wysokość dolnego paska na mobile */
 	--dt-tabbar-h: 68px;
@@ -108,6 +125,23 @@
 	--dt-shadow: 0 8px 24px -10px rgba(0, 0, 0, 0.55);
 	--dt-shadow-lg: 0 28px 70px -20px rgba(0, 0, 0, 0.7);
 	--dt-focus-ring: 0 0 0 3px rgba(245, 154, 82, 0.55);
+
+	--dt-shadow-hover: 0 12px 28px -14px rgba(0, 0, 0, 0.75), 0 2px 6px rgba(0, 0, 0, 0.3);
+	--dt-focus: #ffb77a;
+	--dt-control-border: #9a7a62;
+	--dt-check-mark: #1c1714;
+}
+
+/* Ograniczony ruch: bez unoszenia i „wciskania” (zmiany koloru zostają) */
+.reduce-motion {
+	--dt-lift: 0px;
+	--dt-press: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--dt-lift: 0px;
+		--dt-press: 1;
+	}
 }
 
 /* ==========================================================================
@@ -122,10 +156,16 @@ body {
 	-webkit-tap-highlight-color: transparent;
 }
 
+/* Fokus z klawiatury: obrys (a nie box-shadow) — nie gryzie się z cieniami
+   przycisków, zachowuje ich zaokrąglenie i jest widoczny w trybie wysokiego kontrastu */
 :focus-visible {
+	outline: 2px solid var(--dt-focus);
+	outline-offset: 2px;
+}
+/* Pola tekstowe mają własny fokus: ciepła ramka + poświata (bez podwójnego obrysu) */
+:where(input:not([type="checkbox"], [type="radio"], [type="range"]), textarea, select):focus-visible {
 	outline: none;
 	box-shadow: var(--dt-focus-ring);
-	border-radius: var(--dt-radius-sm);
 }
 
 /* Użytkownik wyłączył animacje w ustawieniach lub w systemie */
@@ -253,15 +293,16 @@ body {
 		line-height: 1.1;
 		cursor: pointer;
 		transition:
-			background-color 0.18s ease,
-			border-color 0.18s ease,
-			color 0.18s ease,
-			transform 0.18s var(--dt-ease);
+			background-color var(--dt-t-fast) ease,
+			border-color var(--dt-t-fast) ease,
+			color var(--dt-t-fast) ease,
+			box-shadow var(--dt-t) ease,
+			transform var(--dt-t) var(--dt-ease);
 		user-select: none;
 		white-space: nowrap;
 	}
 	.dt-btn:active:not(:disabled) {
-		transform: scale(0.97);
+		transform: scale(var(--dt-press));
 	}
 	.dt-btn:disabled {
 		opacity: 0.5;
@@ -272,39 +313,50 @@ body {
 		color: var(--dt-on-accent);
 		box-shadow: 0 6px 16px -8px rgba(181, 80, 26, 0.6);
 	}
-	.dt-btn-primary:hover:not(:disabled) {
-		background: var(--dt-accent-strong-hover);
-	}
 	.dt-btn-soft {
 		background: var(--dt-accent-soft);
 		color: var(--dt-accent-ink);
-	}
-	.dt-btn-soft:hover:not(:disabled) {
-		background: color-mix(in srgb, var(--dt-accent) 26%, var(--dt-surface));
 	}
 	.dt-btn-outline {
 		background: var(--dt-surface);
 		border-color: var(--dt-border-strong);
 		color: var(--dt-text);
 	}
-	.dt-btn-outline:hover:not(:disabled) {
-		border-color: var(--dt-accent);
-		background: var(--dt-accent-softer);
-	}
 	.dt-btn-ghost {
 		background: transparent;
 		color: var(--dt-text-2);
-	}
-	.dt-btn-ghost:hover:not(:disabled) {
-		background: var(--dt-accent-softer);
-		color: var(--dt-accent-ink);
 	}
 	.dt-btn-danger {
 		background: var(--dt-danger-soft);
 		color: var(--dt-danger);
 	}
-	.dt-btn-danger:hover:not(:disabled) {
-		background: color-mix(in srgb, var(--dt-danger) 20%, var(--dt-surface));
+	/* Hover tylko tam, gdzie jest kursor — na dotyku stan „przykleja się” po tapnięciu */
+	@media (hover: hover) {
+		.dt-btn:hover:not(:disabled) {
+			transform: translateY(calc(var(--dt-lift) / 2));
+		}
+		.dt-btn:active:not(:disabled) {
+			transform: scale(var(--dt-press));
+		}
+		.dt-btn-primary:hover:not(:disabled) {
+			background: var(--dt-accent-strong-hover);
+			box-shadow: 0 10px 20px -10px rgba(181, 80, 26, 0.7);
+		}
+		.dt-btn-soft:hover:not(:disabled) {
+			background: color-mix(in srgb, var(--dt-accent) 26%, var(--dt-surface));
+		}
+		.dt-btn-outline:hover:not(:disabled) {
+			border-color: var(--dt-hover-border);
+			background: var(--dt-hover-bg);
+			box-shadow: var(--dt-shadow-sm);
+		}
+		.dt-btn-ghost:hover:not(:disabled) {
+			background: var(--dt-hover-bg);
+			color: var(--dt-accent-ink);
+		}
+		.dt-btn-danger:hover:not(:disabled) {
+			background: color-mix(in srgb, var(--dt-danger) 20%, var(--dt-surface));
+		}
 	}
 	.dt-btn-sm {
 		min-height: 2.1rem;
@@ -324,9 +376,13 @@ body {
 		text-decoration-color: color-mix(in srgb, var(--dt-accent-ink) 35%, transparent);
 		text-underline-offset: 3px;
 		cursor: pointer;
+		border-radius: var(--dt-radius-sm);
+		transition: text-decoration-color var(--dt-t-fast) ease;
 	}
-	.dt-link:hover {
-		text-decoration-color: currentColor;
+	@media (hover: hover) {
+		.dt-link:hover {
+			text-decoration-color: currentColor;
+		}
 	}
 
 	/* Okrągły przycisk-ikona (min. 40px — wygodny cel dotyku) */
@@ -342,21 +398,28 @@ body {
 		color: var(--dt-text-2);
 		cursor: pointer;
 		transition:
-			background-color 0.18s ease,
-			color 0.18s ease,
-			transform 0.18s var(--dt-ease);
+			background-color var(--dt-t-fast) ease,
+			color var(--dt-t-fast) ease,
+			transform var(--dt-t) var(--dt-ease);
 		flex-shrink: 0;
 	}
-	.dt-icon-btn:hover:not(:disabled) {
-		background: var(--dt-accent-softer);
-		color: var(--dt-accent-ink);
-	}
 	.dt-icon-btn:active:not(:disabled) {
-		transform: scale(0.92);
+		transform: scale(calc(1 - (1 - var(--dt-press)) * 1.6));
 	}
 	.dt-icon-btn:disabled {
 		opacity: 0.35;
 		cursor: not-allowed;
+	}
+	@media (hover: hover) {
+		.dt-icon-btn:hover:not(:disabled) {
+			background: var(--dt-accent-soft);
+			color: var(--dt-accent-ink);
+		}
+		/* Usuwanie: czerwony odcień zdradza, co się stanie */
+		.dt-icon-btn-danger:hover:not(:disabled) {
+			background: var(--dt-danger-soft);
+			color: var(--dt-danger);
+		}
 	}
 
 	/* Pola formularzy */
@@ -381,15 +444,18 @@ body {
 		font-family: var(--dt-font);
 		font-size: 1rem; /* ≥16px — iOS nie przybliża przy fokusie */
 		transition:
-			border-color 0.18s ease,
-			box-shadow 0.18s ease;
+			border-color var(--dt-t-fast) ease,
+			background-color var(--dt-t-fast) ease,
+			box-shadow var(--dt-t-fast) ease;
 	}
 	.dt-input::placeholder {
 		color: var(--dt-text-3);
 		opacity: 0.85;
 	}
-	.dt-input:hover {
-		border-color: color-mix(in srgb, var(--dt-accent) 55%, var(--dt-border-strong));
+	@media (hover: hover) {
+		.dt-input:hover:not(:focus) {
+			border-color: var(--dt-hover-border);
+		}
 	}
 	.dt-input:focus {
 		outline: none;
@@ -424,19 +490,30 @@ body {
 		cursor: pointer;
 		white-space: nowrap;
 		transition:
-			background-color 0.18s ease,
-			border-color 0.18s ease,
-			color 0.18s ease;
+			background-color var(--dt-t-fast) ease,
+			border-color var(--dt-t-fast) ease,
+			color var(--dt-t-fast) ease,
+			transform var(--dt-t) var(--dt-ease);
 	}
-	.dt-chip:hover {
-		border-color: var(--dt-border-strong);
-		background: var(--dt-accent-softer);
+	.dt-chip:active {
+		transform: scale(var(--dt-press));
 	}
 	.dt-chip[aria-pressed="true"],
 	.dt-chip.is-active {
 		background: var(--dt-accent-soft);
 		border-color: color-mix(in srgb, var(--dt-accent) 55%, transparent);
 		color: var(--dt-accent-ink);
+	}
+	@media (hover: hover) {
+		.dt-chip:hover {
+			border-color: var(--dt-hover-border);
+			background: var(--dt-hover-bg);
+			color: var(--dt-accent-ink);
+		}
+		.dt-chip[aria-pressed="true"]:hover,
+		.dt-chip.is-active:hover {
+			background: color-mix(in srgb, var(--dt-accent) 24%, var(--dt-surface));
+		}
 	}
 
 	/* Przełącznik segmentowy (Tydzień / Miesiąc itp.) */
@@ -459,13 +536,132 @@ body {
 		border-radius: var(--dt-radius-pill);
 		cursor: pointer;
 		transition:
-			background-color 0.18s ease,
-			color 0.18s ease;
+			background-color var(--dt-t-fast) ease,
+			color var(--dt-t-fast) ease,
+			box-shadow var(--dt-t-fast) ease;
 	}
 	.dt-segmented button[aria-pressed="true"] {
 		background: var(--dt-surface);
 		color: var(--dt-accent-ink);
 		box-shadow: var(--dt-shadow-sm);
+	}
+	@media (hover: hover) {
+		.dt-segmented button:hover:not([aria-pressed="true"]) {
+			background: color-mix(in srgb, var(--dt-surface) 65%, transparent);
+			color: var(--dt-text);
+		}
+	}
+
+	/* Wiersz listy (zadania, kroki, dni w statystykach) — ten sam ciepły hover */
+	.dt-row {
+		border-radius: var(--dt-radius);
+		transition: background-color var(--dt-t-fast) ease;
+	}
+	@media (hover: hover) {
+		.dt-row:hover {
+			background: var(--dt-hover-bg);
+		}
+	}
+
+	/* ======================================================================
+	   CHECKBOX — prawdziwy <input type="checkbox"> (semantyka i klawiatura
+	   natywne), wygląd własny: zaokrąglony kwadrat, pikselowy „ptaszek”,
+	   małe „pyknięcie” przy zaznaczeniu. Mały wizualnie — pole dotyku daje
+	   etykieta (.dt-check-label / .dt-check-hit, min. 40px).
+	   ====================================================================== */
+	.dt-check {
+		appearance: none;
+		-webkit-appearance: none;
+		position: relative;
+		display: inline-grid;
+		place-content: center;
+		flex-shrink: 0;
+		width: 1.25rem;
+		height: 1.25rem;
+		margin: 0;
+		border: 2px solid var(--dt-control-border);
+		border-radius: 0.4rem;
+		background: var(--dt-surface);
+		box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--dt-control-border) 18%, transparent);
+		color: var(--dt-check-mark);
+		cursor: pointer;
+		vertical-align: middle;
+		transition:
+			background-color var(--dt-t-fast) ease,
+			border-color var(--dt-t-fast) ease,
+			box-shadow var(--dt-t-fast) ease,
+			transform 0.32s var(--dt-spring);
+	}
+	/* Pikselowy ptaszek 7×6 (siatka 2px — ostre krawędzie w 1× i 2×) */
+	.dt-check::before {
+		content: "";
+		width: 0.875rem;
+		height: 0.75rem;
+		background: currentColor;
+		-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 6' shape-rendering='crispEdges'%3E%3Cpath d='M6 0h1v1H6zM5 1h2v1H5zM0 2h1v1H0zM4 2h2v1H4zM0 3h2v1H0zM3 3h2v1H3zM1 4h3v1H1zM2 5h1v1H2z'/%3E%3C/svg%3E")
+			center / 100% 100% no-repeat;
+		mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 6' shape-rendering='crispEdges'%3E%3Cpath d='M6 0h1v1H6zM5 1h2v1H5zM0 2h1v1H0zM4 2h2v1H4zM0 3h2v1H0zM3 3h2v1H3zM1 4h3v1H1zM2 5h1v1H2z'/%3E%3C/svg%3E")
+			center / 100% 100% no-repeat;
+		transform: scale(0);
+		transition: transform 0.3s var(--dt-spring);
+	}
+	.dt-check:checked {
+		background: var(--dt-check-fill);
+		border-color: var(--dt-check-fill);
+		box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.14);
+	}
+	/* „Pyknięcie”: ptaszek wskakuje ze sprężystym przestrzeleniem. To przejście,
+	   nie animacja — nie odpala się przy wczytaniu już zaznaczonych pól. */
+	.dt-check:checked::before {
+		transform: scale(1);
+	}
+	.dt-check:active:not(:disabled) {
+		transform: scale(calc(1 - (1 - var(--dt-press)) * 3));
+	}
+	.dt-check:disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+	}
+	/* Okrągły wariant — główne zadania na liście */
+	.dt-check-round {
+		width: 1.5rem;
+		height: 1.5rem;
+		border-radius: 50%;
+	}
+	@media (hover: hover) {
+		.dt-check:hover:not(:disabled),
+		:is(.dt-check-label, .dt-check-hit):hover > .dt-check:not(:disabled) {
+			border-color: var(--dt-check-fill);
+			background: color-mix(in srgb, var(--dt-check-fill) 10%, var(--dt-surface));
+		}
+		.dt-check:checked:hover:not(:disabled),
+		:is(.dt-check-label, .dt-check-hit):hover > .dt-check:checked:not(:disabled) {
+			background: color-mix(in srgb, var(--dt-check-fill) 88%, var(--dt-text));
+		}
+		/* Podgląd ptaszka nad pustym polem — wiadomo, co zrobi kliknięcie */
+		.dt-check:not(:checked):hover:not(:disabled)::before,
+		:is(.dt-check-label, .dt-check-hit):hover > .dt-check:not(:checked):not(:disabled)::before {
+			transform: scale(0.75);
+			color: color-mix(in srgb, var(--dt-check-fill) 45%, transparent);
+		}
+	}
+	/* Etykieta z tekstem — cała jest celem kliknięcia */
+	.dt-check-label {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+		min-height: 2.5rem;
+		cursor: pointer;
+	}
+	/* Samotny checkbox — niewidoczne pole dotyku 40×40 wokół małego kwadratu */
+	.dt-check-hit {
+		display: inline-grid;
+		place-items: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		flex-shrink: 0;
+		border-radius: var(--dt-radius);
+		cursor: pointer;
 	}
 
 	/* Pierścień postępu (conic-gradient) */

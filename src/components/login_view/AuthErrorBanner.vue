@@ -68,8 +68,10 @@ watch(
 	cursor: pointer;
 	flex-shrink: 0;
 }
-.auth-error-close:hover {
-	background: color-mix(in srgb, var(--dt-danger) 14%, transparent);
+@media (hover: hover) {
+	.auth-error-close:hover {
+		background: color-mix(in srgb, var(--dt-danger) 14%, transparent);
+	}
 }
 .auth-error-close i {
 	font-size: 0.7rem;

@@ -140,10 +140,20 @@ function hasLogs(date: { day: number; month: number; year: number }) {
 	background: transparent;
 	color: var(--dt-text);
 	cursor: pointer;
-	transition: background-color 0.18s ease;
+	transition:
+		background-color var(--dt-t-fast) ease,
+		transform var(--dt-t) var(--dt-ease);
 }
-.dp-date:hover {
-	background: var(--dt-accent-softer);
+.dp-date:active {
+	transform: scale(var(--dt-press));
+}
+@media (hover: hover) {
+	.dp-date:hover {
+		background: var(--dt-hover-bg);
+	}
+	.dp-date:hover .dp-full {
+		color: var(--dt-accent-ink);
+	}
 }
 .dp-weekday {
 	font-size: var(--dt-text-md);
@@ -153,6 +163,7 @@ function hasLogs(date: { day: number; month: number; year: number }) {
 .dp-full {
 	font-size: var(--dt-text-xs);
 	color: var(--dt-text-3);
+	transition: color var(--dt-t-fast) ease;
 }
 .dp-today-pill {
 	position: absolute;

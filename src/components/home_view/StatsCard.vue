@@ -558,14 +558,23 @@ function openDay(key: string) {
 	color: inherit;
 	text-align: left;
 	cursor: pointer;
-	transition: background-color 0.18s ease;
-}
-.day-row:hover:not(:disabled) {
-	background: var(--dt-surface-soft);
+	transition:
+		background-color var(--dt-t-fast) ease,
+		border-color var(--dt-t-fast) ease;
 }
 .day-row.perfect {
 	background: color-mix(in srgb, var(--dt-gold) 12%, var(--dt-surface));
 	border-color: color-mix(in srgb, var(--dt-gold) 35%, transparent);
+}
+@media (hover: hover) {
+	.day-row:hover:not(:disabled) {
+		background: var(--dt-hover-bg);
+		border-color: color-mix(in srgb, var(--dt-accent) 22%, transparent);
+	}
+	.day-row.perfect:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--dt-gold) 20%, var(--dt-surface));
+		border-color: color-mix(in srgb, var(--dt-gold) 55%, transparent);
+	}
 }
 .day-row.future {
 	opacity: 0.45;
@@ -650,10 +659,15 @@ function openDay(key: string) {
 	font-weight: 600;
 	color: var(--dt-text-2);
 	cursor: pointer;
-	transition: transform 0.15s var(--dt-ease);
+	transition:
+		transform var(--dt-t) var(--dt-spring),
+		box-shadow var(--dt-t-fast) ease;
 }
-.heat-cell:hover:not(:disabled) {
-	transform: scale(1.08);
+@media (hover: hover) {
+	.heat-cell:hover:not(:disabled) {
+		transform: scale(calc(1 + (1 - var(--dt-press)) * 1.6));
+		box-shadow: var(--dt-shadow-sm);
+	}
 }
 .heat-cell:disabled {
 	opacity: 0.35;
