@@ -8,7 +8,7 @@
 				v-for="item in visibleCards"
 				:key="item.card.id"
 				class="carousel-card"
-				:class="`role-${item.role}`"
+				:class="[`role-${item.role}`, { 'is-hinted': hintedRole === item.role }]"
 				@click="onCardClick(item.role)">
 				<!-- inert na środku karty, nie na niej samej: zawartość bocznej karty
 				     jest nieaktywna, ale kliknięcie w kartę przełącza karuzelę -->
@@ -19,13 +19,30 @@
 						:is="cardComponentMap[item.card.id]"
 						:isActive="item.role === 'active'" />
 				</div>
+				<!-- Podpowiedź po najechaniu: dokąd zabierze kliknięcie (klawiatura ma .side-hit) -->
+				<span
+					v-if="item.role !== 'active'"
+					class="side-hint"
+					aria-hidden="true">
+					<i
+						v-if="item.role === 'left'"
+						class="pi pi-chevron-left"></i>
+					{{ cardLabels[item.card.id] }}
+					<i
+						v-if="item.role === 'right'"
+						class="pi pi-chevron-right"></i>
+				</span>
 			</div>
 			<button
 				v-if="carouselStore.leftCard"
 				type="button"
 				class="side-hit side-left"
 				:aria-label="`Show ${cardLabels[carouselStore.leftCard.id]}`"
-				@click="goPrevWithAnimation">
+				@click="goPrevWithAnimation"
+				@pointerenter="onHitEnter('left', $event)"
+				@pointerleave="hitHover = null"
+				@focus="hitFocus = 'left'"
+				@blur="hitFocus = null">
 				<i
 					class="pi pi-chevron-left"
 					aria-hidden="true"></i>
@@ -35,7 +52,11 @@
 				type="button"
 				class="side-hit side-right"
 				:aria-label="`Show ${cardLabels[carouselStore.rightCard.id]}`"
-				@click="goNextWithAnimation">
+				@click="goNextWithAnimation"
+				@pointerenter="onHitEnter('right', $event)"
+				@pointerleave="hitHover = null"
+				@focus="hitFocus = 'right'"
+				@blur="hitFocus = null">
 				<i
 					class="pi pi-chevron-right"
 					aria-hidden="true"></i>
@@ -143,6 +164,16 @@ function goPrevWithAnimation() {
 	withAnimationLock(() => carouselStore.goPrev());
 }
 
+// Boczna karta „wychyla się” także, gdy kursor jest nad jej przyciskiem
+// (pas przy krawędzi ekranu) albo przycisk ma fokus z klawiatury
+const hitHover = ref<CarouselRole | null>(null);
+const hitFocus = ref<CarouselRole | null>(null);
+const hintedRole = computed(() => hitFocus.value ?? hitHover.value);
+
+function onHitEnter(role: CarouselRole, event: PointerEvent) {
+	if (event.pointerType === "mouse") hitHover.value = role;
+}
+
 // Kliknięcie w widoczną część bocznej karty przenosi ją na środek
 function onCardClick(role: CarouselRole) {
 	if (role === "left") goPrevWithAnimation();
@@ -206,6 +237,12 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 	background-color: var(--dt-accent);
 	transform: scale(1.5);
 }
+@media (hover: hover) {
+	.dot:not(.active):hover::before {
+		background-color: var(--dt-hover-border);
+		transform: scale(1.3);
+	}
+}
 
 /* ====== DESKTOP CAROUSEL (hidden on mobile) ====== */
 .desktop-carousel {
@@ -222,6 +259,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 	--carousel-side-opacity: 0.58;
 }
 .carousel-card {
+	--carousel-peek: 0px;
 	position: absolute;
 	top: 50%;
 	left: 50%;
@@ -230,43 +268,109 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 	display: flex;
 	align-items: stretch;
 	justify-content: center;
-	will-change: transform, opacity;
+	will-change: transform;
 	backface-visibility: hidden;
-	transition:
-		transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
-		opacity 320ms ease,
-		filter 320ms ease;
+	transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 .role-active {
 	transform: translate(-50%, -50%) scale(1);
-	opacity: 1;
-	filter: saturate(1);
 	z-index: 3;
 }
+/* Przygaszamy tylko zawartość — podpowiedź na karcie zostaje wyraźna */
 .carousel-card-inner {
 	display: flex;
 	align-items: stretch;
 	height: 100%;
+	transition:
+		opacity 320ms ease,
+		filter 320ms ease;
 }
 .role-left,
 .role-right {
 	cursor: pointer;
 }
-.role-left:hover,
-.role-right:hover {
-	--carousel-side-opacity: 0.78;
-}
-.role-left {
-	transform: translate(calc(-50% - var(--carousel-side-offset)), -50%) scale(var(--carousel-side-scale));
+.role-left .carousel-card-inner,
+.role-right .carousel-card-inner {
 	opacity: var(--carousel-side-opacity);
 	filter: saturate(0.9);
+}
+.role-left {
+	transform: translate(calc(-50% - var(--carousel-side-offset) + var(--carousel-peek)), -50%)
+		scale(var(--carousel-side-scale));
 	z-index: 2;
 }
 .role-right {
-	transform: translate(calc(-50% + var(--carousel-side-offset)), -50%) scale(var(--carousel-side-scale));
-	opacity: var(--carousel-side-opacity);
-	filter: saturate(0.9);
+	transform: translate(calc(-50% + var(--carousel-side-offset) - var(--carousel-peek)), -50%)
+		scale(var(--carousel-side-scale));
 	z-index: 2;
+}
+/* Najechanie na boczną kartę: rozjaśnia się i lekko „wychyla” w stronę środka.
+   --dt-lift = 0 przy ograniczonym ruchu, więc wtedy tylko się rozjaśnia. */
+.carousel-card.is-hinted {
+	--carousel-side-opacity: 0.88;
+	--carousel-peek: calc(var(--dt-lift) * -7);
+}
+.is-hinted .carousel-card-inner {
+	filter: saturate(1);
+}
+@media (hover: hover) {
+	.role-left:hover,
+	.role-right:hover {
+		--carousel-side-opacity: 0.88;
+		--carousel-peek: calc(var(--dt-lift) * -7);
+	}
+	.role-left:hover .carousel-card-inner,
+	.role-right:hover .carousel-card-inner {
+		filter: saturate(1);
+	}
+}
+
+/* „‹ To-do list” / „Progress ›” na widocznym brzegu bocznej karty */
+.side-hint {
+	--hint-shift: 0px;
+	position: absolute;
+	top: 50%;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.45rem;
+	padding: 0.55rem 1rem;
+	border-radius: var(--dt-radius-pill);
+	border: 1px solid var(--dt-border);
+	background: var(--dt-surface);
+	box-shadow: var(--dt-shadow);
+	color: var(--dt-accent-ink);
+	font-size: var(--dt-text-sm);
+	font-weight: 700;
+	white-space: nowrap;
+	pointer-events: none;
+	opacity: 0;
+	transform: translate(var(--hint-shift), -50%);
+	transition:
+		opacity 0.2s ease,
+		transform 0.3s var(--dt-ease);
+}
+.side-hint i {
+	font-size: 0.7rem;
+}
+.role-left .side-hint {
+	left: 1.25rem;
+	--hint-shift: calc(var(--dt-lift) * -3);
+}
+.role-right .side-hint {
+	right: 1.25rem;
+	--hint-shift: calc(var(--dt-lift) * 3);
+}
+.is-hinted .side-hint {
+	opacity: 1;
+	--hint-shift: 0px;
+}
+@media (hover: hover) {
+	.role-left:hover .side-hint,
+	.role-right:hover .side-hint {
+		opacity: 1;
+		--hint-shift: 0px;
+	}
 }
 /* Przezroczyste pola kliknięcia nad kartami bocznymi */
 .side-hit {
@@ -291,12 +395,23 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 	border-radius: 50%;
 	background: var(--dt-surface);
 	box-shadow: var(--dt-shadow);
+	color: var(--dt-accent-ink);
 	opacity: 0;
 	transition: opacity 0.2s ease;
 }
-.side-hit:hover i,
+/* Fokus z klawiatury widać na kółku ze strzałką, nie na całym wysokim pasie */
+.side-hit:focus-visible {
+	outline: none;
+}
 .side-hit:focus-visible i {
 	opacity: 1;
+	outline: 2px solid var(--dt-focus);
+	outline-offset: 2px;
+}
+@media (hover: hover) {
+	.side-hit:hover i {
+		opacity: 1;
+	}
 }
 .side-left {
 	left: 0;
@@ -357,6 +472,8 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 
 @media (prefers-reduced-motion: reduce) {
 	.carousel-card,
+	.carousel-card-inner,
+	.side-hint,
 	.slide-left-enter-active,
 	.slide-left-leave-active,
 	.slide-right-enter-active,
