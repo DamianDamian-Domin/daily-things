@@ -24,19 +24,18 @@
 			</div>
 		</header>
 
+		<!-- Jedno pole: obramowanie i fokus ma cały wiersz, nie samo <input> -->
 		<form
 			class="add-row"
 			@submit.prevent="submitNew">
 			<label
 				for="new-todo"
-				class="sr-only"
-				>New task</label
-			>
-			<span
-				class="add-plus"
-				aria-hidden="true"
-				><i class="pi pi-plus"></i
-			></span>
+				class="add-plus">
+				<i
+					class="pi pi-plus"
+					aria-hidden="true"></i>
+				<span class="sr-only">New task</span>
+			</label>
 			<input
 				id="new-todo"
 				ref="newInputRef"
@@ -68,19 +67,17 @@
 				:touch-start-threshold="6">
 				<template #item="{ element: todo }">
 					<li
-						class="todo"
+						class="todo dt-row"
 						:class="[todo.color ? `c-${todo.color}` : '', { expanded: expanded.has(todo.id) }]">
 						<div class="todo-row">
-							<button
-								type="button"
-								class="todo-check"
-								:class="{ popping: poppingId === todo.id }"
-								:aria-label="`Mark “${todo.text}” as done`"
-								@click="toggle(todo)">
-								<i
-									class="pi pi-check"
-									aria-hidden="true"></i>
-							</button>
+							<label class="dt-check-hit">
+								<input
+									type="checkbox"
+									class="dt-check dt-check-round"
+									:checked="todo.completed"
+									:aria-label="todo.text"
+									@change="onTodoCheck(todo, $event)" />
+							</label>
 							<button
 								type="button"
 								class="todo-main"
@@ -119,12 +116,17 @@
 									v-for="sub in todo.subtasks"
 									:key="sub.id"
 									class="subtask">
-									<label class="subtask-label">
+									<label class="subtask-label dt-check-label">
 										<input
 											type="checkbox"
+											class="dt-check"
 											:checked="sub.done"
 											@change="toggleSub(todo, sub.id)" />
-										<span :class="{ done: sub.done }">{{ sub.text }}</span>
+										<span
+											class="subtask-text"
+											:class="{ done: sub.done }"
+											>{{ sub.text }}</span
+										>
 									</label>
 								</li>
 								<li class="subtask-add">
@@ -189,17 +191,16 @@
 						<li
 							v-for="todo in completedTodos"
 							:key="todo.id"
-							class="todo is-done">
+							class="todo dt-row is-done">
 							<div class="todo-row">
-								<button
-									type="button"
-									class="todo-check checked"
-									:aria-label="`Mark “${todo.text}” as not done`"
-									@click="toggle(todo)">
-									<i
-										class="pi pi-check"
-										aria-hidden="true"></i>
-								</button>
+								<label class="dt-check-hit">
+									<input
+										type="checkbox"
+										class="dt-check dt-check-round"
+										:checked="todo.completed"
+										:aria-label="todo.text"
+										@change="toggle(todo)" />
+								</label>
 								<button
 									type="button"
 									class="todo-main"
@@ -276,17 +277,20 @@
 						handle=".drag-handle"
 						:animation="150">
 						<template #item="{ element: sub }">
-							<li class="subtask-edit">
+							<li class="subtask-edit dt-row">
 								<span
 									class="drag-handle"
 									aria-hidden="true"
 									><i class="pi pi-bars"></i
 								></span>
-								<input
-									type="checkbox"
-									:checked="sub.done"
-									:aria-label="`Mark “${sub.text}” as ${sub.done ? 'not done' : 'done'}`"
-									@change="toggleSub(editing!, sub.id)" />
+								<label class="dt-check-hit">
+									<input
+										type="checkbox"
+										class="dt-check"
+										:checked="sub.done"
+										:aria-label="sub.text"
+										@change="toggleSub(editing!, sub.id)" />
+								</label>
 								<input
 									class="subtask-edit-input"
 									:class="{ done: sub.done }"
@@ -295,7 +299,7 @@
 									@change="(e) => renameSub(sub.id, (e.target as HTMLInputElement).value)" />
 								<button
 									type="button"
-									class="dt-icon-btn subtask-remove"
+									class="dt-icon-btn dt-icon-btn-danger subtask-remove"
 									:aria-label="`Delete step “${sub.text}”`"
 									@click="removeSub(sub.id)">
 									<i
@@ -378,7 +382,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, reactive, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from "vue";
 import Dialog from "primevue/dialog";
 import draggable from "vuedraggable";
 import type { Subtask, TodoColor, TodoItem } from "@/libs/types";
@@ -460,14 +464,10 @@ async function submitNew() {
 // ==========================================
 // ODHACZANIE
 // ==========================================
-const poppingId = ref<string | null>(null);
-
-async function toggle(todo: TodoItem) {
+async function toggle(todo: TodoItem, withSound = true) {
 	lastToggleAt = Date.now();
 	if (!todo.completed) {
-		playCheck();
-		poppingId.value = todo.id;
-		setTimeout(() => (poppingId.value = null), 400);
+		if (withSound) playCheck();
 		const id = todo.id;
 		await todosStore.toggleTodo(id);
 		if (!allDone.value)
@@ -477,6 +477,42 @@ async function toggle(todo: TodoItem) {
 		await todosStore.toggleTodo(todo.id);
 	}
 }
+
+// Po odhaczeniu zadanie zostaje chwilę na miejscu, żeby było widać „pyknięcie”
+// ptaszka, i dopiero wtedy zjeżdża do ukończonych. Ponowne kliknięcie w tej
+// chwili cofa decyzję.
+const TICK_DELAY_MS = 320;
+const pendingTicks = new Map<string, number>();
+
+function onTodoCheck(todo: TodoItem, event: Event) {
+	const input = event.target as HTMLInputElement;
+	const pending = pendingTicks.get(todo.id);
+	if (pending !== undefined) {
+		window.clearTimeout(pending);
+		pendingTicks.delete(todo.id);
+		return;
+	}
+	if (!input.checked) return;
+	lastToggleAt = Date.now();
+	playCheck();
+	pendingTicks.set(
+		todo.id,
+		window.setTimeout(() => {
+			pendingTicks.delete(todo.id);
+			toggle(todo, false);
+		}, TICK_DELAY_MS),
+	);
+}
+
+// Karta znika (np. wylogowanie) — oczekujące odhaczenia zapisujemy od razu
+onBeforeUnmount(() => {
+	for (const [id, timer] of pendingTicks) {
+		window.clearTimeout(timer);
+		const todo = todosStore.userTodosList.find((t) => t.id === id);
+		if (todo && !todo.completed) todosStore.toggleTodo(id);
+	}
+	pendingTicks.clear();
+});
 
 async function clearCompleted() {
 	const removed = await todosStore.clearCompletedTodos();
@@ -633,24 +669,37 @@ async function deleteEditing() {
 	font-style: italic;
 }
 
+/* Pole „Dodaj zadanie”: jedna ramka i jeden pierścień fokusu dla całego wiersza */
 .add-row {
 	display: flex;
 	align-items: center;
-	gap: 0.5rem;
-	padding: 0.35rem 0.4rem 0.35rem 0.5rem;
+	gap: 0.35rem;
+	padding: 0.2rem 0.3rem 0.2rem 0.2rem;
 	border-radius: var(--dt-radius-lg);
 	border: 1.5px dashed var(--dt-border-strong);
 	background: var(--dt-surface-soft);
 	transition:
-		border-color 0.18s ease,
-		box-shadow 0.18s ease;
+		border-color var(--dt-t-fast) ease,
+		background-color var(--dt-t-fast) ease,
+		box-shadow var(--dt-t-fast) ease;
 }
 .add-row:focus-within {
 	border-style: solid;
 	border-color: var(--dt-accent);
+	background: var(--dt-surface);
 	box-shadow: var(--dt-focus-ring);
 }
+/* „+” to etykieta pola — kliknięcie w nią ustawia kursor w polu */
 .add-plus {
+	display: grid;
+	place-items: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	flex-shrink: 0;
+	border-radius: 50%;
+	cursor: text;
+}
+.add-plus i {
 	display: grid;
 	place-items: center;
 	width: 1.9rem;
@@ -658,15 +707,22 @@ async function deleteEditing() {
 	border-radius: 50%;
 	background: var(--dt-accent-soft);
 	color: var(--dt-accent-ink);
-	flex-shrink: 0;
-}
-.add-plus i {
 	font-size: 0.75rem;
+	transition:
+		background-color var(--dt-t-fast) ease,
+		color var(--dt-t-fast) ease,
+		transform var(--dt-t) var(--dt-spring);
+}
+.add-row:focus-within .add-plus i {
+	background: var(--dt-accent-strong);
+	color: var(--dt-on-accent);
+	transform: rotate(90deg);
 }
 .add-input {
 	flex: 1;
 	min-width: 0;
-	min-height: 2.3rem;
+	min-height: 2.5rem;
+	padding: 0;
 	border: none;
 	background: transparent;
 	font-family: var(--dt-font);
@@ -674,8 +730,22 @@ async function deleteEditing() {
 	color: var(--dt-text);
 	outline: none;
 }
+/* Fokus pokazuje cały wiersz — samo pole nie dokłada drugiego obrysu */
+.add-input:focus-visible {
+	outline: none;
+	box-shadow: none;
+}
 .add-input::placeholder {
 	color: var(--dt-text-3);
+}
+@media (hover: hover) {
+	.add-row:hover:not(:focus-within) {
+		border-color: var(--dt-hover-border);
+		background: var(--dt-hover-bg);
+	}
+	.add-row:hover:not(:focus-within) .add-plus i {
+		background: color-mix(in srgb, var(--dt-accent) 26%, var(--dt-surface));
+	}
 }
 
 .todos-scroll {
@@ -696,12 +766,7 @@ async function deleteEditing() {
 	gap: 0.15rem;
 }
 .todo {
-	border-radius: var(--dt-radius);
-	transition: background-color 0.18s ease;
 	border-left: 3px solid transparent;
-}
-.todo:hover {
-	background: var(--dt-surface-soft);
 }
 .todo.expanded {
 	background: var(--dt-surface-soft);
@@ -733,54 +798,6 @@ async function deleteEditing() {
 	align-items: center;
 	gap: 0.35rem;
 	padding: 0.2rem 0.35rem;
-}
-.todo-check {
-	display: grid;
-	place-items: center;
-	width: 2.5rem;
-	height: 2.5rem;
-	border: none;
-	background: transparent;
-	cursor: pointer;
-	flex-shrink: 0;
-	border-radius: 50%;
-}
-.todo-check i {
-	display: grid;
-	place-items: center;
-	width: 1.45rem;
-	height: 1.45rem;
-	border-radius: 50%;
-	border: 2px solid var(--dt-border-strong);
-	color: transparent;
-	font-size: 0.65rem;
-	transition:
-		background-color 0.2s ease,
-		border-color 0.2s ease,
-		color 0.2s ease;
-}
-.todo-check:hover i {
-	border-color: var(--dt-success-fill);
-	color: color-mix(in srgb, var(--dt-success-fill) 60%, transparent);
-}
-.todo-check.checked i {
-	background: var(--dt-success-fill);
-	border-color: var(--dt-success-fill);
-	color: #fff;
-}
-.todo-check.popping i {
-	animation: check-pop 0.4s var(--dt-spring);
-	background: var(--dt-success-fill);
-	border-color: var(--dt-success-fill);
-	color: #fff;
-}
-@keyframes check-pop {
-	40% {
-		transform: scale(1.35);
-	}
-	70% {
-		transform: scale(0.9);
-	}
 }
 
 .todo-main {
@@ -828,6 +845,10 @@ async function deleteEditing() {
 	font-variant-numeric: tabular-nums;
 	cursor: pointer;
 	flex-shrink: 0;
+	transition:
+		background-color var(--dt-t-fast) ease,
+		border-color var(--dt-t-fast) ease,
+		color var(--dt-t-fast) ease;
 }
 .subtask-chip i {
 	font-size: 0.6rem;
@@ -841,48 +862,82 @@ async function deleteEditing() {
 	border-color: transparent;
 	color: var(--dt-success);
 }
+@media (hover: hover) {
+	.subtask-chip:hover {
+		border-color: var(--dt-hover-border);
+		background: var(--dt-hover-bg);
+		color: var(--dt-accent-ink);
+	}
+	.subtask-chip.complete:hover {
+		border-color: color-mix(in srgb, var(--dt-success) 40%, transparent);
+		background: var(--dt-success-soft);
+		color: var(--dt-success);
+	}
+}
 
+/* Kroki na liście — wyrównane pod tekstem zadania */
 .subtasks {
 	list-style: none;
 	margin: 0;
-	padding: 0 0.75rem 0.6rem 3.1rem;
+	padding: 0 0.75rem 0.6rem 2.95rem;
 	display: flex;
 	flex-direction: column;
-	gap: 0.1rem;
+	gap: 0.05rem;
 }
 .subtask-label {
-	display: flex;
-	align-items: center;
-	gap: 0.6rem;
-	min-height: 2.2rem;
+	padding: 0 0.5rem;
+	border-radius: var(--dt-radius-sm);
 	font-size: var(--dt-text-sm);
 	color: var(--dt-text-2);
-	cursor: pointer;
+	transition: background-color var(--dt-t-fast) ease;
 }
-.subtask-label input,
-.subtask-edit input[type="checkbox"] {
-	width: 1.1rem;
-	height: 1.1rem;
-	accent-color: var(--dt-success-fill);
-	flex-shrink: 0;
+@media (hover: hover) {
+	.subtask-label:hover {
+		background: var(--dt-hover-bg);
+	}
 }
-.subtask-label .done {
+.subtask-text {
+	line-height: 1.35;
+	overflow-wrap: anywhere;
 	text-decoration: line-through;
+	text-decoration-color: transparent;
+	transition:
+		color var(--dt-t) ease,
+		text-decoration-color var(--dt-t) ease;
+}
+.subtask-text.done {
 	color: var(--dt-text-3);
+	text-decoration-color: currentColor;
+}
+.subtask-add {
+	padding: 0.15rem 0.5rem 0;
 }
 .subtask-input {
 	width: 100%;
-	min-height: 2.2rem;
+	min-height: 2.5rem;
+	padding: 0 0.1rem;
 	border: none;
 	border-bottom: 1px dashed var(--dt-border-strong);
+	border-radius: 0;
 	background: transparent;
 	font-family: var(--dt-font);
 	font-size: var(--dt-text-sm);
 	color: var(--dt-text);
 	outline: none;
+	transition:
+		border-color var(--dt-t-fast) ease,
+		background-color var(--dt-t-fast) ease;
 }
-.subtask-input:focus {
-	border-bottom-color: var(--dt-accent);
+@media (hover: hover) {
+	.subtask-input:hover:not(:focus) {
+		border-bottom-color: var(--dt-hover-border);
+	}
+}
+/* Pole bez ramki — fokus to wypełniona linia i ciepłe tło, bez dodatkowej poświaty */
+.subtask-input:focus-visible {
+	box-shadow: none;
+	border-bottom: 1.5px solid var(--dt-accent);
+	background: var(--dt-hover-bg);
 }
 
 .all-clear {
@@ -914,8 +969,8 @@ async function deleteEditing() {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.45rem;
-	min-height: 2.2rem;
-	padding: 0.3rem 0.4rem;
+	min-height: 2.5rem;
+	padding: 0.3rem 0.6rem;
 	border: none;
 	background: transparent;
 	color: var(--dt-text-2);
@@ -923,10 +978,19 @@ async function deleteEditing() {
 	font-size: var(--dt-text-sm);
 	font-weight: 600;
 	cursor: pointer;
-	border-radius: var(--dt-radius-sm);
+	border-radius: var(--dt-radius-pill);
+	transition:
+		background-color var(--dt-t-fast) ease,
+		color var(--dt-t-fast) ease;
 }
 .done-toggle i {
 	font-size: 0.65rem;
+}
+@media (hover: hover) {
+	.done-toggle:hover {
+		background: var(--dt-hover-bg);
+		color: var(--dt-accent-ink);
+	}
 }
 
 /* Okno szczegółów */
@@ -962,8 +1026,8 @@ async function deleteEditing() {
 .subtask-edit {
 	display: flex;
 	align-items: center;
-	gap: 0.5rem;
-	padding: 0.1rem 0.25rem;
+	gap: 0.15rem;
+	padding: 0 0.15rem 0 0.25rem;
 	border-radius: var(--dt-radius-sm);
 	background: var(--dt-surface-soft);
 }
@@ -972,6 +1036,16 @@ async function deleteEditing() {
 	cursor: grab;
 	padding: 0.4rem 0.2rem;
 	font-size: 0.75rem;
+	border-radius: var(--dt-radius-sm);
+	transition: color var(--dt-t-fast) ease;
+}
+.drag-handle:active {
+	cursor: grabbing;
+}
+@media (hover: hover) {
+	.drag-handle:hover {
+		color: var(--dt-accent-ink);
+	}
 }
 .subtask-edit-input {
 	flex: 1;
@@ -984,9 +1058,13 @@ async function deleteEditing() {
 	color: var(--dt-text);
 	outline: none;
 	border-radius: var(--dt-radius-sm);
-	padding: 0 0.3rem;
+	padding: 0 0.4rem;
+	transition:
+		background-color var(--dt-t-fast) ease,
+		box-shadow var(--dt-t-fast) ease;
 }
 .subtask-edit-input:focus {
+	background: var(--dt-surface);
 	box-shadow: var(--dt-focus-ring);
 }
 .subtask-edit-input.done {
@@ -994,8 +1072,8 @@ async function deleteEditing() {
 	color: var(--dt-text-3);
 }
 .subtask-remove {
-	width: 2rem;
-	height: 2rem;
+	width: 2.25rem;
+	height: 2.25rem;
 }
 .subtask-remove i {
 	font-size: 0.65rem;
@@ -1027,9 +1105,28 @@ async function deleteEditing() {
 	cursor: pointer;
 	color: #fff;
 	font-size: 0.7rem;
+	transition:
+		transform var(--dt-t) var(--dt-spring),
+		box-shadow var(--dt-t-fast) ease;
 }
 .swatch[aria-pressed="true"] {
 	box-shadow: 0 0 0 2px var(--dt-text-2);
+}
+.swatch:active {
+	transform: scale(var(--dt-press));
+}
+@media (hover: hover) {
+	.swatch:hover {
+		transform: translateY(var(--dt-lift));
+		box-shadow:
+			0 0 0 1px var(--dt-hover-border),
+			var(--dt-shadow-sm);
+	}
+	.swatch[aria-pressed="true"]:hover {
+		box-shadow:
+			0 0 0 2px var(--dt-text-2),
+			var(--dt-shadow-sm);
+	}
 }
 .s-none {
 	background: var(--dt-surface-sunken);
