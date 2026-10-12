@@ -71,6 +71,17 @@ const EXTRA_ICONS = [
 	"forest",
 	"cloud",
 	"nightlight",
+	// Kategorie w oknie dodawania habitu (SUPER_CATEGORIES[].icon) + nagłówki sekcji
+	"category",
+	"do_not_disturb_on",
+	"ecg_heart",
+	"nutrition",
+	"work",
+	"menu_book",
+	"group",
+	"palette",
+	"devices",
+	"search",
 ];
 
 function glyphMask(name) {

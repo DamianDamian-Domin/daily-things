@@ -28,7 +28,9 @@ export type SuperCategoryKey =
 export interface SuperCategory {
 	key: SuperCategoryKey;
 	label: string;
+	short: string; // krótka nazwa na kafelek filtra w oknie dodawania
 	emoji: string;
+	icon: string; // pikselowa ikona (Material Symbols) — musi być w EXTRA_ICONS generatora
 	palette: PaletteKey;
 	sources: string[];
 }
@@ -37,14 +39,18 @@ export const SUPER_CATEGORIES: SuperCategory[] = [
 	{
 		key: "fitness",
 		label: "Fitness",
+		short: "Fitness",
 		emoji: "🏃",
+		icon: "directions_run",
 		palette: "orange",
 		sources: ["Sports & Games", "Fitness & Movement"],
 	},
 	{
 		key: "health",
 		label: "Health & Body",
+		short: "Health",
 		emoji: "💪",
+		icon: "ecg_heart",
 		palette: "teal",
 		sources: [
 			"Personal Hygiene & Grooming",
@@ -53,40 +59,66 @@ export const SUPER_CATEGORIES: SuperCategory[] = [
 			"Sleep & Routines",
 		],
 	},
-	{ key: "food", label: "Food", emoji: "🍎", palette: "red", sources: ["Nutrition & Food"] },
+	{
+		key: "food",
+		label: "Food",
+		short: "Food",
+		emoji: "🍎",
+		icon: "nutrition",
+		palette: "red",
+		sources: ["Nutrition & Food"],
+	},
 	{
 		key: "mind",
 		label: "Mind",
+		short: "Mind",
 		emoji: "🧘",
+		icon: "self_improvement",
 		palette: "purple",
 		sources: ["Mental Health & Mindfulness", "Spirituality & Reflection"],
 	},
 	{
 		key: "work",
 		label: "Work & Focus",
+		short: "Work",
 		emoji: "💼",
+		icon: "work",
 		palette: "blue",
 		sources: ["Productivity & Work"],
 	},
 	{
 		key: "learning",
 		label: "Learning",
+		short: "Learning",
 		emoji: "📚",
+		icon: "menu_book",
 		palette: "indigo",
 		sources: ["Learning & Growth"],
 	},
-	{ key: "home", label: "Home", emoji: "🏡", palette: "brown", sources: ["Home & Chores"] },
+	{
+		key: "home",
+		label: "Home",
+		short: "Home",
+		emoji: "🏡",
+		icon: "home",
+		palette: "brown",
+		sources: ["Home & Chores"],
+	},
 	{
 		key: "social",
 		label: "People",
+		short: "People",
 		emoji: "👥",
+		icon: "group",
 		palette: "pink",
 		sources: ["Social & Community", "Family & Relationships"],
 	},
 	{
 		key: "life",
 		label: "Life & Play",
+		short: "Play",
 		emoji: "🎨",
+		icon: "palette",
 		palette: "green",
 		sources: [
 			"Creativity & Hobbies",
@@ -95,21 +127,41 @@ export const SUPER_CATEGORIES: SuperCategory[] = [
 			"Transport & Car",
 		],
 	},
-	{ key: "pets", label: "Pets", emoji: "🐾", palette: "sand", sources: ["Pets"] },
+	{
+		key: "pets",
+		label: "Pets",
+		short: "Pets",
+		emoji: "🐾",
+		icon: "pets",
+		palette: "sand",
+		sources: ["Pets"],
+	},
 	{
 		key: "tech",
 		label: "Digital",
+		short: "Digital",
 		emoji: "📱",
+		icon: "devices",
 		palette: "gray",
 		sources: ["Digital Wellbeing & Tech"],
 	},
-	{ key: "finance", label: "Money", emoji: "💰", palette: "yellow", sources: ["Finance"] },
+	{
+		key: "finance",
+		label: "Money",
+		short: "Money",
+		emoji: "💰",
+		icon: "savings",
+		palette: "yellow",
+		sources: ["Finance"],
+	},
 ];
 
 export const CUSTOM_CATEGORY: SuperCategory = {
 	key: "yours",
 	label: "Your habits",
+	short: "Yours",
 	emoji: "⭐",
+	icon: "star",
 	palette: "orange",
 	sources: [],
 };
