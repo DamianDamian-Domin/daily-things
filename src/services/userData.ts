@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/firebase";
 import type { DayEntry, Goal, Habbit, TodoItem, UserPreferences } from "@/libs/types";
+import type { AvatarConfig } from "@/utils/avatar";
 
 // ==========================================================================
 // Model danych:
@@ -29,6 +30,9 @@ export interface UserDoc {
 	recentlyUsed?: string[];
 	customHabbits?: Habbit[];
 	preferences?: Partial<UserPreferences>;
+	// Własny awatar (brak = domyślny wyliczony z UID) i kod znajomego
+	avatar?: AvatarConfig;
+	friendCode?: string;
 }
 
 export const userDocRef = (uid: string) => doc(db, "users", uid);
@@ -109,7 +113,13 @@ export async function mergeUserData(targetUid: string, source: ExportedUserData)
 		...(source.user.customHabbits ?? []).filter((h) => !customNames.has(h.name)),
 	];
 
-	await saveUserFields(targetUid, { todos, dailyGoals, recentlyUsed, customHabbits });
+	await saveUserFields(targetUid, {
+		todos,
+		dailyGoals,
+		recentlyUsed,
+		customHabbits,
+		...(!target.avatar && source.user.avatar ? { avatar: source.user.avatar } : {}),
+	});
 
 	for (const day of source.days) {
 		if (!day.habbits?.length) continue;

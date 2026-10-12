@@ -27,6 +27,7 @@
 			v-if="!isLoginRoute && !authStore.isAuthDialogOpen"
 			:bottom-offset="bottomOffset" />
 		<AuthDialog v-if="authDialogNeeded" />
+		<AvatarEditor v-if="avatarEditorNeeded" />
 		<ToastHost :bottom-offset="bottomOffset" />
 	</div>
 </template>
@@ -39,6 +40,7 @@ import { useHabbitsStore } from "@/stores/habbits";
 import { useTodosStore } from "@/stores/todos";
 import { usePreferencesStore } from "@/stores/userPreferences";
 import { useToastStore } from "@/stores/toast";
+import { useProfileStore } from "@/stores/profile";
 import { fetchUserDoc } from "@/services/userData";
 import { isNativePlatform } from "@/utils/platform";
 import { useLayout } from "@/utils/useLayout";
@@ -49,6 +51,7 @@ import CookiesConsentBanner from "@/components/CookiesConsentBanner.vue";
 // Okno logowania ładujemy dopiero, gdy jest potrzebne (powracający
 // użytkownicy nigdy go nie pobiorą)
 const AuthDialog = defineAsyncComponent(() => import("@/components/login_view/AuthDialog.vue"));
+const AvatarEditor = defineAsyncComponent(() => import("@/components/friends/AvatarEditor.vue"));
 import ToastHost from "@/components/ui/ToastHost.vue";
 
 const route = useRoute();
@@ -58,6 +61,7 @@ const habbitsStore = useHabbitsStore();
 const todosStore = useTodosStore();
 const preferencesStore = usePreferencesStore();
 const toast = useToastStore();
+const profileStore = useProfileStore();
 
 // ==========================================
 // UKŁAD (mobile / desktop)
@@ -73,6 +77,13 @@ watch(
 	},
 	{ immediate: true },
 );
+const avatarEditorNeeded = ref(false);
+watch(
+	() => profileStore.isEditorOpen,
+	(open) => {
+		if (open) avatarEditorNeeded.value = true;
+	},
+);
 const showChrome = computed(() => !isLoginRoute.value);
 const bottomOffset = computed(() => (showChrome.value && isMobileLayout.value ? 68 : 0));
 
@@ -86,7 +97,10 @@ async function loadSession(uid: string) {
 		preferencesStore.hydrate(userDoc);
 		habbitsStore.hydrate(userDoc);
 		todosStore.hydrate(userDoc);
+		profileStore.hydrate(userDoc);
 		await habbitsStore.loadInitialHistory();
+		if (authStore.userUid !== uid) return;
+		profileStore.markReady();
 	} catch (err) {
 		console.error("Session load failed", err);
 		toast.error("We couldn't load your data. Check your connection.");
@@ -98,6 +112,7 @@ watch(
 	async ([uid]) => {
 		habbitsStore.clearData();
 		todosStore.clearData();
+		profileStore.clear();
 
 		if (!uid) {
 			if (isNativePlatform) {
@@ -115,6 +130,7 @@ watch(
 	},
 	{ immediate: true },
 );
+
 </script>
 
 <style scoped>
