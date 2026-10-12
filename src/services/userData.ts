@@ -19,6 +19,7 @@ import type { AvatarConfig } from "@/utils/avatar";
 //   users/{uid}                     → profil, todos[], dailyGoals[], recentlyUsed[],
 //                                      customHabbits[], preferences{}
 //   users/{uid}/habbits/{YYYY-MM-DD} → { date, habbits[], goalsSnapshot[] }
+// Funkcje „Znajomi” (profiles, friendCodes, friendships) → services/friends.ts
 // ==========================================================================
 
 export interface UserDoc {
@@ -137,8 +138,13 @@ export async function mergeUserData(targetUid: string, source: ExportedUserData)
 	}
 }
 
-// RODO / Google Play: pełne usunięcie danych użytkownika
+// RODO / Google Play: pełne usunięcie danych użytkownika — również profilu
+// dla znajomych, kodu, znajomości i powiadomień
 export async function deleteAllUserData(uid: string) {
+	const userDoc = await fetchUserDoc(uid);
+	// Moduł znajomych ładujemy dopiero tutaj (rzadka operacja)
+	const { deleteSocialData } = await import("@/services/friends");
+	await deleteSocialData(uid, userDoc.friendCode);
 	const days = await getDocs(daysCollectionRef(uid));
 	let batch = writeBatch(db);
 	let ops = 0;
