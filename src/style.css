@@ -85,6 +85,8 @@
 	--dt-control-border: #b0866a;
 	--dt-check-fill: var(--dt-success);
 	--dt-check-mark: #ffffff;
+	/* Zmienna, nie wartość w regule: lightningcss psuje fallback color-mix przy ::before w :is() */
+	--dt-check-preview: color-mix(in srgb, var(--dt-check-fill) 45%, transparent);
 
 	/* Wysokość dolnego paska na mobile */
 	--dt-tabbar-h: 68px;
@@ -663,7 +665,7 @@ body {
 		.dt-check:not(:checked):hover:not(:disabled)::before,
 		:is(.dt-check-label, .dt-check-hit):hover > .dt-check:not(:checked):not(:disabled)::before {
 			transform: scale(0.75);
-			color: color-mix(in srgb, var(--dt-check-fill) 45%, transparent);
+			color: var(--dt-check-preview);
 		}
 	}
 	/* Etykieta z tekstem — cała jest celem kliknięcia */
