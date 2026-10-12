@@ -60,26 +60,62 @@
 					@keydown.enter.prevent="onSearchEnter" />
 			</div>
 
+			<!-- Półka kategorii: jeden rząd pikselowych kafelków. Mysz: strzałki
+			     i kółko, dotyk: przesunięcie palcem, klawiatura: strzałki
+			     (radiogroup z „wędrującym” tabindexem). -->
 			<div
-				class="add-cats"
-				role="group"
-				aria-label="Categories">
+				class="cat-shelf"
+				:class="{ 'can-left': railEdges.left, 'can-right': railEdges.right }">
 				<button
 					type="button"
-					class="dt-chip"
-					:aria-pressed="category === 'all'"
-					@click="category = 'all'">
-					All
+					class="cat-arrow is-left"
+					tabindex="-1"
+					aria-hidden="true"
+					@click="scrollRail(-1)">
+					<i class="pi pi-chevron-left"></i>
 				</button>
+				<div
+					ref="railRef"
+					class="cat-rail"
+					role="radiogroup"
+					aria-label="Category"
+					@scroll.passive="updateRailEdges"
+					@wheel="onRailWheel"
+					@keydown="onRailKeydown">
+					<template
+						v-for="f in filters"
+						:key="f.key">
+						<span
+							v-if="f.key === firstCatalogKey"
+							class="cat-sep"
+							aria-hidden="true"></span>
+						<button
+							type="button"
+							role="radio"
+							class="cat-tile"
+							:class="`is-${f.key}`"
+							:aria-checked="category === f.key"
+							:tabindex="category === f.key ? 0 : -1"
+							:data-key="f.key"
+							:style="{ '--tint': PALETTES[f.palette].h, '--tint-strong': PALETTES[f.palette].f }"
+							@click="selectCategory(f.key)">
+							<span class="cat-face">
+								<PixelIcon
+									:icon="f.icon"
+									:palette="f.palette"
+									:size="26" />
+							</span>
+							<span class="cat-label">{{ f.short }}</span>
+						</button>
+					</template>
+				</div>
 				<button
-					v-for="cat in categories"
-					:key="cat.key"
 					type="button"
-					class="dt-chip"
-					:aria-pressed="category === cat.key"
-					@click="category = category === cat.key ? 'all' : cat.key">
-					<span aria-hidden="true">{{ cat.emoji }}</span>
-					{{ cat.label }}
+					class="cat-arrow is-right"
+					tabindex="-1"
+					aria-hidden="true"
+					@click="scrollRail(1)">
+					<i class="pi pi-chevron-right"></i>
 				</button>
 			</div>
 
@@ -126,10 +162,11 @@
 						</fieldset>
 						<label
 							v-if="mode === 'log'"
-							class="negative-toggle">
+							class="negative-toggle dt-check-label">
 							<input
 								v-model="customNegative"
-								type="checkbox" />
+								type="checkbox"
+								class="dt-check" />
 							It's a habit I want to break
 						</label>
 						<div class="create-actions">
@@ -149,13 +186,22 @@
 					</form>
 				</Transition>
 
+				<p
+					v-if="category === 'negative' && !query && !creating"
+					class="break-hint">
+					Noticing a slip is the first step to changing it. Log it kindly 🌱
+				</p>
+
 				<section
 					v-for="section in sections"
 					:key="section.key"
 					class="add-section"
 					:aria-label="section.title">
 					<div class="add-section-head">
-						<span aria-hidden="true">{{ section.emoji }}</span>
+						<PixelIcon
+							:icon="section.icon"
+							:palette="section.palette"
+							:size="26" />
 						<h3 class="dt-section-title">{{ section.title }}</h3>
 						<button
 							v-if="section.key === 'yours'"
@@ -202,14 +248,22 @@
 					</div>
 				</section>
 
+				<!-- Pusto: w wybranej kategorii nic nie pasuje — proponujemy szukanie wszędzie -->
 				<div
-					v-if="query && sections.length === 0 && !creating"
-					class="dt-empty">
+					v-if="sections.length === 0 && !creating"
+					class="dt-empty add-empty">
 					<PixelIcon
-						icon="eco"
-						palette="green"
-						:size="40" />
-					<p>Nothing called “{{ query }}” yet.</p>
+						:icon="query ? 'search' : 'potted_plant'"
+						:palette="query ? 'orange' : 'green'"
+						:size="52" />
+					<p>{{ emptyText }}</p>
+					<button
+						v-if="query && category !== 'all' && matchesElsewhere > 0"
+						type="button"
+						class="dt-btn dt-btn-soft dt-btn-sm"
+						@click="selectCategory('all')">
+						See {{ matchesElsewhere }} {{ matchesElsewhere === 1 ? "match" : "matches" }} in all categories
+					</button>
 				</div>
 
 				<button
@@ -224,7 +278,11 @@
 					>
 					<span>
 						<strong>{{ query ? `Create “${query.trim()}”` : "Create your own habit" }}</strong>
-						<small>Can't find it? Make it yours.</small>
+						<small>{{
+							category === "negative"
+								? "Something else you'd like to cut back on?"
+								: "Can't find it? Make it yours."
+						}}</small>
 					</span>
 				</button>
 			</div>
@@ -247,10 +305,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, reactive, ref, watch } from "vue";
 import Dialog from "primevue/dialog";
 import type { Habbit } from "@/libs/types";
 import { useHabbitsStore } from "@/stores/habbits";
+import { usePreferencesStore } from "@/stores/userPreferences";
 import { useSound } from "@/utils/useSound";
 import {
 	CUSTOM_CATEGORY,
@@ -264,6 +323,7 @@ import {
 	superCategoryOf,
 	type SuperCategoryKey,
 } from "@/utils/habitCatalog";
+import { PALETTES, type PaletteKey } from "@/utils/pixelIcons";
 import HabitTile from "@/components/home_view/HabitTile.vue";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 
@@ -272,6 +332,7 @@ const emit = defineEmits<{ (e: "logged"): void }>();
 const visible = defineModel<boolean>({ default: false });
 
 const habbitsStore = useHabbitsStore();
+const preferences = usePreferencesStore();
 const { playHabitCheck, playUncheck } = useSound();
 
 const CUSTOM_ICONS = [
@@ -305,8 +366,32 @@ const CUSTOM_ICONS = [
 	"potted_plant",
 ];
 
+// Filtr: wszystko, złe nawyki („do rzucenia”) albo jedna z kategorii katalogu
+type FilterKey = "all" | "negative" | SuperCategoryKey;
+interface CategoryFilter {
+	key: FilterKey;
+	label: string;
+	short: string;
+	icon: string;
+	palette: PaletteKey;
+}
+const ALL_FILTER: CategoryFilter = {
+	key: "all",
+	label: "All habits",
+	short: "All",
+	icon: "category",
+	palette: "orange",
+};
+const NEGATIVE_FILTER: CategoryFilter = {
+	key: "negative",
+	label: "Habits to break",
+	short: "Break",
+	icon: "do_not_disturb_on",
+	palette: "plum",
+};
+
 const query = ref("");
-const category = ref<"all" | SuperCategoryKey>("all");
+const category = ref<FilterKey>("all");
 const searchRef = ref<HTMLInputElement | null>(null);
 const scrollRef = ref<HTMLElement | null>(null);
 const sessionAdds = ref(0);
@@ -326,6 +411,10 @@ function onShow() {
 	creating.value = false;
 	managing.value = false;
 	recentSnapshot.value = [...habbitsStore.recentHabbits];
+	nextTick(() => {
+		if (railRef.value) railRef.value.scrollLeft = 0;
+		updateRailEdges();
+	});
 	// Na telefonie nie otwieramy od razu klawiatury — zasłoniłaby listę
 	if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
 		nextTick(() => searchRef.value?.focus());
@@ -371,38 +460,168 @@ function tileLabel(h: Habbit) {
 		: `${name}, goal ${n} ${n === 1 ? "time" : "times"} a day. Add one more`;
 }
 
-const categories = computed(() => {
-	const list = SUPER_CATEGORIES.filter((c) => pool.value.some((h) => superCategoryOf(h)?.key === c.key));
-	return habbitsStore.customHabbits.length ? [CUSTOM_CATEGORY, ...list] : list;
+// Kafelki filtrów — tylko te, w których coś jest (w trybie celów nie ma złych nawyków)
+const filters = computed<CategoryFilter[]>(() => {
+	const has = (test: (h: Habbit) => boolean) => pool.value.some(test);
+	const list: CategoryFilter[] = [ALL_FILTER];
+	if (has((h) => h.origin === "user")) list.push(CUSTOM_CATEGORY);
+	if (has(isNegative)) list.push(NEGATIVE_FILTER);
+	for (const cat of SUPER_CATEGORIES) if (has((h) => superCategoryOf(h)?.key === cat.key)) list.push(cat);
+	return list;
 });
+// Pionowa kreska oddziela „specjalne” filtry od kategorii katalogu
+const CATALOG_KEYS = new Set<FilterKey>(SUPER_CATEGORIES.map((c) => c.key));
+const firstCatalogKey = computed(() => filters.value.find((f) => CATALOG_KEYS.has(f.key))?.key);
+const activeFilter = computed(() => filters.value.find((f) => f.key === category.value) ?? ALL_FILTER);
+
+// Np. po usunięciu ostatniego własnego habitu filtr „Yours” znika — wracamy do „All”
+watch(filters, (list) => {
+	if (!list.some((f) => f.key === category.value)) category.value = "all";
+	nextTick(updateRailEdges);
+});
+
+// ==========================================================================
+// Półka kategorii (przewijanie myszą, dotykiem i klawiaturą)
+// ==========================================================================
+const railRef = ref<HTMLElement | null>(null);
+const railEdges = reactive({ left: false, right: false });
+
+function updateRailEdges() {
+	const rail = railRef.value;
+	if (!rail) return;
+	const max = rail.scrollWidth - rail.clientWidth;
+	railEdges.left = rail.scrollLeft > 2;
+	railEdges.right = rail.scrollLeft < max - 2;
+}
+
+let railObserver: ResizeObserver | null = null;
+watch(railRef, (rail) => {
+	railObserver?.disconnect();
+	if (!rail || typeof ResizeObserver === "undefined") return;
+	railObserver = new ResizeObserver(() => updateRailEdges());
+	railObserver.observe(rail);
+});
+onBeforeUnmount(() => railObserver?.disconnect());
+
+const scrollBehavior = (): ScrollBehavior => (preferences.animationsEnabled ? "smooth" : "auto");
+
+// Strzałki przewijają o „stronę” kafelków
+function scrollRail(direction: -1 | 1) {
+	const rail = railRef.value;
+	if (!rail) return;
+	rail.scrollBy({ left: direction * Math.max(rail.clientWidth * 0.7, 120), behavior: scrollBehavior() });
+}
+
+// Kółko myszy (pionowe) przewija półkę w poziomie; na krańcach oddajemy je oknu
+function onRailWheel(event: WheelEvent) {
+	const rail = railRef.value;
+	if (!rail || event.ctrlKey) return;
+	if (Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return; // gładzik w poziomie — natywnie
+	const max = rail.scrollWidth - rail.clientWidth;
+	if (max <= 0) return;
+	if ((event.deltaY < 0 && rail.scrollLeft <= 0) || (event.deltaY > 0 && rail.scrollLeft >= max - 1)) return;
+	event.preventDefault();
+	const delta = event.deltaMode === 1 ? event.deltaY * 32 : event.deltaY; // linie → piksele
+	rail.scrollLeft += delta;
+}
+
+function tileEl(key: FilterKey) {
+	return railRef.value?.querySelector<HTMLElement>(`[data-key="${key}"]`) ?? null;
+}
+
+// Wybrany kafelek zawsze w pełni widoczny (z zapasem na wygaszone krawędzie)
+function revealTile(key: FilterKey) {
+	const rail = railRef.value;
+	const tile = tileEl(key);
+	if (!rail || !tile) return;
+	const margin = 48;
+	const left = tile.offsetLeft - rail.scrollLeft;
+	const right = left + tile.offsetWidth;
+	if (left < margin) rail.scrollBy({ left: left - margin, behavior: scrollBehavior() });
+	else if (right > rail.clientWidth - margin)
+		rail.scrollBy({ left: right - rail.clientWidth + margin, behavior: scrollBehavior() });
+}
+
+function selectCategory(key: FilterKey) {
+	category.value = key;
+	nextTick(() => revealTile(key));
+}
+
+// Radiogroup: strzałki / Home / End przenoszą fokus i od razu wybierają kategorię
+function onRailKeydown(event: KeyboardEvent) {
+	const keys = filters.value.map((f) => f.key);
+	const index = keys.indexOf(category.value);
+	let next: number;
+	switch (event.key) {
+		case "ArrowRight":
+		case "ArrowDown":
+			next = (index + 1) % keys.length;
+			break;
+		case "ArrowLeft":
+		case "ArrowUp":
+			next = (index - 1 + keys.length) % keys.length;
+			break;
+		case "Home":
+			next = 0;
+			break;
+		case "End":
+			next = keys.length - 1;
+			break;
+		default:
+			return;
+	}
+	event.preventDefault();
+	selectCategory(keys[next]);
+	nextTick(() => tileEl(keys[next])?.focus({ preventScroll: true }));
+}
+
+function inFilter(h: Habbit, key: FilterKey = category.value) {
+	if (key === "all") return true;
+	if (key === "negative") return isNegative(h);
+	return superCategoryOf(h)?.key === key;
+}
 
 interface Section {
 	key: string;
 	title: string;
-	emoji: string;
+	icon: string;
+	palette: PaletteKey;
 	items: Habbit[];
 }
 
+const normalizedQuery = computed(() => normalizeText(query.value.trim()));
+
 const sections = computed<Section[]>(() => {
-	const q = normalizeText(query.value.trim());
-	const inCategory = (h: Habbit) =>
-		category.value === "all" || superCategoryOf(h)?.key === category.value;
+	const q = normalizedQuery.value;
 
 	if (q) {
-		const items = pool.value.filter((h) => inCategory(h) && matchesQuery(h, q));
-		return items.length ? [{ key: "results", title: `${items.length} found`, emoji: "🔎", items }] : [];
+		const items = pool.value.filter((h) => inFilter(h) && matchesQuery(h, q));
+		const where = category.value === "all" ? "" : ` in ${activeFilter.value.label}`;
+		return items.length
+			? [{ key: "results", title: `${items.length} found${where}`, icon: "search", palette: "orange", items }]
+			: [];
+	}
+
+	// Złe nawyki: najpierw własne, potem z katalogu pogrupowane po kategoriach
+	if (category.value === "negative") {
+		const result: Section[] = [];
+		const custom = pool.value.filter((h) => h.origin === "user" && isNegative(h));
+		if (custom.length)
+			result.push({ key: "yours", title: CUSTOM_CATEGORY.label, icon: "star", palette: "orange", items: custom });
+		for (const cat of SUPER_CATEGORIES) {
+			const items = pool.value.filter(
+				(h) => h.origin !== "user" && isNegative(h) && superCategoryOf(h)?.key === cat.key,
+			);
+			if (items.length)
+				result.push({ key: `negative-${cat.key}`, title: cat.label, icon: cat.icon, palette: cat.palette, items });
+		}
+		return result;
 	}
 
 	if (category.value !== "all") {
-		const cat = categories.value.find((c) => c.key === category.value);
-		return [
-			{
-				key: String(category.value),
-				title: cat?.label ?? "",
-				emoji: cat?.emoji ?? "",
-				items: pool.value.filter(inCategory),
-			},
-		];
+		const f = activeFilter.value;
+		const items = pool.value.filter((h) => inFilter(h));
+		return items.length ? [{ key: f.key, title: f.label, icon: f.icon, palette: f.palette, items }] : [];
 	}
 
 	const result: Section[] = [];
@@ -413,11 +632,13 @@ const sections = computed<Section[]>(() => {
 		const current = [...new Set(habbitsStore.dailyGoalsList.map((g) => g.name))].map((name) =>
 			habbitsStore.resolve({ name }),
 		);
-		if (current.length) result.push({ key: "current", title: "Your goals", emoji: "🎯", items: take(current) });
+		if (current.length)
+			result.push({ key: "current", title: "Your goals", icon: "flag", palette: "yellow", items: take(current) });
 	}
 
 	const custom = pool.value.filter((h) => h.origin === "user");
-	if (custom.length) result.push({ key: "yours", title: "Your habits", emoji: "⭐", items: custom });
+	if (custom.length)
+		result.push({ key: "yours", title: CUSTOM_CATEGORY.label, icon: "star", palette: "orange", items: custom });
 	custom.forEach((h) => shown.add(h.name));
 
 	const recent = recentSnapshot.value
@@ -431,15 +652,30 @@ const sections = computed<Section[]>(() => {
 		result.push({
 			key: "suggested",
 			title: recent.length ? "Recently used" : "Great to start with",
-			emoji: "✨",
+			icon: "star_shine",
+			palette: "yellow",
 			items: suggestedItems,
 		});
 
 	for (const cat of SUPER_CATEGORIES) {
 		const items = pool.value.filter((h) => h.origin !== "user" && superCategoryOf(h)?.key === cat.key);
-		if (items.length) result.push({ key: cat.key, title: cat.label, emoji: cat.emoji, items });
+		if (items.length) result.push({ key: cat.key, title: cat.label, icon: cat.icon, palette: cat.palette, items });
 	}
 	return result;
+});
+
+// Ile wyników dałoby to samo wyszukiwanie we wszystkich kategoriach
+const matchesElsewhere = computed(() => {
+	const q = normalizedQuery.value;
+	return q ? pool.value.filter((h) => matchesQuery(h, q)).length : 0;
+});
+
+const emptyText = computed(() => {
+	const q = query.value.trim();
+	if (category.value === "negative")
+		return q ? `No habits to break match “${q}”.` : "No habits to break here — lovely! 🌿";
+	if (q && category.value !== "all") return `No “${q}” in ${activeFilter.value.label}.`;
+	return q ? `Nothing called “${q}” yet.` : "Nothing here yet.";
 });
 
 const summary = computed(() => {
@@ -494,7 +730,8 @@ const customNameRef = ref<HTMLInputElement | null>(null);
 function startCreating() {
 	customName.value = query.value.trim();
 	customIcon.value = "star";
-	customNegative.value = false;
+	// Tworzenie z widoku „Break” od razu oznacza habit jako zły nawyk
+	customNegative.value = props.mode === "log" && category.value === "negative";
 	creating.value = true;
 	if (scrollRef.value) scrollRef.value.scrollTop = 0;
 	nextTick(() => customNameRef.value?.focus());
@@ -567,38 +804,228 @@ async function deleteCustom(h: Habbit) {
 	background: var(--dt-surface-soft);
 }
 
-/* Na komputerze kategorie zawijają się w wiersze — przewijanie w poziomie
-   bez paska jest dla myszki niewidoczne i niedostępne */
-.add-cats {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.4rem;
-	padding: 0.75rem 1.25rem 0.5rem;
+/* ===== Półka kategorii ===== */
+.cat-shelf {
+	position: relative;
 	flex-shrink: 0;
+	margin-top: 0.45rem;
+	--fade: 2.75rem;
 }
-.add-cats .dt-chip {
-	padding: 0.3rem 0.7rem;
+.cat-rail {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.15rem;
+	padding: 0.4rem 1rem 0.35rem;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scrollbar-width: none;
+	overscroll-behavior-x: contain;
+}
+.cat-rail::-webkit-scrollbar {
+	display: none;
+}
+/* Wygaszone krawędzie tylko po tej stronie, gdzie jest coś jeszcze */
+.can-left .cat-rail {
+	-webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fade));
+	mask-image: linear-gradient(to right, transparent, #000 var(--fade));
+}
+.can-right .cat-rail {
+	-webkit-mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent);
+	mask-image: linear-gradient(to right, #000 calc(100% - var(--fade)), transparent);
+}
+.can-left.can-right .cat-rail {
+	-webkit-mask-image: linear-gradient(
+		to right,
+		transparent,
+		#000 var(--fade),
+		#000 calc(100% - var(--fade)),
+		transparent
+	);
+	mask-image: linear-gradient(to right, transparent, #000 var(--fade), #000 calc(100% - var(--fade)), transparent);
+}
+/* Na dotyku kafelki „zaskakują” przy przesuwaniu palcem */
+@media (pointer: coarse) {
+	.cat-rail {
+		scroll-snap-type: x proximity;
+		scroll-padding-inline: 1rem;
+	}
+	.cat-tile {
+		scroll-snap-align: start;
+	}
+}
+
+.cat-sep {
+	flex: 0 0 1px;
+	align-self: center;
+	height: 2.4rem;
+	margin: 0 0.3rem 1.1rem;
+	background: var(--dt-border-strong);
+	border-radius: 1px;
+}
+
+.cat-tile {
+	flex: 0 0 auto;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.3rem;
+	width: 3.9rem;
+	padding: 0.15rem 0 0.1rem;
+	border: none;
+	border-radius: var(--dt-radius);
+	background: transparent;
+	color: var(--dt-text-2);
+	font-family: var(--dt-font);
+	cursor: pointer;
+	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
+}
+.cat-face {
+	display: grid;
+	place-items: center;
+	width: 2.6rem;
+	height: 2.6rem;
+	border-radius: 0.85rem;
+	background: color-mix(in srgb, var(--tint) 32%, var(--dt-surface));
+	box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--tint-strong) 22%, transparent);
+	transition:
+		transform var(--dt-t) var(--dt-spring),
+		box-shadow var(--dt-t-fast) ease,
+		background-color var(--dt-t-fast) ease;
+}
+:where(.my-app-dark) .cat-face {
+	background: color-mix(in srgb, var(--tint-strong) 16%, var(--dt-surface));
+}
+.cat-label {
+	max-width: 100%;
+	font-size: 0.72rem;
+	font-weight: 600;
+	line-height: 1.15;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	transition: color var(--dt-t-fast) ease;
+}
+/* Wybrana kategoria: uniesiona, z akcentowym pierścieniem i pogrubionym podpisem */
+.cat-tile[aria-checked="true"] .cat-face {
+	transform: translateY(var(--dt-lift));
+	background: color-mix(in srgb, var(--tint) 55%, var(--dt-surface));
+	box-shadow:
+		0 0 0 2px var(--dt-surface),
+		0 0 0 4px var(--dt-accent),
+		var(--dt-shadow-sm);
+}
+:where(.my-app-dark) .cat-tile[aria-checked="true"] .cat-face {
+	background: color-mix(in srgb, var(--tint-strong) 30%, var(--dt-surface));
+}
+.cat-tile[aria-checked="true"] .cat-label {
+	color: var(--dt-accent-ink);
+	font-weight: 700;
+}
+.cat-tile:active .cat-face {
+	transform: scale(calc(1 - (1 - var(--dt-press)) * 1.4));
+}
+.cat-tile:focus-visible {
+	outline: none;
+}
+.cat-tile:focus-visible .cat-face {
+	outline: 2px solid var(--dt-focus);
+	outline-offset: 5px;
+}
+@media (hover: hover) {
+	.cat-tile:hover .cat-face {
+		transform: translateY(var(--dt-lift));
+		box-shadow:
+			inset 0 -3px 0 color-mix(in srgb, var(--tint-strong) 30%, transparent),
+			var(--dt-shadow-hover);
+	}
+	.cat-tile[aria-checked="true"]:hover .cat-face {
+		box-shadow:
+			0 0 0 2px var(--dt-surface),
+			0 0 0 4px var(--dt-accent),
+			var(--dt-shadow-hover);
+	}
+	.cat-tile:hover .cat-label {
+		color: var(--dt-text);
+	}
+	.cat-tile[aria-checked="true"]:hover .cat-label {
+		color: var(--dt-accent-ink);
+	}
+}
+
+/* Strzałki — tylko z myszką, pojawiają się po stronie, gdzie jest więcej */
+.cat-arrow {
+	display: none;
+}
+@media (hover: hover) and (pointer: fine) {
+	.cat-arrow {
+		position: absolute;
+		top: 0.6rem;
+		z-index: 1;
+		display: grid;
+		place-items: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		padding: 0;
+		border: none;
+		background: transparent;
+		color: var(--dt-text-2);
+		cursor: pointer;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity var(--dt-t-fast) ease;
+	}
+	.cat-arrow i {
+		display: grid;
+		place-items: center;
+		width: 1.9rem;
+		height: 1.9rem;
+		border-radius: 50%;
+		border: 1px solid var(--dt-border);
+		background: var(--dt-surface);
+		box-shadow: var(--dt-shadow);
+		font-size: 0.7rem;
+		transition:
+			background-color var(--dt-t-fast) ease,
+			color var(--dt-t-fast) ease,
+			transform var(--dt-t) var(--dt-ease);
+	}
+	.cat-arrow.is-left {
+		left: 0.15rem;
+	}
+	.cat-arrow.is-right {
+		right: 0.15rem;
+	}
+	.can-left .cat-arrow.is-left,
+	.can-right .cat-arrow.is-right {
+		opacity: 1;
+		pointer-events: auto;
+	}
+	.cat-arrow:hover i {
+		background: var(--dt-accent-soft);
+		color: var(--dt-accent-ink);
+		transform: scale(1.08);
+	}
+	.cat-arrow:active i {
+		transform: scale(var(--dt-press));
+	}
+}
+
+.break-hint {
+	margin: 0.25rem 0 0.9rem;
+	padding: 0.55rem 0.8rem;
+	border-radius: var(--dt-radius);
+	background: color-mix(in srgb, var(--dt-surface-sunken) 70%, var(--dt-surface));
 	font-size: var(--dt-text-sm);
+	font-style: italic;
+	color: var(--dt-text-2);
+	line-height: 1.45;
 }
-/* Na telefonie jeden przewijany palcem rząd, z wygaszoną krawędzią
-   sugerującą, że jest więcej */
-@media (max-width: 640px), (hover: none) and (pointer: coarse) {
-	.add-cats {
-		flex-wrap: nowrap;
-		overflow-x: auto;
-		scrollbar-width: none;
-		overscroll-behavior-x: contain;
-		mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
-		-webkit-mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
-	}
-	.add-cats::-webkit-scrollbar {
-		display: none;
-	}
-	/* Odstęp na końcu, żeby ostatni chip dało się w pełni przewinąć spod wygaszenia */
-	.add-cats::after {
-		content: "";
-		flex: 0 0 1.5rem;
-	}
+.add-empty p {
+	margin: 0.15rem 0 0.35rem;
+	max-width: 20rem;
+	line-height: 1.45;
+	color: var(--dt-text-2);
 }
 
 .add-scroll {
@@ -615,12 +1042,12 @@ async function deleteCustom(h: Habbit) {
 .add-section-head {
 	display: flex;
 	align-items: center;
-	gap: 0.4rem;
-	margin-bottom: 0.6rem;
+	gap: 0.45rem;
+	margin-bottom: 0.5rem;
 	position: sticky;
 	top: -0.5rem;
 	z-index: 2;
-	padding: 0.35rem 0;
+	padding: 0.25rem 0;
 	background: var(--dt-surface);
 }
 .manage-link {
@@ -651,17 +1078,31 @@ async function deleteCustom(h: Habbit) {
 	cursor: pointer;
 	box-shadow: var(--dt-shadow-sm);
 	z-index: 1;
+	transition:
+		background-color var(--dt-t-fast) ease,
+		color var(--dt-t-fast) ease,
+		transform var(--dt-t) var(--dt-spring);
 }
 .cell-mini i {
 	font-size: 0.6rem;
 }
-.cell-mini:hover {
-	background: var(--dt-accent-soft);
-	color: var(--dt-accent-ink);
-}
 .cell-mini.is-delete {
 	background: var(--dt-danger-soft);
 	color: var(--dt-danger);
+}
+.cell-mini:active {
+	transform: scale(calc(1 - (1 - var(--dt-press)) * 2));
+}
+@media (hover: hover) {
+	.cell-mini:hover {
+		background: var(--dt-accent-soft);
+		color: var(--dt-accent-ink);
+		transform: scale(calc(1 + (1 - var(--dt-press)) * 2));
+	}
+	.cell-mini.is-delete:hover {
+		background: color-mix(in srgb, var(--dt-danger) 22%, var(--dt-surface));
+		color: var(--dt-danger);
+	}
 }
 
 .create-cta {
@@ -677,13 +1118,25 @@ async function deleteCustom(h: Habbit) {
 	color: var(--dt-text);
 	cursor: pointer;
 	text-align: left;
+	font-family: var(--dt-font);
 	transition:
-		border-color 0.18s ease,
-		background-color 0.18s ease;
+		border-color var(--dt-t-fast) ease,
+		background-color var(--dt-t-fast) ease,
+		transform var(--dt-t) var(--dt-ease);
 }
-.create-cta:hover {
-	border-color: var(--dt-accent);
-	background: var(--dt-accent-softer);
+.create-cta:active {
+	transform: scale(calc(1 - (1 - var(--dt-press)) * 0.4));
+}
+@media (hover: hover) {
+	.create-cta:hover {
+		border-color: var(--dt-accent);
+		background: var(--dt-hover-bg);
+	}
+	.create-cta:hover .create-plus {
+		background: var(--dt-accent-strong);
+		color: var(--dt-on-accent);
+		transform: rotate(90deg);
+	}
 }
 .create-cta span:last-child {
 	display: flex;
@@ -704,6 +1157,10 @@ async function deleteCustom(h: Habbit) {
 	font-size: 1.4rem;
 	font-weight: 700;
 	flex-shrink: 0;
+	transition:
+		background-color var(--dt-t-fast) ease,
+		color var(--dt-t-fast) ease,
+		transform var(--dt-t) var(--dt-spring);
 }
 
 .create-form {
@@ -731,23 +1188,34 @@ async function deleteCustom(h: Habbit) {
 	border: 2px solid transparent;
 	background: var(--dt-surface);
 	cursor: pointer;
+	transition:
+		background-color var(--dt-t-fast) ease,
+		border-color var(--dt-t-fast) ease,
+		transform var(--dt-t) var(--dt-spring);
 }
 .icon-choice[aria-pressed="true"] {
 	border-color: var(--dt-accent);
 	background: var(--dt-accent-soft);
 }
+.icon-choice:active {
+	transform: scale(calc(1 - (1 - var(--dt-press)) * 1.4));
+}
+@media (hover: hover) {
+	.icon-choice:hover {
+		background: var(--dt-hover-bg);
+		border-color: var(--dt-hover-border);
+		transform: translateY(var(--dt-lift));
+	}
+	.icon-choice[aria-pressed="true"]:hover {
+		border-color: var(--dt-accent);
+		background: var(--dt-accent-soft);
+	}
+}
 .negative-toggle {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
+	align-self: flex-start;
+	padding-right: 0.5rem;
 	font-size: var(--dt-text-sm);
 	color: var(--dt-text-2);
-	cursor: pointer;
-}
-.negative-toggle input {
-	width: 1.1rem;
-	height: 1.1rem;
-	accent-color: var(--dt-accent-strong);
 }
 .create-actions {
 	display: flex;
