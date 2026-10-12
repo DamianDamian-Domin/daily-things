@@ -28,6 +28,8 @@ VITE_FIREBASE_PROJECT_ID=
 VITE_FIREBASE_STORAGE_BUCKET=
 VITE_FIREBASE_MESSAGING_SENDER_ID=
 VITE_FIREBASE_APP_ID=
+# optional: public URL used in friend invite links (needed in the native app)
+VITE_PUBLIC_URL=
 ```
 
 ## Scripts
@@ -46,13 +48,17 @@ VITE_FIREBASE_APP_ID=
 
 ```
 src/
-  services/userData.ts     all Firestore paths + reads/writes in one place
-  stores/                  auth, habbits, todos, userPreferences, toast (Pinia, composition style)
+  services/userData.ts     private Firestore data (users/**) — paths + reads/writes
+  services/friends.ts      social Firestore data (profiles, friendCodes, friendships, cheers)
+  stores/                  auth, habbits, todos, userPreferences, toast, profile (my avatar/code)
+                           + lazy: friends (listeners, requests), profileSync (publishing), social (loader)
   utils/date.ts            LOCAL date keys (YYYY-MM-DD) + formatting
   utils/habitCatalog.ts    catalog, categories, palettes, search
   utils/pixelIcons.ts      renders pixel sprites to cached SVG data URLs
-  components/ui/           PixelIcon, ToastHost
-  components/home_view/    HabbitsCard, HabitTile, AddHabitDialog, ToDosCard, StatsCard, DatePicker
+  utils/avatar.ts          procedural pixel-art avatars (layered 32×32 masks → SVG data URL)
+  components/ui/           PixelIcon, PixelAvatar, ToastHost
+  components/home_view/    HabbitsCard, HabitTile, AddHabitDialog, ToDosCard, StatsCard, FriendsCard, DatePicker
+  components/friends/      AvatarEditor, AddFriendDialog, FriendDetailDialog
   components/settings/     AccountSheet, ProfilePanel, SettingsPanel
   style.css                design tokens (--dt-*) + shared component classes (.dt-btn, .dt-card…)
 firestore.rules            security rules (deploy: npx firebase-tools deploy --only firestore:rules)
