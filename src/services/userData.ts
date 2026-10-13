@@ -11,13 +11,20 @@ import {
 	writeBatch,
 } from "firebase/firestore";
 import { db } from "@/firebase";
-import type { DayEntry, Goal, Habbit, TodoItem, UserPreferences } from "@/libs/types";
+import type {
+	DayEntry,
+	Goal,
+	Habbit,
+	HabitReminder,
+	TodoItem,
+	UserPreferences,
+} from "@/libs/types";
 import type { AvatarConfig } from "@/utils/avatar";
 
 // ==========================================================================
 // Model danych:
 //   users/{uid}                     → profil, todos[], dailyGoals[], recentlyUsed[],
-//                                      customHabbits[], preferences{}
+//                                      customHabbits[], reminders[], preferences{}
 //   users/{uid}/habbits/{YYYY-MM-DD} → { date, habbits[], goalsSnapshot[] }
 // Funkcje „Znajomi” (profiles, friendCodes, friendships) → services/friends.ts
 // ==========================================================================
@@ -31,6 +38,8 @@ export interface UserDoc {
 	recentlyUsed?: string[];
 	customHabbits?: Habbit[];
 	preferences?: Partial<UserPreferences>;
+	// Godziny przypomnień o celach (powiadomienia planuje urządzenie)
+	reminders?: HabitReminder[];
 	// Własny awatar (brak = domyślny wyliczony z UID) i kod znajomego
 	avatar?: AvatarConfig;
 	friendCode?: string;
@@ -119,6 +128,9 @@ export async function mergeUserData(targetUid: string, source: ExportedUserData)
 		dailyGoals,
 		recentlyUsed,
 		customHabbits,
+		...(!target.reminders?.length && source.user.reminders?.length
+			? { reminders: source.user.reminders }
+			: {}),
 		...(!target.avatar && source.user.avatar ? { avatar: source.user.avatar } : {}),
 	});
 

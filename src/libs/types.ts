@@ -48,6 +48,12 @@ export interface Goal extends GoalRef {
 }
 
 // Widok zgrupowany (jedna kafelka na nazwę habitu)
+// Przypomnienie o celu: godzina lokalna „HH:MM”, klucz to `name` habitu
+export interface HabitReminder {
+	name: string;
+	time: string;
+}
+
 export interface GroupedHabbit {
 	name: string;
 	habbit: Habbit;

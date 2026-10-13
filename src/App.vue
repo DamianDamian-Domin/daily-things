@@ -41,6 +41,7 @@ import { useTodosStore } from "@/stores/todos";
 import { usePreferencesStore } from "@/stores/userPreferences";
 import { useToastStore } from "@/stores/toast";
 import { useProfileStore } from "@/stores/profile";
+import { useRemindersStore } from "@/stores/reminders";
 import { hasStoredInvite, loadFriends, loadProfileSync, peekFriends } from "@/stores/social";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 import { fetchUserDoc } from "@/services/userData";
@@ -64,6 +65,7 @@ const todosStore = useTodosStore();
 const preferencesStore = usePreferencesStore();
 const toast = useToastStore();
 const profileStore = useProfileStore();
+const remindersStore = useRemindersStore();
 const carouselStore = useCarouselStore();
 
 // ==========================================
@@ -101,6 +103,7 @@ async function loadSession(uid: string) {
 		habbitsStore.hydrate(userDoc);
 		todosStore.hydrate(userDoc);
 		profileStore.hydrate(userDoc);
+		remindersStore.hydrate(userDoc);
 		await habbitsStore.loadInitialHistory();
 		if (authStore.userUid !== uid) return;
 		// Od teraz profil dla znajomych może się publikować (seria jest już policzona)
@@ -119,6 +122,7 @@ watch(
 		habbitsStore.clearData();
 		todosStore.clearData();
 		profileStore.clear();
+		remindersStore.clear();
 		peekFriends()?.clear();
 
 		if (!uid) {

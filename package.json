@@ -17,6 +17,7 @@
     "@capacitor/android": "^8.3.3",
     "@capacitor/cli": "^8.3.3",
     "@capacitor/core": "^8.3.3",
+    "@capacitor/local-notifications": "^8.3.1",
     "@fontsource-variable/lora": "^5.3.0",
     "@fontsource/sacramento": "^5.3.0",
     "@primeuix/themes": "^1.0.3",
