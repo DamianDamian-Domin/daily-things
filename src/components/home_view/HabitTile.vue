@@ -158,20 +158,27 @@ function onClick(event: MouseEvent) {
 	background: color-mix(in srgb, var(--tint-strong) 16%, var(--dt-surface));
 }
 
-.tile:hover .tile-face {
-	transform: translateY(-2px);
-	box-shadow:
-		inset 0 -3px 0 color-mix(in srgb, var(--tint-strong) 30%, transparent),
-		var(--dt-shadow);
+@media (hover: hover) {
+	.tile:hover .tile-face {
+		transform: translateY(var(--dt-lift));
+		box-shadow:
+			inset 0 -3px 0 color-mix(in srgb, var(--tint-strong) 30%, transparent),
+			var(--dt-shadow-hover);
+	}
+	.tile:hover .tile-label {
+		color: var(--dt-text);
+	}
 }
 .tile:active .tile-face {
-	transform: scale(0.93);
+	transform: scale(calc(1 - (1 - var(--dt-press)) * 1.4));
 }
+/* Fokus na samej „buzi” kafelka, nie na całym przycisku z podpisem */
 .tile:focus-visible {
-	box-shadow: none;
+	outline: none;
 }
 .tile:focus-visible .tile-face {
-	box-shadow: var(--dt-focus-ring);
+	outline: 2px solid var(--dt-focus);
+	outline-offset: 3px;
 }
 
 /* Cel jeszcze nie zrobiony — przerywana ramka, „duch” ikony */
@@ -253,6 +260,7 @@ function onClick(event: MouseEvent) {
 	font-weight: 600;
 	line-height: 1.2;
 	color: var(--dt-text-2);
+	transition: color var(--dt-t-fast) ease;
 	text-align: center;
 	max-width: 100%;
 	display: -webkit-box;

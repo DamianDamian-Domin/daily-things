@@ -32,6 +32,9 @@ export const usePreferencesStore = defineStore("userPreferences", () => {
 		storedTheme ? storedTheme === "dark" : Boolean(media("(prefers-color-scheme: dark)")),
 	);
 	const soundEnabled = ref(readStorage("soundEnabled") !== "false");
+	// Prywatność wobec znajomych — tylko w Firestore (bez localStorage)
+	const shareProgress = ref(true);
+	const shareHabits = ref(true);
 	const storedAnimations = readStorage("animationsEnabled");
 	const animationsEnabled = ref(
 		storedAnimations !== null
@@ -55,6 +58,8 @@ export const usePreferencesStore = defineStore("userPreferences", () => {
 			isDarkMode: isDarkMode.value,
 			soundEnabled: soundEnabled.value,
 			animationsEnabled: animationsEnabled.value,
+			shareProgress: shareProgress.value,
+			shareHabits: shareHabits.value,
 		};
 	}
 
@@ -69,8 +74,15 @@ export const usePreferencesStore = defineStore("userPreferences", () => {
 
 	function hydrate(userDoc: UserDoc) {
 		const prefs = userDoc.preferences;
-		if (!prefs) return;
 		hydrating = true;
+		shareProgress.value = prefs?.shareProgress !== false;
+		shareHabits.value = prefs?.shareHabits !== false;
+		if (!prefs) {
+			queueMicrotask(() => {
+				setTimeout(() => (hydrating = false), 0);
+			});
+			return;
+		}
 		if (typeof prefs.isDarkMode === "boolean") isDarkMode.value = prefs.isDarkMode;
 		if (typeof prefs.soundEnabled === "boolean") soundEnabled.value = prefs.soundEnabled;
 		if (typeof prefs.animationsEnabled === "boolean")
@@ -99,6 +111,8 @@ export const usePreferencesStore = defineStore("userPreferences", () => {
 	});
 	document.documentElement.classList.toggle("reduce-motion", !animationsEnabled.value);
 
+	watch([shareProgress, shareHabits], () => persistRemote());
+
 	function toggleTheme() {
 		isDarkMode.value = !isDarkMode.value;
 	}
@@ -107,6 +121,8 @@ export const usePreferencesStore = defineStore("userPreferences", () => {
 		isDarkMode,
 		soundEnabled,
 		animationsEnabled,
+		shareProgress,
+		shareHabits,
 		toggleTheme,
 		hydrate,
 	};

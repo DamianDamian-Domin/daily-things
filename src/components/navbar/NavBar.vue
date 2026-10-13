@@ -52,12 +52,9 @@
 				class="avatar-btn"
 				:aria-label="`Account: ${authStore.displayName || 'guest'}`"
 				@click="openAccount('profile')">
-				<img
-					v-if="authStore.photoURL"
-					:src="authStore.photoURL"
-					alt=""
-					referrerpolicy="no-referrer" />
-				<span v-else>{{ authStore.initials || "?" }}</span>
+				<PixelAvatar
+					:avatar="profileStore.avatar"
+					:size="42" />
 			</button>
 		</div>
 
@@ -72,10 +69,13 @@
 import { defineAsyncComponent, ref } from "vue";
 import { useAuthStore } from "@/stores/auth";
 import { usePreferencesStore } from "@/stores/userPreferences";
+import { useProfileStore } from "@/stores/profile";
+import PixelAvatar from "@/components/ui/PixelAvatar.vue";
 const AccountSheet = defineAsyncComponent(() => import("@/components/settings/AccountSheet.vue"));
 
 const authStore = useAuthStore();
 const preferences = usePreferencesStore();
+const profileStore = useProfileStore();
 
 const accountOpen = ref(false);
 const accountTab = ref<"profile" | "settings">("profile");
@@ -129,22 +129,25 @@ function openAccount(tab: "profile" | "settings") {
 	height: 2.6rem;
 	margin-left: 0.25rem;
 	border-radius: 0.9rem;
+	padding: 0;
 	border: 2px solid var(--dt-surface);
 	overflow: hidden;
-	background: linear-gradient(135deg, #f9c6a0, #f3a17a);
-	color: #5a2c12;
-	font-weight: 700;
-	font-size: 0.9rem;
+	background: var(--dt-surface-sunken);
 	cursor: pointer;
 	box-shadow: var(--dt-shadow-sm);
-	transition: transform 0.2s var(--dt-ease);
+	transition:
+		transform var(--dt-t) var(--dt-ease),
+		box-shadow var(--dt-t) ease;
 }
-.avatar-btn:hover {
-	transform: scale(1.05);
+@media (hover: hover) {
+	.avatar-btn:hover {
+		transform: translateY(var(--dt-lift));
+		box-shadow: var(--dt-shadow-hover);
+	}
 }
 .avatar-btn img {
 	width: 100%;
 	height: 100%;
-	object-fit: cover;
+	border-radius: 0 !important;
 }
 </style>

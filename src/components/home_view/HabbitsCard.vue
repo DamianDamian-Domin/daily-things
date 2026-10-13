@@ -668,15 +668,21 @@ function openDialog(mode: "log" | "goal") {
 	color: var(--dt-accent-ink);
 	cursor: pointer;
 	transition:
-		background-color 0.18s ease,
+		background-color var(--dt-t-fast) ease,
+		border-color var(--dt-t-fast) ease,
+		box-shadow var(--dt-t) ease,
 		transform 0.22s var(--dt-spring);
 }
-.add-tile:hover {
-	background: var(--dt-accent-softer);
-	transform: translateY(-2px);
+@media (hover: hover) {
+	.add-tile:hover {
+		background: var(--dt-hover-bg);
+		border-color: var(--dt-accent);
+		transform: translateY(var(--dt-lift));
+		box-shadow: var(--dt-shadow-hover);
+	}
 }
 .add-tile:active {
-	transform: scale(0.93);
+	transform: scale(calc(1 - (1 - var(--dt-press)) * 1.4));
 }
 .add-tile i {
 	font-size: 1.1rem;
@@ -714,15 +720,31 @@ function openDialog(mode: "log" | "goal") {
 	background: var(--dt-surface);
 	color: var(--dt-text-2);
 	cursor: pointer;
-	transition: transform 0.18s var(--dt-spring);
+	transition:
+		background-color var(--dt-t-fast) ease,
+		border-color var(--dt-t-fast) ease,
+		color var(--dt-t-fast) ease,
+		transform 0.18s var(--dt-spring);
 }
 .stepper-btn:active {
-	transform: scale(0.9);
+	transform: scale(calc(1 - (1 - var(--dt-press)) * 2));
 }
 .stepper-btn.is-plus {
 	background: var(--dt-accent-strong);
 	border-color: transparent;
 	color: var(--dt-on-accent);
+}
+@media (hover: hover) {
+	.stepper-btn:hover {
+		border-color: var(--dt-hover-border);
+		background: var(--dt-hover-bg);
+		color: var(--dt-accent-ink);
+	}
+	.stepper-btn.is-plus:hover {
+		border-color: transparent;
+		background: var(--dt-accent-strong-hover);
+		color: var(--dt-on-accent);
+	}
 }
 .stepper-count {
 	min-width: 2.5rem;

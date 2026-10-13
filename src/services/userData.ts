@@ -12,12 +12,14 @@ import {
 } from "firebase/firestore";
 import { db } from "@/firebase";
 import type { DayEntry, Goal, Habbit, TodoItem, UserPreferences } from "@/libs/types";
+import type { AvatarConfig } from "@/utils/avatar";
 
 // ==========================================================================
 // Model danych:
 //   users/{uid}                     → profil, todos[], dailyGoals[], recentlyUsed[],
 //                                      customHabbits[], preferences{}
 //   users/{uid}/habbits/{YYYY-MM-DD} → { date, habbits[], goalsSnapshot[] }
+// Funkcje „Znajomi” (profiles, friendCodes, friendships) → services/friends.ts
 // ==========================================================================
 
 export interface UserDoc {
@@ -29,6 +31,9 @@ export interface UserDoc {
 	recentlyUsed?: string[];
 	customHabbits?: Habbit[];
 	preferences?: Partial<UserPreferences>;
+	// Własny awatar (brak = domyślny wyliczony z UID) i kod znajomego
+	avatar?: AvatarConfig;
+	friendCode?: string;
 }
 
 export const userDocRef = (uid: string) => doc(db, "users", uid);
@@ -109,7 +114,13 @@ export async function mergeUserData(targetUid: string, source: ExportedUserData)
 		...(source.user.customHabbits ?? []).filter((h) => !customNames.has(h.name)),
 	];
 
-	await saveUserFields(targetUid, { todos, dailyGoals, recentlyUsed, customHabbits });
+	await saveUserFields(targetUid, {
+		todos,
+		dailyGoals,
+		recentlyUsed,
+		customHabbits,
+		...(!target.avatar && source.user.avatar ? { avatar: source.user.avatar } : {}),
+	});
 
 	for (const day of source.days) {
 		if (!day.habbits?.length) continue;
@@ -127,8 +138,13 @@ export async function mergeUserData(targetUid: string, source: ExportedUserData)
 	}
 }
 
-// RODO / Google Play: pełne usunięcie danych użytkownika
+// RODO / Google Play: pełne usunięcie danych użytkownika — również profilu
+// dla znajomych, kodu, znajomości i powiadomień
 export async function deleteAllUserData(uid: string) {
+	const userDoc = await fetchUserDoc(uid);
+	// Moduł znajomych ładujemy dopiero tutaj (rzadka operacja)
+	const { deleteSocialData } = await import("@/services/friends");
+	await deleteSocialData(uid, userDoc.friendCode);
 	const days = await getDocs(daysCollectionRef(uid));
 	let batch = writeBatch(db);
 	let ops = 0;

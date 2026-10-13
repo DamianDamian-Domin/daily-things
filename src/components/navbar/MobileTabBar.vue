@@ -11,7 +11,13 @@
 			:aria-current="isActive(tab.id) ? 'page' : undefined"
 			@click="onTab(tab.id)">
 			<span class="tab-icon-wrap">
+				<PixelAvatar
+					v-if="tab.id === 'me'"
+					:avatar="profileStore.avatar"
+					:size="26"
+					class="tab-avatar" />
 				<i
+					v-else
 					:class="['pi', tab.icon]"
 					aria-hidden="true"></i>
 				<span
@@ -37,18 +43,22 @@
 import { defineAsyncComponent, ref } from "vue";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 import { useAuthStore } from "@/stores/auth";
+import { useProfileStore } from "@/stores/profile";
+import PixelAvatar from "@/components/ui/PixelAvatar.vue";
 const AccountSheet = defineAsyncComponent(() => import("@/components/settings/AccountSheet.vue"));
 
-type TabId = "textAdd" | "manage" | "stats" | "me";
+type TabId = "textAdd" | "manage" | "stats" | "friends" | "me";
 
 const carouselStore = useCarouselStore();
 const authStore = useAuthStore();
+const profileStore = useProfileStore();
 const accountOpen = ref(false);
 
 const tabs: Array<{ id: TabId; label: string; icon: string }> = [
 	{ id: "textAdd", label: "To-do", icon: "pi-list-check" },
 	{ id: "manage", label: "Today", icon: "pi-sun" },
 	{ id: "stats", label: "Progress", icon: "pi-chart-bar" },
+	{ id: "friends", label: "Friends", icon: "pi-users" },
 	{ id: "me", label: "Me", icon: "pi-user" },
 ];
 
@@ -75,9 +85,9 @@ function onTab(id: TabId) {
 	bottom: 0;
 	z-index: 50;
 	display: grid;
-	grid-template-columns: repeat(4, 1fr);
+	grid-template-columns: repeat(5, 1fr);
 	height: calc(var(--dt-tabbar-h) + env(safe-area-inset-bottom, 0px));
-	padding: 0.35rem 0.5rem env(safe-area-inset-bottom, 0px);
+	padding: 0.35rem 0.25rem env(safe-area-inset-bottom, 0px);
 	background: var(--dt-surface);
 	border-top: 1px solid var(--dt-border);
 	box-shadow: 0 -6px 20px -12px rgba(120, 53, 15, 0.25);
@@ -102,7 +112,7 @@ function onTab(id: TabId) {
 	position: relative;
 	display: grid;
 	place-items: center;
-	width: 3.2rem;
+	width: 2.9rem;
 	height: 1.9rem;
 	border-radius: var(--dt-radius-pill);
 	transition:
@@ -112,6 +122,14 @@ function onTab(id: TabId) {
 .tab-icon-wrap i {
 	font-size: 1.1rem;
 }
+@media (hover: hover) {
+	.tab:hover:not(.active) {
+		color: var(--dt-text-2);
+	}
+	.tab:hover:not(.active) .tab-icon-wrap {
+		background: var(--dt-hover-bg);
+	}
+}
 .tab.active {
 	color: var(--dt-accent-ink);
 }
@@ -119,10 +137,17 @@ function onTab(id: TabId) {
 	background: var(--dt-accent-soft);
 	transform: translateY(-1px);
 }
+.tab-avatar {
+	border-radius: 0.55rem !important;
+	box-shadow: 0 0 0 1.5px var(--dt-surface), 0 0 0 2.5px var(--dt-border-strong);
+}
+.tab.active .tab-avatar {
+	box-shadow: 0 0 0 1.5px var(--dt-surface), 0 0 0 3px var(--dt-accent);
+}
 .tab-dot {
 	position: absolute;
 	top: 0.15rem;
-	right: 0.7rem;
+	right: 0.35rem;
 	width: 0.55rem;
 	height: 0.55rem;
 	border-radius: 50%;

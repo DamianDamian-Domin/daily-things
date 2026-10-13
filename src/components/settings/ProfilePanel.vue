@@ -1,16 +1,20 @@
 <template>
 	<div class="profile">
 		<div class="profile-head">
-			<div
+			<button
+				type="button"
 				class="profile-avatar"
-				aria-hidden="true">
-				<img
-					v-if="authStore.photoURL"
-					:src="authStore.photoURL"
-					alt=""
-					referrerpolicy="no-referrer" />
-				<span v-else>{{ authStore.initials }}</span>
-			</div>
+				aria-label="Edit your avatar"
+				@click="profileStore.openEditor()">
+				<PixelAvatar
+					:avatar="profileStore.avatar"
+					:size="60" />
+				<span
+					class="profile-avatar-edit"
+					aria-hidden="true"
+					><i class="pi pi-pencil"></i
+				></span>
+			</button>
 			<div class="profile-id">
 				<p class="profile-hello">{{ greeting }} 👋</p>
 				<p class="profile-name">{{ authStore.displayName }}</p>
@@ -252,11 +256,14 @@ import { useToastStore } from "@/stores/toast";
 import { partOfDay } from "@/utils/date";
 import PasswordInput from "@/components/login_view/PasswordInput.vue";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
+import PixelAvatar from "@/components/ui/PixelAvatar.vue";
+import { useProfileStore } from "@/stores/profile";
 
 const emit = defineEmits<{ (e: "close"): void }>();
 
 const authStore = useAuthStore();
 const toast = useToastStore();
+const profileStore = useProfileStore();
 
 const greeting = computed(() => partOfDay().greeting);
 
@@ -389,23 +396,32 @@ async function deleteAccount() {
 	gap: 0.9rem;
 }
 .profile-avatar {
+	position: relative;
+	padding: 0;
+	border: none;
+	background: none;
+	border-radius: 1.1rem;
+	flex-shrink: 0;
+	cursor: pointer;
+	box-shadow: var(--dt-shadow-sm);
+	transition: transform 0.2s var(--dt-ease);
+}
+.profile-avatar:hover {
+	transform: scale(1.04);
+}
+.profile-avatar-edit {
+	position: absolute;
+	right: -0.3rem;
+	bottom: -0.3rem;
 	display: grid;
 	place-items: center;
-	width: 3.5rem;
-	height: 3.5rem;
-	border-radius: 1.1rem;
-	overflow: hidden;
-	background: linear-gradient(135deg, #f9c6a0, #f3a17a);
-	color: #5a2c12;
-	font-weight: 700;
-	font-size: 1.15rem;
-	flex-shrink: 0;
+	width: 1.4rem;
+	height: 1.4rem;
+	border-radius: 50%;
+	background: var(--dt-surface);
+	color: var(--dt-accent-ink);
 	box-shadow: var(--dt-shadow-sm);
-}
-.profile-avatar img {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
+	font-size: 0.6rem;
 }
 .profile-id {
 	min-width: 0;

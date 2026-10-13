@@ -68,6 +68,67 @@
 		</section>
 
 		<section
+			v-if="!authStore.isGuest"
+			class="settings-group"
+			aria-labelledby="settings-friends">
+			<h3
+				id="settings-friends"
+				class="settings-heading">
+				Friends
+			</h3>
+
+			<div class="settings-row">
+				<span
+					class="settings-icon"
+					aria-hidden="true">
+					<i class="pi pi-users"></i>
+				</span>
+				<div class="settings-text">
+					<label
+						for="pref-share"
+						class="settings-label"
+						>Share my progress with friends</label
+					>
+					<p
+						id="pref-share-desc"
+						class="settings-desc">
+						Streak, daily goals and your week
+					</p>
+				</div>
+				<ToggleSwitch
+					v-model="preferences.shareProgress"
+					input-id="pref-share"
+					:pt="{ input: { 'aria-describedby': 'pref-share-desc' } }" />
+			</div>
+
+			<div
+				class="settings-row is-nested">
+				<span
+					class="settings-icon"
+					aria-hidden="true">
+					<i class="pi pi-eye"></i>
+				</span>
+				<div class="settings-text">
+					<label
+						for="pref-share-habits"
+						class="settings-label"
+						>Show which habits</label
+					>
+					<p
+						id="pref-share-habits-desc"
+						class="settings-desc">
+						Today's habit icons. Habits you're cutting back on stay private.
+					</p>
+				</div>
+				<ToggleSwitch
+					v-model="preferences.shareHabits"
+					input-id="pref-share-habits"
+					:disabled="!preferences.shareProgress"
+					:pt="{ input: { 'aria-describedby': 'pref-share-habits-desc' } }" />
+			</div>
+		</section>
+
+		<section
 			class="settings-group"
 			aria-labelledby="settings-privacy">
 			<h3
@@ -137,11 +198,13 @@ import ToggleSwitch from "primevue/toggleswitch";
 import LegalDocumentsDialog from "@/components/legal/LegalDocumentsDialog.vue";
 import { usePreferencesStore } from "@/stores/userPreferences";
 import { useCookieConsentStore } from "@/stores/cookieConsent";
+import { useAuthStore } from "@/stores/auth";
 
 const emit = defineEmits<{ (e: "close"): void }>();
 
 const preferences = usePreferencesStore();
 const cookieConsent = useCookieConsentStore();
+const authStore = useAuthStore();
 const legalRef = ref<InstanceType<typeof LegalDocumentsDialog> | null>(null);
 
 function manageCookies() {
@@ -182,6 +245,9 @@ function openLegal(doc: "privacy" | "terms") {
 	border-radius: var(--dt-radius);
 	text-align: left;
 	width: 100%;
+}
+.settings-row.is-nested {
+	padding-left: 1.25rem;
 }
 .settings-link {
 	border: none;
