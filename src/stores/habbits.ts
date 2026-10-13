@@ -26,6 +26,7 @@ import {
 	type DateKey,
 } from "@/utils/date";
 import { CATALOG, findCatalogHabbit, resolveHabbit } from "@/utils/habitCatalog";
+import { countStreak } from "@/utils/streak";
 
 const RECENT_LIMIT = 12;
 const MAX_STREAK_LOOKBACK_MONTHS = 24;
@@ -168,17 +169,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		return logsOn(key).length > 0;
 	}
 
-	// Liczba dni z rzędu z co najmniej jednym wpisem. Dzisiejszy dzień „nie psuje”
-	// serii, dopóki trwa — liczymy od wczoraj i dodajemy dziś, jeśli coś jest.
-	const streak = computed(() => {
-		let count = hasLogsOn(todayKey.value) ? 1 : 0;
-		let day = addDays(startOfDay(), -1);
-		while (hasLogsOn(toDateKey(day))) {
-			count++;
-			day = addDays(day, -1);
-		}
-		return count;
-	});
+	const streak = computed(() => countStreak(hasLogsOn, todayKey.value));
 
 	// Seria trwa, ale dziś jeszcze nic nie zapisano — delikatne przypomnienie
 	const streakAtRisk = computed(() => streak.value > 0 && !hasLogsOn(todayKey.value));
