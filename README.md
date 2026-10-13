@@ -44,6 +44,10 @@ VITE_PUBLIC_URL=
 | `npm run android`   | Build + `cap sync`                                              |
 | `npm run icons`     | Regenerates pixel-art habit icons (`src/assets/pixelIcons.json`) |
 
+### Deploy
+
+`firebase deploy` builds the app (`npm run build` runs as a predeploy hook) and uploads `dist/` to Firebase Hosting together with the Firestore rules. Use `firebase deploy --only hosting` to ship only the app. The Android app is not updated by this; rebuild it with `npm run android`.
+
 ## Project map
 
 ```
