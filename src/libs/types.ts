@@ -55,6 +55,16 @@ export interface HabitReminder {
 	time: string;
 }
 
+// Obowiązek cykliczny (np. lodówka co 4 tygodnie), klucz to `name` habitu.
+// `anchor` to dzień, od którego liczymy, gdy w historii nie ma nowszego wpisu:
+// ostatni raz sprzed ustawienia cyklu albo dzień ustawienia.
+export interface HabitCycle {
+	name: string;
+	every: number;
+	unit: "day" | "week" | "month";
+	anchor: string;
+}
+
 export interface GroupedHabit {
 	name: string;
 	habit: Habit;

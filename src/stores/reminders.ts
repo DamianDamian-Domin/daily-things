@@ -4,10 +4,12 @@ import type { HabitReminder } from "@/libs/types";
 import { saveUserFields, type UserDoc } from "@/services/userData";
 import { useAuthStore } from "@/stores/auth";
 import { useHabitsStore } from "@/stores/habits";
+import { useCyclesStore } from "@/stores/cycles";
 import { useToastStore } from "@/stores/toast";
 import { displayName } from "@/utils/habitCatalog";
 import { isNativePlatform } from "@/utils/platform";
 import { addDays, startOfDay } from "@/utils/date";
+import { dueLabel, shouldNudge } from "@/utils/cycles";
 
 // Planujemy pojedyncze powiadomienia na kilka dni do przodu zamiast jednego
 // powtarzalnego — dzięki temu dzisiejsze przypomnienie znika, gdy cel jest
@@ -15,6 +17,9 @@ import { addDays, startOfDay } from "@/utils/date";
 const DAYS_AHEAD = 7;
 const CHANNEL_ID = "habit-reminders";
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+// Obowiązki cykliczne: przypomnienie rano w dniu terminu (i co kilka dni po nim)
+const CYCLE_HOUR = 9;
+const CYCLE_ID_BASE = 5000;
 const SAVE_ERROR = "Couldn't save that reminder — check your connection and try again.";
 
 export type ReminderPermission = "granted" | "denied" | "prompt" | "unsupported";
@@ -31,6 +36,7 @@ const loadPlugin = () =>
 export const useRemindersStore = defineStore("reminders", () => {
 	const authStore = useAuthStore();
 	const habitsStore = useHabitsStore();
+	const cyclesStore = useCyclesStore();
 	const toast = useToastStore();
 
 	const reminders = ref<HabitReminder[]>([]);
@@ -152,6 +158,30 @@ export const useRemindersStore = defineStore("reminders", () => {
 				});
 			}
 		}
+		// Terminy obowiązków przesuwają się same, gdy obowiązek zostanie odhaczony
+		if (cyclesStore.ready) {
+			let cycleId = CYCLE_ID_BASE;
+			for (const item of cyclesStore.items) {
+				const name = displayName(item.habit);
+				for (let d = 0; d < DAYS_AHEAD; d++) {
+					const daysLeft = item.status.daysLeft - d;
+					const at = addDays(today, d);
+					at.setHours(CYCLE_HOUR, 0, 0, 0);
+					if (!shouldNudge(daysLeft) || at.getTime() <= now) continue;
+					notifications.push({
+						id: cycleId++,
+						title: `${name} 🧽`,
+						body:
+							daysLeft === 0
+								? "It's due today. Ten minutes and it's done for a while ✨"
+								: `It's ${dueLabel({ daysLeft })}. Tick it off when you get to it 🌱`,
+						channelId: CHANNEL_ID,
+						schedule: { at, allowWhileIdle: true },
+						extra: { habit: item.cycle.name },
+					});
+				}
+			}
+		}
 		return notifications;
 	}
 
@@ -161,7 +191,7 @@ export const useRemindersStore = defineStore("reminders", () => {
 			await plugin.createChannel({
 				id: CHANNEL_ID,
 				name: "Habit reminders",
-				description: "Nudges at the times you set for your daily goals",
+				description: "Nudges at the times you set for your daily goals and when a repeating chore is due",
 				importance: 4,
 			});
 			channelReady = true;
@@ -212,6 +242,7 @@ export const useRemindersStore = defineStore("reminders", () => {
 					habitsStore.dailyGoalsList.map((g) => g.name),
 					activeReminders.value.map((r) => counts[r.name] ?? 0),
 					permission.value,
+					cyclesStore.ready ? cyclesStore.items.map((i) => [i.cycle.name, i.status.due]) : null,
 				]);
 			},
 			scheduleSoon,

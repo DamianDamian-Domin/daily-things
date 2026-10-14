@@ -23,6 +23,7 @@
 		</div>
 
 		<RecapBanner />
+		<ChoresBanner />
 
 		<CarouselView class="home-carousel" />
 	</div>
@@ -34,6 +35,7 @@ import { useLayout } from "@/utils/useLayout";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 import DatePicker from "@/components/home_view/DatePicker.vue";
 import RecapBanner from "@/components/insights/RecapBanner.vue";
+import ChoresBanner from "@/components/insights/ChoresBanner.vue";
 import CarouselView from "./CarouselView.vue";
 
 const carouselStore = useCarouselStore();

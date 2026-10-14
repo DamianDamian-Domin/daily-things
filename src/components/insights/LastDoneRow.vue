@@ -1,7 +1,7 @@
 <template>
 	<li
 		class="ld-row"
-		:class="[`is-${row.fresh}`, { 'is-open': open, 'is-never': row.never }]">
+		:class="[`is-${row.fresh}`, { 'is-open': open, 'is-never': row.never && !row.cycle, 'is-cycle': !!row.cycle }]">
 		<button
 			type="button"
 			class="ld-head dt-row"
@@ -24,7 +24,7 @@
 			<span
 				class="ld-ago"
 				aria-hidden="true"
-				>{{ row.never ? "never" : agoShort(row.daysAgo) }}</span
+				>{{ badge }}</span
 			>
 			<i
 				class="pi pi-chevron-down ld-chevron"
@@ -44,7 +44,18 @@
 			</p>
 
 			<p
-				v-if="!row.never"
+				v-if="row.cycle"
+				class="ld-facts">
+				<span>{{ everyLabel(row.cycle.cycle) }}</span>
+				<span
+					v-if="row.fresh !== 'fresh'"
+					class="ld-due"
+					>{{ capitalize(dueLabel(row.cycle.status)) }}</span
+				>
+				<span v-if="row.cycle.status.daysLeft > 0">next {{ formatShort(row.cycle.status.due) }}</span>
+			</p>
+			<p
+				v-else-if="!row.never"
 				class="ld-facts">
 				<span>on {{ row.dates.length }} {{ row.dates.length === 1 ? "day" : "days" }}</span>
 				<span v-if="rhythm">{{ rhythm }}</span>
@@ -81,6 +92,11 @@
 				Show all {{ row.dates.length }}
 			</button>
 
+			<CyclePicker
+				:cycle="row.cycle?.cycle ?? null"
+				:habit-key="row.name"
+				@set="(every, unit) => emit('setCycle', every, unit)" />
+
 			<button
 				type="button"
 				class="dt-btn dt-btn-soft dt-btn-sm ld-log"
@@ -98,7 +114,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
-import type { Habit } from "@/libs/types";
+import type { Habit, HabitCycle } from "@/libs/types";
+import { dueLabel, dueShort, everyLabel, type CycleStatus, type CycleUnit } from "@/utils/cycles";
+import CyclePicker from "./CyclePicker.vue";
 import { addDays, fromDateKey, type DateKey } from "@/utils/date";
 import { displayName, paletteFor } from "@/utils/habitCatalog";
 import { agoLabel, agoShort, daysBetween, rhythmLabel, type Freshness } from "@/utils/lastDone";
@@ -113,6 +131,8 @@ export interface LastDoneItem {
 	gap: number | null;
 	fresh: Freshness;
 	never: boolean;
+	// Obowiązek cykliczny: termin zamiast „ile temu”
+	cycle?: { cycle: HabitCycle; status: CycleStatus };
 }
 
 const PREVIEW = 6;
@@ -122,6 +142,7 @@ const emit = defineEmits<{
 	(e: "toggle"): void;
 	(e: "openDay", key: DateKey): void;
 	(e: "logToday"): void;
+	(e: "setCycle", every: number | null, unit: CycleUnit): void;
 }>();
 
 const showAll = ref(false);
@@ -140,7 +161,16 @@ const tintStrong = computed(() => PALETTES[palette.value].f);
 const rhythm = computed(() => rhythmLabel(props.row.gap));
 const shownDates = computed(() => (showAll.value ? props.row.dates : props.row.dates.slice(0, PREVIEW)));
 
+const badge = computed(() => {
+	if (props.row.cycle) return dueShort(props.row.cycle.status);
+	return props.row.never ? "never" : agoShort(props.row.daysAgo);
+});
+
 const subline = computed(() => {
+	if (props.row.cycle) {
+		const last = props.row.never ? "not logged yet" : `last ${formatLong(props.row.dates[0])}`;
+		return `${everyLabel(props.row.cycle.cycle)} · ${last}`;
+	}
 	if (props.row.never) return "Not logged yet";
 	const times = props.row.count === 1 ? "once" : `${props.row.count}×`;
 	return `${formatLong(props.row.dates[0])} · ${times}`;
@@ -152,6 +182,12 @@ const nextAround = computed(() => {
 	const next = addDays(fromDateKey(props.row.dates[0]), Math.round(props.row.gap));
 	return next.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 });
+
+function formatShort(key: DateKey) {
+	return fromDateKey(key).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+}
+
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 function formatLong(key: DateKey) {
 	const date = fromDateKey(key);
@@ -247,6 +283,9 @@ function formatLong(key: DateKey) {
 	font-variant-numeric: tabular-nums;
 	color: color-mix(in srgb, var(--fresh) 70%, var(--dt-text));
 	background: color-mix(in srgb, var(--fresh) 16%, var(--dt-surface));
+}
+.ld-row.is-cycle .ld-ago {
+	min-width: 3.6rem;
 }
 .ld-chevron {
 	font-size: 0.75rem;

@@ -19,6 +19,7 @@ import type {
 	GoalRef,
 	Habit,
 	HabitLog,
+	HabitCycle,
 	HabitReminder,
 	TodoItem,
 	UserPreferences,
@@ -29,7 +30,8 @@ import { plain } from "@/utils/plain";
 // ==========================================================================
 // Model danych:
 //   users/{uid}                     → profil, dailyGoals[], recentlyUsed[],
-//                                      customHabbits[], reminders[], preferences{}
+//                                      customHabbits[], reminders[], cycles[],
+//                                      preferences{}
 //   users/{uid}/habbits/{YYYY-MM-DD} → { date, habbits[], goalsSnapshot[] }
 //   users/{uid}/todos/{todoId}       → TodoItem (z podzadaniami w środku)
 // Funkcje „Znajomi” (profiles, friendCodes, friendships) → services/friends.ts
@@ -49,6 +51,8 @@ export interface UserDoc {
 	preferences?: Partial<UserPreferences>;
 	// Godziny przypomnień o celach (powiadomienia planuje urządzenie)
 	reminders?: HabitReminder[];
+	// Obowiązki cykliczne (np. lodówka co 4 tygodnie)
+	cycles?: HabitCycle[];
 	// Własny awatar (brak = domyślny wyliczony z UID) i kod znajomego
 	avatar?: AvatarConfig;
 	friendCode?: string;
@@ -224,6 +228,7 @@ export async function mergeUserData(targetUid: string, source: ExportedUserData)
 		...(!target.reminders?.length && source.user.reminders?.length
 			? { reminders: source.user.reminders }
 			: {}),
+		...(!target.cycles?.length && source.user.cycles?.length ? { cycles: source.user.cycles } : {}),
 		...(!target.avatar && source.user.avatar ? { avatar: source.user.avatar } : {}),
 	});
 
