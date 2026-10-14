@@ -92,19 +92,17 @@
 						<li
 							v-for="h in habits"
 							:key="h.icon + h.name"
-							class="fd-habit"
-							v-tooltip.top="h.name">
+							class="fd-habit">
 							<PixelIcon
 								:icon="h.icon"
 								:palette="h.palette"
-								:size="28" />
+								:size="22" />
+							<span class="fd-habit-name">{{ h.name }}</span>
 							<span
 								v-if="h.count > 1"
 								class="fd-count"
-								aria-hidden="true"
-								>{{ h.count }}</span
+								>×{{ h.count }}</span
 							>
-							<span class="sr-only">{{ h.name }}{{ h.count > 1 ? ` × ${h.count}` : "" }}</span>
 						</li>
 					</ul>
 					<p
@@ -317,29 +315,31 @@ function remove() {
 	padding: 0;
 	list-style: none;
 }
+/* Habity znajomego jako „pigułki” z nazwą — same ikony były nieczytelne */
 .fd-habit {
-	position: relative;
-	display: grid;
-	place-items: center;
-	width: 2.6rem;
-	height: 2.6rem;
-	border-radius: 0.8rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	max-width: 100%;
+	padding: 0.3rem 0.7rem 0.3rem 0.4rem;
+	border-radius: var(--dt-radius-pill);
 	background: var(--dt-surface-sunken);
+	font-size: var(--dt-text-sm);
+	font-weight: 600;
+	color: var(--dt-text);
+}
+.fd-habit-name {
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 .fd-count {
-	position: absolute;
-	top: -0.3rem;
-	right: -0.3rem;
-	min-width: 1.05rem;
-	height: 1.05rem;
-	padding: 0 0.2rem;
-	border-radius: 999px;
-	background: var(--dt-accent-strong);
-	color: var(--dt-on-accent);
-	font-size: 0.62rem;
+	flex-shrink: 0;
+	font-size: var(--dt-text-xs);
 	font-weight: 700;
-	display: grid;
-	place-items: center;
+	color: var(--dt-accent-ink);
+	font-variant-numeric: tabular-nums;
 }
 .fd-note {
 	margin: 0;
