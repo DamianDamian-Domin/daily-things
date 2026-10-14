@@ -56,6 +56,7 @@ You are a **senior software engineer** focused on modern, accessible, mobile-fir
 - Only current daily goals ring. Scheduling lives in `stores/reminders.ts`, runs on native only and lazy-imports `@capacitor/local-notifications` (web never downloads it; the dialog says reminders ring in the Android app).
 - We schedule one-off notifications for the next 7 days (not a repeating one), cancel + rebuild on any change, and skip today's once the goal is done. Every app open moves the window forward.
 - Ask for notification permission only when the user sets their first time.
+- `android/` is gitignored: custom Android resources (the `ic_stat_icon` status-bar icon) live in `native/android/res` and `npm run android` copies them in. `capacitor.config.ts` points LocalNotifications `smallIcon` at it.
 
 ## Auth
 - Guests are persistent anonymous accounts. Upgrading keeps the same uid (`linkWithCredential` / `linkWithPopup`); signing into an existing account migrates guest data (`mergeUserData`).
