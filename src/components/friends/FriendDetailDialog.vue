@@ -93,15 +93,23 @@
 							v-for="h in habits"
 							:key="h.icon + h.name"
 							class="fd-habit">
-							<PixelIcon
-								:icon="h.icon"
-								:palette="h.palette"
-								:size="22" />
+							<span class="fd-habit-face">
+								<PixelIcon
+									:icon="h.icon"
+									:palette="h.palette"
+									:size="28" />
+								<span
+									v-if="h.count > 1"
+									class="fd-count"
+									aria-hidden="true"
+									>{{ h.count }}</span
+								>
+							</span>
 							<span class="fd-habit-name">{{ h.name }}</span>
 							<span
 								v-if="h.count > 1"
-								class="fd-count"
-								>×{{ h.count }}</span
+								class="sr-only"
+								>× {{ h.count }}</span
 							>
 						</li>
 					</ul>
@@ -310,36 +318,55 @@ function remove() {
 .fd-habits {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.4rem;
+	gap: 0.6rem 0.2rem;
 	margin: 0;
 	padding: 0;
 	list-style: none;
 }
-/* Habity znajomego jako „pigułki” z nazwą — same ikony były nieczytelne */
+/* Kwadracik z ikoną i nazwą pod spodem — same ikony były nieczytelne */
 .fd-habit {
-	display: inline-flex;
+	display: flex;
+	flex-direction: column;
 	align-items: center;
-	gap: 0.35rem;
-	max-width: 100%;
-	padding: 0.3rem 0.7rem 0.3rem 0.4rem;
-	border-radius: var(--dt-radius-pill);
+	gap: 0.25rem;
+	width: 4rem;
+}
+.fd-habit-face {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 2.6rem;
+	height: 2.6rem;
+	border-radius: 0.8rem;
 	background: var(--dt-surface-sunken);
-	font-size: var(--dt-text-sm);
-	font-weight: 600;
-	color: var(--dt-text);
 }
 .fd-habit-name {
-	min-width: 0;
+	max-width: 100%;
+	font-size: 0.72rem;
+	font-weight: 600;
+	line-height: 1.2;
+	color: var(--dt-text-2);
+	text-align: center;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
 	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	word-break: break-word;
 }
 .fd-count {
-	flex-shrink: 0;
-	font-size: var(--dt-text-xs);
+	position: absolute;
+	top: -0.3rem;
+	right: -0.3rem;
+	min-width: 1.05rem;
+	height: 1.05rem;
+	padding: 0 0.2rem;
+	border-radius: 999px;
+	background: var(--dt-accent-strong);
+	color: var(--dt-on-accent);
+	font-size: 0.62rem;
 	font-weight: 700;
-	color: var(--dt-accent-ink);
-	font-variant-numeric: tabular-nums;
+	display: grid;
+	place-items: center;
 }
 .fd-note {
 	margin: 0;
