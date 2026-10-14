@@ -2,6 +2,7 @@
 	<div
 		class="app-shell"
 		:class="{ 'is-mobile': isMobileLayout }">
+		<OfflineBadge />
 		<a
 			href="#main"
 			class="skip-link"
@@ -69,6 +70,7 @@ const InsightsDialogs = defineAsyncComponent(() => import("@/components/insights
 // Obrazkowy przewodnik „Jak to działa” (raz dla nowych, potem z ustawień)
 const HelpTour = defineAsyncComponent(() => import("@/components/help/HelpTour.vue"));
 import ToastHost from "@/components/ui/ToastHost.vue";
+import OfflineBadge from "@/components/ui/OfflineBadge.vue";
 
 const route = useRoute();
 const router = useRouter();

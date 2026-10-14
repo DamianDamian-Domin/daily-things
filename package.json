@@ -45,8 +45,10 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^5.8.3",
     "vite": "^8.3.4",
+    "vite-plugin-pwa": "^2.0.0",
     "vite-plugin-vue-devtools": "^8.2.1",
     "vitest": "^5.0.4",
-    "vue-tsc": "^2.2.12"
+    "vue-tsc": "^2.2.12",
+    "workbox-window": "^7.4.1"
   }
 }
