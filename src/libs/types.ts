@@ -19,6 +19,7 @@ export interface HabitLog {
 	id: string;
 	name: string;
 	at?: number; // znacznik czasu odhaczenia (ms)
+	note?: string; // krótka notatka, np. „wymieniony filtr, model X” (tylko dla właściciela)
 	icon?: string;
 	display_name?: string;
 	severity?: string;

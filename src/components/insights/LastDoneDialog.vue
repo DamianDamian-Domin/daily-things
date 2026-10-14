@@ -45,7 +45,7 @@
 					v-model="query"
 					type="search"
 					class="dt-input"
-					placeholder="e.g. clean the fridge"
+					placeholder="e.g. clean the fridge, filter"
 					aria-label="Search your habits"
 					autocomplete="off"
 					spellcheck="false"
@@ -138,9 +138,10 @@ import { useHabitsStore } from "@/stores/habits";
 import { useInsightsStore } from "@/stores/insights";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 import { useToastStore } from "@/stores/toast";
+import { useLogNoteStore } from "@/stores/logNote";
 import { fromDateKey, type DateKey } from "@/utils/date";
 import { displayName, matchesQuery, normalizeText } from "@/utils/habitCatalog";
-import { averageGap, buildHabitHistory, daysBetween, freshness } from "@/utils/lastDone";
+import { averageGap, buildHabitHistory, daysBetween, findNote, freshness } from "@/utils/lastDone";
 import LastDoneRow, { type LastDoneItem } from "./LastDoneRow.vue";
 
 const NEVER_LIMIT = 5;
@@ -150,6 +151,7 @@ const habitsStore = useHabitsStore();
 const insights = useInsightsStore();
 const carouselStore = useCarouselStore();
 const toast = useToastStore();
+const logNote = useLogNoteStore();
 
 const query = ref("");
 const sort = ref<"recent" | "oldest">("recent");
@@ -194,10 +196,21 @@ const logged = computed<LastDoneItem[]>(() => {
 	const rows: LastDoneItem[] = [];
 	for (const entry of history.value.values()) {
 		const habit = habitsStore.resolve(entry);
-		if (!matchesQuery(habit, normalizedQuery.value)) continue;
+		// Szukamy też w notatkach: „filtr” znajdzie mycie lodówki
+		const byName = matchesQuery(habit, normalizedQuery.value);
+		const matchedNote = byName ? null : findNote(entry, normalizedQuery.value, normalizeText);
+		if (!byName && !matchedNote) continue;
 		const daysAgo = daysBetween(entry.dates[0], today);
 		const gap = averageGap(entry.dates);
-		rows.push({ ...entry, habit, daysAgo, gap, fresh: freshness(daysAgo, gap), never: false });
+		rows.push({
+			...entry,
+			habit,
+			daysAgo,
+			gap,
+			fresh: freshness(daysAgo, gap),
+			never: false,
+			matchedNote,
+		});
 	}
 	const dir = sort.value === "recent" ? 1 : -1;
 	return rows.sort(
@@ -217,6 +230,8 @@ const never = computed<LastDoneItem[]>(() => {
 			habit,
 			dates: [],
 			count: 0,
+			notes: {},
+			matchedNote: null,
 			daysAgo: 0,
 			gap: null,
 			fresh: "fresh" as const,
@@ -249,8 +264,11 @@ function logToday(row: LastDoneItem) {
 	const log = habitsStore.logHabit(row.habit, habitsStore.todayKey);
 	if (!log) return;
 	expanded.value = row.name;
-	toast.undoable(`${displayName(row.habit)} logged for today`, () =>
-		habitsStore.removeLog(log.id, habitsStore.todayKey),
+	const key = habitsStore.todayKey;
+	toast.undoable(
+		`${displayName(row.habit)} logged for today`,
+		() => habitsStore.removeLog(log.id, key),
+		logNote.toastAction(log.id, key),
 	);
 }
 </script>

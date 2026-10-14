@@ -9,6 +9,8 @@ export interface HabitHistory {
 	dates: DateKey[];
 	// Wszystkie odhaczenia (habit 3× dziennie liczy się 3 razy)
 	count: number;
+	// Notatki z odhaczeń, po dniach (tylko dni, w których jakaś była)
+	notes: Record<DateKey, string[]>;
 }
 
 export function buildHabitHistory(days: Iterable<DayEntry>): Map<string, HabitHistory> {
@@ -18,10 +20,12 @@ export function buildHabitHistory(days: Iterable<DayEntry>): Map<string, HabitHi
 		for (const log of day.habits) {
 			let entry = map.get(log.name);
 			if (!entry) {
-				entry = { name: log.name, dates: [], count: 0 };
+				entry = { name: log.name, dates: [], count: 0, notes: {} };
 				map.set(log.name, entry);
 			}
 			entry.count++;
+			const note = log.note?.trim();
+			if (note) (entry.notes[day.date] ??= []).push(note);
 			if (!seen.has(log.name)) {
 				seen.add(log.name);
 				entry.dates.push(day.date);
@@ -30,6 +34,20 @@ export function buildHabitHistory(days: Iterable<DayEntry>): Map<string, HabitHi
 	}
 	for (const entry of map.values()) entry.dates.sort((a, b) => (a < b ? 1 : a > b ? -1 : 0));
 	return map;
+}
+
+// Notatka pasująca do wyszukiwania, od najnowszego dnia („filtr” → lodówka)
+export function findNote(
+	history: HabitHistory,
+	normalizedQuery: string,
+	normalize: (text: string) => string,
+): string | null {
+	if (!normalizedQuery) return null;
+	for (const date of history.dates) {
+		const hit = history.notes[date]?.find((n) => normalize(n).includes(normalizedQuery));
+		if (hit) return hit;
+	}
+	return null;
 }
 
 // Liczba pełnych dni między datami (Math.round chroni przed zmianą czasu)

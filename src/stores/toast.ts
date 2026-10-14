@@ -9,12 +9,21 @@ export interface Toast {
 	tone: ToastTone;
 	actionLabel?: string;
 	action?: () => void;
+	extra?: ToastExtra;
+}
+
+// Druga, mniejsza akcja obok „Cofnij” (np. „Notatka” po odhaczeniu)
+export interface ToastExtra {
+	label: string;
+	icon: string;
+	run: () => void;
 }
 
 interface ShowOptions {
 	tone?: ToastTone;
 	actionLabel?: string;
 	action?: () => void;
+	extra?: ToastExtra;
 	duration?: number;
 }
 
@@ -40,6 +49,7 @@ export const useToastStore = defineStore("toast", () => {
 			tone: options.tone ?? "info",
 			actionLabel: options.actionLabel,
 			action: options.action,
+			extra: options.extra,
 		};
 		// Nowy komunikat z „Cofnij” zastępuje poprzedni z tą samą akcją (bez
 		// piętrzenia przy szybkim klikaniu); poza tym maksymalnie 3 naraz.
@@ -62,13 +72,19 @@ export const useToastStore = defineStore("toast", () => {
 		toast?.action?.();
 	}
 
+	function runExtra(id: number) {
+		const toast = toasts.value.find((t) => t.id === id);
+		dismiss(id);
+		toast?.extra?.run();
+	}
+
 	function error(message = "Something went wrong. Please try again.") {
 		return show(message, { tone: "error", duration: 4500 });
 	}
 
-	function undoable(message: string, undo: () => void) {
-		return show(message, { actionLabel: "Undo", action: undo });
+	function undoable(message: string, undo: () => void, extra?: ToastExtra) {
+		return show(message, { actionLabel: "Undo", action: undo, extra, duration: extra ? 6000 : undefined });
 	}
 
-	return { toasts, show, dismiss, runAction, error, undoable };
+	return { toasts, show, dismiss, runAction, runExtra, error, undoable };
 });
