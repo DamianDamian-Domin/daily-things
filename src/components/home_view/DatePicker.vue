@@ -7,7 +7,7 @@
 			type="button"
 			class="dt-icon-btn"
 			aria-label="Previous day"
-			@click="habbitsStore.changeDate(-1)">
+			@click="habitsStore.changeDate(-1)">
 			<i
 				class="pi pi-chevron-left"
 				aria-hidden="true"></i>
@@ -26,8 +26,8 @@
 			type="button"
 			class="dt-icon-btn"
 			aria-label="Next day"
-			:disabled="habbitsStore.isSelectedToday"
-			@click="habbitsStore.changeDate(1)">
+			:disabled="habitsStore.isSelectedToday"
+			@click="habitsStore.changeDate(1)">
 			<i
 				class="pi pi-chevron-right"
 				aria-hidden="true"></i>
@@ -35,10 +35,10 @@
 
 		<Transition name="dp-today">
 			<button
-				v-if="!habbitsStore.isSelectedToday"
+				v-if="!habitsStore.isSelectedToday"
 				type="button"
 				class="dt-btn dt-btn-soft dt-btn-sm dp-today-pill"
-				@click="habbitsStore.goToToday()">
+				@click="habitsStore.goToToday()">
 				Today
 			</button>
 		</Transition>
@@ -83,41 +83,41 @@
 import { computed, ref } from "vue";
 import Dialog from "primevue/dialog";
 import PrimeDatePicker from "primevue/datepicker";
-import { useHabbitsStore } from "@/stores/habbits";
+import { useHabitsStore } from "@/stores/habits";
 import { addDays, formatDayTitle, toDateKey } from "@/utils/date";
 
-const habbitsStore = useHabbitsStore();
+const habitsStore = useHabitsStore();
 const visible = ref(false);
 const calendarValue = ref<Date>(new Date());
 
-const title = computed(() => formatDayTitle(habbitsStore.selectedDate));
+const title = computed(() => formatDayTitle(habitsStore.selectedDate));
 const relativeLabel = computed(() => {
-	const key = habbitsStore.selectedKey;
-	if (key === habbitsStore.todayKey) return "Today";
+	const key = habitsStore.selectedKey;
+	if (key === habitsStore.todayKey) return "Today";
 	if (key === toDateKey(addDays(new Date(), -1))) return "Yesterday";
 	return "";
 });
 
 function open() {
-	calendarValue.value = new Date(habbitsStore.selectedDate);
-	const d = habbitsStore.selectedDate;
-	habbitsStore.ensureMonth(d.getFullYear(), d.getMonth());
+	calendarValue.value = new Date(habitsStore.selectedDate);
+	const d = habitsStore.selectedDate;
+	habitsStore.ensureMonth(d.getFullYear(), d.getMonth());
 	visible.value = true;
 }
 
 function onSelect(value: unknown) {
 	if (!(value instanceof Date)) return;
-	habbitsStore.setDate(value);
+	habitsStore.setDate(value);
 	visible.value = false;
 }
 
 // PrimeVue podaje miesiąc 1-12
 function onMonthChange(event: { month: number; year: number }) {
-	habbitsStore.ensureMonth(event.year, event.month - 1);
+	habitsStore.ensureMonth(event.year, event.month - 1);
 }
 
 function hasLogs(date: { day: number; month: number; year: number }) {
-	return habbitsStore.hasLogsOn(toDateKey(new Date(date.year, date.month, date.day)));
+	return habitsStore.hasLogsOn(toDateKey(new Date(date.year, date.month, date.day)));
 }
 </script>
 

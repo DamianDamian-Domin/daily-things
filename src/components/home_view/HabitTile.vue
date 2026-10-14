@@ -20,7 +20,7 @@
 		@click="onClick">
 		<span class="tile-face">
 			<PixelIcon
-				:icon="habbit.icon"
+				:icon="habit.icon"
 				:palette="palette"
 				:muted="muted"
 				:size="iconSize" />
@@ -53,14 +53,14 @@
 
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import type { Habbit } from "@/libs/types";
+import type { Habit } from "@/libs/types";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import { PALETTES } from "@/utils/pixelIcons";
 import { displayName, isNegative, paletteFor } from "@/utils/habitCatalog";
 
 const props = withDefaults(
 	defineProps<{
-		habbit: Habbit;
+		habit: Habit;
 		size?: "sm" | "md" | "lg";
 		showLabel?: boolean;
 		tooltip?: boolean;
@@ -88,11 +88,11 @@ const props = withDefaults(
 
 const emit = defineEmits<{ (e: "click", event: MouseEvent): void }>();
 
-const label = computed(() => displayName(props.habbit));
+const label = computed(() => displayName(props.habit));
 // Na ekranach dotykowych tooltip „przykleja się” po tapnięciu
 const canHover = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-const negative = computed(() => isNegative(props.habbit));
-const palette = computed(() => paletteFor(props.habbit));
+const negative = computed(() => isNegative(props.habit));
+const palette = computed(() => paletteFor(props.habit));
 const iconSize = computed(() => ({ sm: 26, md: 34, lg: 40 })[props.size]);
 const tint = computed(() => PALETTES[palette.value].h);
 const tintStrong = computed(() => PALETTES[palette.value].f);

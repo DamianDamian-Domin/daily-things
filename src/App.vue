@@ -36,7 +36,7 @@
 import { computed, defineAsyncComponent, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
-import { useHabbitsStore } from "@/stores/habbits";
+import { useHabitsStore } from "@/stores/habits";
 import { useTodosStore } from "@/stores/todos";
 import { usePreferencesStore } from "@/stores/userPreferences";
 import { useToastStore } from "@/stores/toast";
@@ -60,7 +60,7 @@ import ToastHost from "@/components/ui/ToastHost.vue";
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
-const habbitsStore = useHabbitsStore();
+const habitsStore = useHabitsStore();
 const todosStore = useTodosStore();
 const preferencesStore = usePreferencesStore();
 const toast = useToastStore();
@@ -100,11 +100,10 @@ async function loadSession(uid: string) {
 		const userDoc = await fetchUserDoc(uid);
 		if (authStore.userUid !== uid) return;
 		preferencesStore.hydrate(userDoc);
-		habbitsStore.hydrate(userDoc);
-		todosStore.hydrate(userDoc);
+		habitsStore.hydrate(userDoc);
 		profileStore.hydrate(userDoc);
 		remindersStore.hydrate(userDoc);
-		await habbitsStore.loadInitialHistory();
+		await Promise.all([habitsStore.loadInitialHistory(), todosStore.load(uid, userDoc)]);
 		if (authStore.userUid !== uid) return;
 		// Od teraz profil dla znajomych może się publikować (seria jest już policzona)
 		profileStore.markReady();
@@ -119,7 +118,7 @@ async function loadSession(uid: string) {
 watch(
 	() => [authStore.userUid, authStore.dataRevision] as const,
 	async ([uid]) => {
-		habbitsStore.clearData();
+		habitsStore.clearData();
 		todosStore.clearData();
 		profileStore.clear();
 		remindersStore.clear();
