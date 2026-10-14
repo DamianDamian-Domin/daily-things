@@ -17,6 +17,7 @@ import { useToastStore } from "@/stores/toast";
 import {
 	DAY_LOGS_FIELD,
 	dayDocRef,
+	fetchAllDays,
 	fetchDays,
 	saveUserFields,
 	type UserDoc,
@@ -58,6 +59,9 @@ export const useHabitsStore = defineStore("habits", () => {
 	// Cache doładowanych miesięcy — każdy miesiąc czytamy z Firestore raz na sesję
 	const loadedMonths = new Set<string>();
 	const pendingMonths = new Map<string, Promise<void>>();
+	// Cała historia wczytana jednym zapytaniem — miesięcy nie trzeba już doładowywać
+	const allHistoryLoaded = ref(false);
+	let pendingAllHistory: Promise<void> | null = null;
 	// Dni z niezakończonym zapisem — nie nadpisujemy ich danymi z serwera
 	const pendingDays = new Map<DateKey, number>();
 
@@ -213,7 +217,7 @@ export const useHabitsStore = defineStore("habits", () => {
 		const currentUid = uid.value;
 		if (!currentUid) return Promise.resolve();
 		const key = monthKeyOf(new Date(year, monthIndex, 1));
-		if (loadedMonths.has(key)) return Promise.resolve();
+		if (allHistoryLoaded.value || loadedMonths.has(key)) return Promise.resolve();
 		const pending = pendingMonths.get(key);
 		if (pending) return pending;
 
@@ -238,6 +242,28 @@ export const useHabitsStore = defineStore("habits", () => {
 
 	async function ensureRange(start: Date, end: Date) {
 		await Promise.all(monthsInRange(start, end).map(([y, m]) => ensureMonth(y, m)));
+	}
+
+	// Wyszukiwarka „kiedy ostatnio” potrzebuje całej historii (mycie lodówki
+	// mogło być pół roku temu) — jedno zapytanie zamiast miesiąc po miesiącu
+	function ensureAllHistory(): Promise<void> {
+		const currentUid = uid.value;
+		if (!currentUid || allHistoryLoaded.value) return Promise.resolve();
+		if (pendingAllHistory) return pendingAllHistory;
+		pendingAllHistory = fetchAllDays(currentUid)
+			.then((entries) => {
+				if (uid.value !== currentUid) return;
+				for (const entry of entries) mergeRemoteDay(entry);
+				allHistoryLoaded.value = true;
+			})
+			.catch((err) => {
+				console.error("Failed to load full history", err);
+				toast.error("We couldn't load your full history. Check your connection.");
+			})
+			.finally(() => {
+				pendingAllHistory = null;
+			});
+		return pendingAllHistory;
 	}
 
 	// Start sesji: bieżący i poprzedni miesiąc, potem cofamy się tak długo,
@@ -618,6 +644,8 @@ export const useHabitsStore = defineStore("habits", () => {
 		loadedMonths.clear();
 		pendingMonths.clear();
 		pendingDays.clear();
+		allHistoryLoaded.value = false;
+		pendingAllHistory = null;
 		selectedDate.value = startOfDay();
 		todayKey.value = computeTodayKey();
 	}
@@ -655,6 +683,8 @@ export const useHabitsStore = defineStore("habits", () => {
 		loadInitialHistory,
 		ensureRange,
 		ensureMonth,
+		ensureAllHistory,
+		allHistoryLoaded,
 		// wpisy
 		logHabit,
 		unlogHabit,
