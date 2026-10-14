@@ -10,6 +10,7 @@ export interface Habit {
 	display_name: string;
 	category?: string;
 	id?: string;
+	retired?: boolean; // wycofany z katalogu: nie do dodania, ale historia nadal go rozpoznaje
 }
 
 // Pojedyncze odhaczenie habitu w danym dniu (users/{uid}/habits/{YYYY-MM-DD}.habits[])
