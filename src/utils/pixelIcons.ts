@@ -83,6 +83,17 @@ function buildSvg(rle: string, palette: Palette): string {
 	);
 }
 
+// Surowy sprite i komplet kolorów — dla widżetu Androida, który rysuje
+// ikonę natywnie (RemoteViews nie wyświetli SVG)
+export function pixelSprite(name: string): string {
+	return icons[name] ?? icons.star;
+}
+
+export function paletteColors(paletteKey: PaletteKey): Required<Palette> {
+	const palette = PALETTES[paletteKey];
+	return { o: palette.o ?? OUTLINE, f: palette.f, h: palette.h, s: palette.s };
+}
+
 export function pixelIconUrl(name: string, paletteKey: PaletteKey = "orange"): string {
 	const key = `${name}|${paletteKey}`;
 	const cached = cache.get(key);

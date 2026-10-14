@@ -37,6 +37,13 @@ import { CATALOG, findCatalogHabit, resolveHabit } from "@/utils/habitCatalog";
 import { streakDetails } from "@/utils/streak";
 
 const RECENT_LIMIT = 12;
+
+// Odhaczenie albo cofnięcie zrobione na widżecie (utils/habitsWidget.ts)
+export interface WidgetAction {
+	op: "log" | "unlog";
+	date: DateKey;
+	log: HabitLog;
+}
 const MAX_STREAK_LOOKBACK_MONTHS = 24;
 const SAVE_ERROR = "Couldn't save that — check your connection and try again.";
 
@@ -329,6 +336,11 @@ export const useHabitsStore = defineStore("habits", () => {
 		return slimGoals();
 	}
 
+	// Migawka celów, którą zapisuje odhaczenie z dzisiaj (widżet robi to sam)
+	function todayGoalsSnapshot(): GoalRef[] {
+		return snapshotToWrite(todayKey.value) ?? [];
+	}
+
 	// Zapisy są optymistyczne: stan lokalny zmienia się od razu, a zapis do
 	// Firestore leci w tle (offline trafia do kolejki). Przy błędzie cofamy zmianę.
 	function logHabit(habit: Habit, key: DateKey = selectedKey.value): HabitLog | null {
@@ -338,11 +350,17 @@ export const useHabitsStore = defineStore("habits", () => {
 			return null;
 		}
 		const log: HabitLog = slim(habit, { id: nanoid(), name: habit.name, at: Date.now() });
+		writeLog(currentUid, log, key);
+		touchRecent(habit.name);
+		return log;
+	}
+
+	// Dopisuje gotowy wpis (z własnym id) lokalnie i w Firestore
+	function writeLog(currentUid: string, log: HabitLog, key: DateKey) {
 		const snapshot = snapshotToWrite(key);
 		const entry = localDay(key);
 		entry.habits.push(log);
 		if (snapshot) entry.goalsSnapshot = snapshot;
-		touchRecent(habit.name);
 
 		beginWrite(key);
 		setDoc(
@@ -361,7 +379,25 @@ export const useHabitsStore = defineStore("habits", () => {
 				toast.error(SAVE_ERROR);
 			})
 			.finally(() => endWrite(key));
-		return log;
+	}
+
+	// Odhaczenie z widżetu Androida. `persist` = widżet nie zdążył go zapisać
+	// (np. brak sieci), więc robimy to teraz; inaczej tylko odświeżamy stan.
+	// Zapisy po id są idempotentne, więc powtórka niczego nie dubluje.
+	function applyWidgetAction(action: WidgetAction, persist: boolean) {
+		const currentUid = uid.value;
+		if (!currentUid || !action.log?.id) return;
+		const { op, date: key, log } = action;
+		const present = logsOn(key).some((l) => l.id === log.id);
+		if (op === "log") {
+			if (present) return;
+			if (persist) writeLog(currentUid, plain(log), key);
+			else localDay(key).habits.push(plain(log));
+			touchRecent(log.name);
+		} else if (present) {
+			if (persist) removeLog(log.id, key);
+			else localDay(key).habits = logsOn(key).filter((l) => l.id !== log.id);
+		}
 	}
 
 	function removeLog(logId: string, key: DateKey = selectedKey.value): HabitLog | null {
@@ -674,6 +710,7 @@ export const useHabitsStore = defineStore("habits", () => {
 		groupedGoals,
 		goalsProgress,
 		goalsFor,
+		todayGoalsSnapshot,
 		dayGoalsProgress,
 		streak,
 		streakInfo,
@@ -692,6 +729,7 @@ export const useHabitsStore = defineStore("habits", () => {
 		removeAllLogs,
 		restoreLogs,
 		reorderSelected,
+		applyWidgetAction,
 		// cele
 		addDailyGoal,
 		addDailyGoals,

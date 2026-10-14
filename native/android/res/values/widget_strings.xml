@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_title">Today</string>
+    <string name="widget_description">Tick off today\'s goals right from your home screen</string>
+    <string name="widget_signed_out">Open Daily Things to sign in</string>
+    <string name="widget_no_goals">No daily goals yet. Tap to add some.</string>
+    <string name="widget_more">+%1$d more · open app</string>
+    <string name="widget_row_todo">%1$s, not done. Tap to tick off.</string>
+    <string name="widget_row_done">%1$s, done. Tap to undo.</string>
+</resources>

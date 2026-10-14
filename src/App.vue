@@ -182,6 +182,9 @@ watch(
 	{ immediate: true },
 );
 
+// Widżet „Dzisiejsze cele” na ekranie głównym Androida
+if (isNativePlatform) import("@/utils/habitsWidget").then((m) => m.startHabitsWidget());
+
 // ==========================================
 // ZNAJOMI — zaproszenie z linku i słuchacze tylko przy widocznej karcie
 // ==========================================

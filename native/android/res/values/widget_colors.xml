@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kolory widżetu — te same tokeny co jasny motyw aplikacji (main.ts / style.css) -->
+<resources>
+    <color name="widget_bg">#FDF6EE</color>
+    <color name="widget_row_bg">#FBF0E4</color>
+    <color name="widget_row_done_bg">#FFEDD5</color>
+    <color name="widget_border">#F1E3D4</color>
+    <color name="widget_text">#3B2A20</color>
+    <color name="widget_text_muted">#7D6556</color>
+    <color name="widget_accent">#B5501A</color>
+</resources>
