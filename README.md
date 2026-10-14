@@ -40,6 +40,7 @@ VITE_PUBLIC_URL=
 | `npm run dev:emu`   | Dev server connected to local Firebase emulators                |
 | `npm run emulators` | Starts Auth + Firestore emulators                               |
 | `npm run typecheck` | `vue-tsc` type check (keep it at 0 errors)                      |
+| `npm run lint`      | ESLint (Vue + TypeScript correctness rules, keep it at 0)       |
 | `npm run build`     | Production build                                                |
 | `npm run android`   | Build + `cap sync`                                              |
 | `npm run icons`     | Regenerates pixel-art habit icons (`src/assets/pixelIcons.json`) |

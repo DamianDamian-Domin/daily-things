@@ -11,7 +11,8 @@
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "preview": "vite preview",
     "android": "npm run build && node scripts/copy-android-res.mjs && npx cap sync",
-    "icons": "npm i --no-save @material-symbols/svg-400 @resvg/resvg-js && node scripts/generate-pixel-icons.mjs"
+    "icons": "npm i --no-save @material-symbols/svg-400 @resvg/resvg-js && node scripts/generate-pixel-icons.mjs",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@capacitor/android": "^8.3.3",
@@ -33,8 +34,13 @@
     "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.0.5",
     "@vitejs/plugin-vue": "^6.0.10",
+    "@vue/eslint-config-typescript": "^14.9.0",
+    "eslint": "^10.12.0",
+    "eslint-plugin-vue": "^10.11.1",
+    "globals": "^17.13.0",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.8.3",
     "vite": "^8.3.4",

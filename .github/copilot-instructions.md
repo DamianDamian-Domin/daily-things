@@ -65,4 +65,4 @@ You are a **senior software engineer** focused on modern, accessible, mobile-fir
 
 ## Commands
 - `npm run dev` / `npm run dev:emu` + `npm run emulators`
-- `npm run typecheck` (must pass), `npm run build`
+- `npm run typecheck` and `npm run lint` (both must pass), `npm run build`
