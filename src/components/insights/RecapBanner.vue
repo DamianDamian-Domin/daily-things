@@ -9,19 +9,19 @@
 				palette="orange"
 				:size="28" />
 			<p>
-				<strong>Your week recap is ready ✨</strong>
+				<strong>{{ m.bannerTitle }}</strong>
 				<span>{{ teaser }}</span>
 			</p>
 			<button
 				type="button"
 				class="dt-btn dt-btn-primary dt-btn-sm"
 				@click="openRecap">
-				See recap
+				{{ m.seeRecap }}
 			</button>
 			<button
 				type="button"
 				class="dt-icon-btn"
-				aria-label="Dismiss"
+				:aria-label="common.dismiss"
 				@click="dismiss">
 				<i
 					class="pi pi-times"
@@ -39,6 +39,8 @@ import { useHabitsStore } from "@/stores/habits";
 import { useInsightsStore } from "@/stores/insights";
 import { useProfileStore } from "@/stores/profile";
 import { addDays, daysInRange, fromDateKey, startOfWeek, toDateKey } from "@/utils/date";
+import { insightsMessages as m } from "@/i18n/messages/insights";
+import { commonMessages as common } from "@/i18n/messages/common";
 
 // Baner w pierwszych dniach nowego tygodnia (pon–śr), raz na tydzień na urządzeniu,
 // tylko gdy w poprzednim tygodniu cokolwiek się działo
@@ -83,7 +85,7 @@ const show = computed(() => {
 	);
 });
 
-const teaser = computed(() => `${lastWeekLogs.value} habits logged last week`);
+const teaser = computed(() => m.bannerTeaser(lastWeekLogs.value));
 
 function markSeen() {
 	seen.value = weekId.value;

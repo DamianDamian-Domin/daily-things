@@ -16,12 +16,12 @@
 				<h2
 					id="avatar-editor-title"
 					class="dt-title">
-					Your avatar
+					{{ m.yourAvatar }}
 				</h2>
 				<button
 					type="button"
 					class="dt-icon-btn"
-					aria-label="Close"
+					:aria-label="c.close"
 					@click="visible = false">
 					<i
 						class="pi pi-times"
@@ -36,27 +36,27 @@
 					<PixelAvatar
 						:avatar="draft"
 						:size="128"
-						alt="Preview of your avatar" />
+						:alt="m.avatarPreview" />
 				</div>
 				<button
 					type="button"
 					class="dt-btn dt-btn-soft dt-btn-sm"
 					@click="randomize">
-					<span aria-hidden="true">🎲</span> Randomize
+					<span aria-hidden="true">🎲</span> {{ m.randomize }}
 				</button>
 			</div>
 
 			<div
 				class="dt-segmented ae-tabs"
 				role="group"
-				aria-label="Avatar part">
+				:aria-label="m.avatarPartAria">
 				<button
 					v-for="g in GROUPS"
 					:key="g.id"
 					type="button"
 					:aria-pressed="tab === g.id"
 					@click="tab = g.id">
-					{{ g.label }}
+					{{ g.label() }}
 				</button>
 			</div>
 
@@ -118,13 +118,13 @@
 					type="button"
 					class="dt-btn dt-btn-ghost"
 					@click="visible = false">
-					Cancel
+					{{ c.cancel }}
 				</button>
 				<button
 					type="button"
 					class="dt-btn dt-btn-primary"
 					@click="save">
-					Save avatar
+					{{ m.saveAvatar }}
 				</button>
 			</div>
 		</div>
@@ -148,14 +148,17 @@ import {
 	type AvatarPart,
 } from "@/utils/avatar";
 import { plain } from "@/utils/plain";
+import { profileMessages as m } from "@/i18n/messages/profile";
+import { commonMessages as c } from "@/i18n/messages/common";
 
 type GroupId = "face" | "hair" | "outfit" | "extras";
 
-const GROUPS: Array<{ id: GroupId; label: string; parts: AvatarPart[] }> = [
-	{ id: "face", label: "Face", parts: ["skin", "eyes", "mouth"] },
-	{ id: "hair", label: "Hair", parts: ["hair", "hairColor"] },
-	{ id: "outfit", label: "Outfit", parts: ["top", "topColor"] },
-	{ id: "extras", label: "Extras", parts: ["accessory", "bg"] },
+// Etykiety czytamy przy renderze — podążają za wybranym językiem
+const GROUPS: Array<{ id: GroupId; label: () => string; parts: AvatarPart[] }> = [
+	{ id: "face", label: () => m.groupFace, parts: ["skin", "eyes", "mouth"] },
+	{ id: "hair", label: () => m.groupHair, parts: ["hair", "hairColor"] },
+	{ id: "outfit", label: () => m.groupOutfit, parts: ["top", "topColor"] },
+	{ id: "extras", label: () => m.groupExtras, parts: ["accessory", "bg"] },
 ];
 
 const SWATCH_PARTS: AvatarPart[] = ["skin", "hairColor", "topColor", "bg"];
@@ -203,25 +206,25 @@ function isDark(hex: string | null) {
 function partLabel(part: AvatarPart): string {
 	switch (part) {
 		case "skin":
-			return "Skin tone";
+			return m.partSkin;
 		case "eyes":
-			return "Eyes";
+			return m.partEyes;
 		case "mouth":
-			return "Mouth";
+			return m.partMouth;
 		case "hair":
-			return "Hairstyle";
+			return m.partHair;
 		case "hairColor":
-			return draft.value.hair === "hijab" ? "Scarf color" : "Hair color";
+			return draft.value.hair === "hijab" ? m.partScarfColor : m.partHairColor;
 		case "top":
-			return "Top";
+			return m.partTop;
 		case "topColor":
 			return draft.value.hair === "beanie" || draft.value.accessory === "cap"
-				? "Top & hat color"
-				: "Top color";
+				? m.partTopHatColor
+				: m.partTopColor;
 		case "accessory":
-			return "Accessory";
+			return m.partAccessory;
 		case "bg":
-			return "Background";
+			return m.partBg;
 	}
 }
 
@@ -248,7 +251,7 @@ function save() {
 	const changed = !sameAvatar(draft.value, profileStore.savedAvatar);
 	profileStore.saveAvatar(plain(draft.value));
 	visible.value = false;
-	if (changed) toast.show("Looking good! ✨", { tone: "success" });
+	if (changed) toast.show(m.lookingGood, { tone: "success" });
 }
 </script>
 

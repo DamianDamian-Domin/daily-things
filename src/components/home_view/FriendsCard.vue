@@ -56,13 +56,13 @@
 					v-else-if="friendsStore.listenError && !hasFriends"
 					class="friends-loading"
 					role="status">
-					We couldn't reach your friends right now 🌧️ Try again in a moment.
+					{{ m.friendsError }}
 				</p>
 				<p
 					v-else-if="!friendsStore.loaded"
 					class="friends-loading"
 					role="status">
-					Gathering your friends…
+					{{ m.friendsLoading }}
 				</p>
 
 				<button
@@ -73,7 +73,7 @@
 					<i
 						class="pi pi-user-plus"
 						aria-hidden="true"></i>
-					Add a friend
+					{{ m.addFriend }}
 				</button>
 			</template>
 		</div>
@@ -96,6 +96,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useFriendsStore } from "@/stores/friends";
 import { useProfileStore } from "@/stores/profile";
 import { useInvite } from "@/utils/useInvite";
+import { homeMessages as m } from "@/i18n/messages/home";
 import FriendsHeader from "@/components/friends/FriendsHeader.vue";
 import FriendsEmpty from "@/components/friends/FriendsEmpty.vue";
 import FriendsRequests from "@/components/friends/FriendsRequests.vue";

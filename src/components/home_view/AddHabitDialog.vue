@@ -23,20 +23,16 @@
 					<h2
 						id="add-habit-title"
 						class="dt-title">
-						{{ mode === "log" ? logTitle : "Your daily goals" }}
+						{{ mode === "log" ? logTitle : m.yourDailyGoals }}
 					</h2>
 					<p class="dt-subtitle">
-						{{
-							mode === "log"
-								? "Tap to log. Tap again if you did it more than once."
-								: "Tap to add a goal. Tap again to aim for it several times a day."
-						}}
+						{{ mode === "log" ? m.logSubtitle : m.goalSubtitle }}
 					</p>
 				</div>
 				<button
 					type="button"
 					class="dt-icon-btn"
-					aria-label="Close"
+					:aria-label="common.close"
 					@click="visible = false">
 					<i
 						class="pi pi-times"
@@ -53,8 +49,8 @@
 					v-model="query"
 					type="search"
 					class="dt-input"
-					:placeholder="`Search ${pool.length} habits…`"
-					aria-label="Search habits"
+					:placeholder="m.searchPlaceholder(pool.length)"
+					:aria-label="m.searchAria"
 					autocomplete="off"
 					spellcheck="false"
 					@keydown.enter.prevent="onSearchEnter" />
@@ -94,7 +90,7 @@
 				<p
 					v-if="category === 'negative' && !query && !creating"
 					class="break-hint">
-					Noticing a slip is the first step to changing it. Log it kindly 🌱
+					{{ m.breakHint }}
 				</p>
 
 				<HabitSections
@@ -119,7 +115,7 @@
 						type="button"
 						class="dt-btn dt-btn-soft dt-btn-sm"
 						@click="shelfRef?.select('all')">
-						See {{ matchesElsewhere }} {{ matchesElsewhere === 1 ? "match" : "matches" }} in all categories
+						{{ m.seeMatches(matchesElsewhere) }}
 					</button>
 				</div>
 
@@ -140,7 +136,7 @@
 					type="button"
 					class="dt-btn dt-btn-primary"
 					@click="visible = false">
-					Done
+					{{ m.done }}
 				</button>
 			</div>
 		</div>
@@ -172,6 +168,8 @@ import CreateHabitCta from "@/components/home_view/add_habit/CreateHabitCta.vue"
 import CustomHabitForm from "@/components/home_view/add_habit/CustomHabitForm.vue";
 import HabitSections from "@/components/home_view/add_habit/HabitSections.vue";
 import type { CategoryFilter, FilterKey, HabitSection } from "@/components/home_view/add_habit/types";
+import { addHabitMessages as m } from "@/i18n/messages/addHabit";
+import { commonMessages as common } from "@/i18n/messages/common";
 
 const props = defineProps<{ mode: "log" | "goal" }>();
 const emit = defineEmits<{ (e: "logged"): void }>();
@@ -189,15 +187,23 @@ const DAY_PART_ICON: Record<DayPart, string> = {
 // Filtry „specjalne” (poza kategoriami katalogu)
 const ALL_FILTER: CategoryFilter = {
 	key: "all",
-	label: "All habits",
-	short: "All",
+	get label() {
+		return m.allHabits;
+	},
+	get short() {
+		return m.allShort;
+	},
 	icon: "category",
 	palette: "orange",
 };
 const NEGATIVE_FILTER: CategoryFilter = {
 	key: "negative",
-	label: "Habits to break",
-	short: "Break",
+	get label() {
+		return m.habitsToBreak;
+	},
+	get short() {
+		return m.breakShort;
+	},
 	icon: "do_not_disturb_on",
 	palette: "plum",
 };
@@ -225,7 +231,7 @@ const showPacks = computed(
 );
 
 const logTitle = computed(() =>
-	habitsStore.isSelectedToday ? "What did you do today?" : "What did you do that day?",
+	habitsStore.isSelectedToday ? m.logTitleToday : m.logTitleThatDay,
 );
 
 function onShow() {
@@ -284,9 +290,9 @@ const sections = computed<HabitSection[]>(() => {
 
 	if (q) {
 		const items = pool.value.filter((h) => inFilter(h) && matchesQuery(h, q));
-		const where = category.value === "all" ? "" : ` in ${activeFilter.value.label}`;
+		const where = category.value === "all" ? undefined : activeFilter.value.label;
 		return items.length
-			? [{ key: "results", title: `${items.length} found${where}`, icon: "search", palette: "orange", items }]
+			? [{ key: "results", title: m.found(items.length, where), icon: "search", palette: "orange", items }]
 			: [];
 	}
 
@@ -321,7 +327,7 @@ const sections = computed<HabitSection[]>(() => {
 			habitsStore.resolve({ name }),
 		);
 		if (current.length)
-			result.push({ key: "current", title: "Your goals", icon: "flag", palette: "yellow", items: take(current) });
+			result.push({ key: "current", title: m.yourGoals, icon: "flag", palette: "yellow", items: take(current) });
 	}
 
 	const custom = pool.value.filter((h) => h.origin === "user");
@@ -342,7 +348,7 @@ const sections = computed<HabitSection[]>(() => {
 	if (suggestedItems.length)
 		result.push({
 			key: "suggested",
-			title: recent.length ? "Recently used" : (timely?.title ?? "Great to start with"),
+			title: recent.length ? m.recentlyUsed : (timely?.title ?? m.greatToStart),
 			icon: timely ? DAY_PART_ICON[dayPartOf()] : "star_shine",
 			palette: "yellow",
 			items: suggestedItems,
@@ -364,18 +370,18 @@ const matchesElsewhere = computed(() => {
 const emptyText = computed(() => {
 	const q = query.value.trim();
 	if (category.value === "negative")
-		return q ? `No habits to break match “${q}”.` : "No habits to break here — lovely! 🌿";
-	if (q && category.value !== "all") return `No “${q}” in ${activeFilter.value.label}.`;
-	return q ? `Nothing called “${q}” yet.` : "Nothing here yet.";
+		return q ? m.noBreakMatch(q) : m.noBreak;
+	if (q && category.value !== "all") return m.noInCategory(q, activeFilter.value.label);
+	return q ? m.nothingCalled(q) : m.nothingHere;
 });
 
 const summary = computed(() => {
 	if (props.mode === "goal") {
 		const total = habitsStore.dailyGoalsList.length;
-		return total ? `${total} ${total === 1 ? "goal" : "goals"} a day` : "No goals yet";
+		return total ? m.goalsADay(total) : m.noGoals;
 	}
-	if (sessionAdds.value === 0) return "Nothing added yet";
-	return `${sessionAdds.value} added — nice! ✨`;
+	if (sessionAdds.value === 0) return m.nothingAdded;
+	return m.added(sessionAdds.value);
 });
 
 // ==========================================================================

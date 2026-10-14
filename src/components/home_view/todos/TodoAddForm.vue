@@ -9,14 +9,14 @@
 			<i
 				class="pi pi-plus"
 				aria-hidden="true"></i>
-			<span class="sr-only">New task</span>
+			<span class="sr-only">{{ m.newTask }}</span>
 		</label>
 		<input
 			id="new-todo"
 			ref="newInputRef"
 			v-model="newText"
 			class="add-input"
-			placeholder="Add a task…"
+			:placeholder="m.addPlaceholder"
 			autocomplete="off"
 			enterkeyhint="done"
 			@keydown.escape="newText = ''" />
@@ -24,7 +24,7 @@
 			v-if="newText.trim()"
 			type="submit"
 			class="dt-btn dt-btn-primary dt-btn-sm">
-			Add
+			{{ m.add }}
 		</button>
 	</form>
 </template>
@@ -33,6 +33,7 @@
 import { nextTick, ref } from "vue";
 import { useTodosStore } from "@/stores/todos";
 import { useSound } from "@/utils/useSound";
+import { todosMessages as m } from "@/i18n/messages/todos";
 
 const todosStore = useTodosStore();
 const { playAdd } = useSound();

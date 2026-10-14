@@ -18,7 +18,7 @@
 				<button
 					type="button"
 					class="dt-icon-btn"
-					aria-label="Close help"
+					:aria-label="m.closeHelp"
 					@click="visible = false">
 					<i
 						class="pi pi-times"
@@ -41,7 +41,7 @@
 						class="help-slide"
 						role="group"
 						aria-roledescription="slide"
-						:aria-label="`${i + 1} of ${HELP_SLIDES.length}`"
+						:aria-label="m.slideOf(i + 1, HELP_SLIDES.length)"
 						:aria-hidden="i !== index"
 						:inert="i !== index">
 						<HelpIllustration :slide="slide.id" />
@@ -58,7 +58,7 @@
 			<div
 				class="help-dots"
 				role="tablist"
-				aria-label="Choose a page">
+				:aria-label="m.choosePage">
 				<button
 					v-for="(slide, i) in HELP_SLIDES"
 					:key="slide.id"
@@ -78,21 +78,21 @@
 					type="button"
 					class="dt-btn dt-btn-ghost"
 					@click="go(index - 1)">
-					Back
+					{{ common.back }}
 				</button>
 				<button
 					v-else
 					type="button"
 					class="dt-btn dt-btn-ghost"
 					@click="visible = false">
-					Skip
+					{{ m.skip }}
 				</button>
 				<button
 					v-if="!isLast"
 					type="button"
 					class="dt-btn dt-btn-primary"
 					@click="go(index + 1)">
-					Next
+					{{ m.next }}
 					<i
 						class="pi pi-arrow-right"
 						aria-hidden="true"></i>
@@ -102,7 +102,7 @@
 					type="button"
 					class="dt-btn dt-btn-primary"
 					@click="visible = false">
-					Let's go
+					{{ m.letsGo }}
 				</button>
 			</div>
 		</div>
@@ -114,6 +114,8 @@ import { computed, ref, watch } from "vue";
 import Dialog from "primevue/dialog";
 import HelpIllustration from "./HelpIllustration.vue";
 import { HELP_SLIDES } from "@/utils/onboarding";
+import { helpMessages as m } from "@/i18n/messages/help";
+import { commonMessages as common } from "@/i18n/messages/common";
 
 const visible = defineModel<boolean>({ default: false });
 const index = ref(0);

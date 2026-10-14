@@ -21,14 +21,14 @@
 					<h2
 						id="year-title"
 						class="dt-title">
-						Your year
+						{{ m.yourYear }}
 					</h2>
 					<p class="dt-subtitle">{{ rangeLabel }}</p>
 				</div>
 				<button
 					type="button"
 					class="dt-icon-btn"
-					aria-label="Close"
+					:aria-label="common.close"
 					@click="visible = false">
 					<i
 						class="pi pi-times"
@@ -39,19 +39,19 @@
 			<dl class="year-kpis">
 				<div>
 					<dd>{{ totals.activeDays }}</dd>
-					<dt>active days</dt>
+					<dt>{{ m.activeDays(totals.activeDays) }}</dt>
 				</div>
 				<div>
 					<dd>{{ totals.perfectDays }}</dd>
-					<dt>perfect days</dt>
+					<dt>{{ m.perfectDays(totals.perfectDays) }}</dt>
 				</div>
 				<div>
 					<dd>{{ totals.bestStreak }}</dd>
-					<dt>longest streak</dt>
+					<dt>{{ m.longestStreak }}</dt>
 				</div>
 				<div>
 					<dd>{{ totals.checkIns }}</dd>
-					<dt>habits logged</dt>
+					<dt>{{ m.habitsLogged(totals.checkIns) }}</dt>
 				</div>
 			</dl>
 
@@ -59,7 +59,7 @@
 				v-if="loading"
 				class="year-loading"
 				aria-live="polite">
-				Gathering your year…
+				{{ m.gatheringYear }}
 			</p>
 
 			<div
@@ -84,7 +84,7 @@
 						<span
 							class="year-wd"
 							aria-hidden="true"
-							>{{ row % 2 === 1 ? WEEKDAYS[row - 1] : "" }}</span
+							>{{ row % 2 === 1 ? m.weekdays3[row - 1] : "" }}</span
 						>
 						<button
 							v-for="w in weeks"
@@ -104,18 +104,18 @@
 			</div>
 
 			<p class="heat-legend">
-				<span>Less</span>
+				<span>{{ m.less }}</span>
 				<span
 					v-for="l in 5"
 					:key="l"
 					class="year-cell is-swatch"
 					:class="`lvl-${l - 1}`"
 					aria-hidden="true"></span>
-				<span>More</span>
+				<span>{{ m.more }}</span>
 				<span
 					class="year-cell is-swatch perfect lvl-3"
 					aria-hidden="true"></span>
-				<span>all goals</span>
+				<span>{{ m.allGoals }}</span>
 			</p>
 		</div>
 	</Dialog>
@@ -130,8 +130,10 @@ import { useCarouselStore } from "@/stores/useCarouselStore";
 import { addDays, formatShortDate, fromDateKey, startOfDay, startOfWeek, toDateKey } from "@/utils/date";
 import { isNegative } from "@/utils/habitCatalog";
 import { longestRun } from "@/utils/streak";
+import { insightsMessages as m } from "@/i18n/messages/insights";
+import { commonMessages as common } from "@/i18n/messages/common";
+import { dateLocale } from "@/i18n";
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const WEEKS = 53;
 
 const visible = defineModel<boolean>({ default: false });
@@ -172,14 +174,14 @@ const weeks = computed(() => {
 		const days = cells.slice(w * 7, w * 7 + 7).map((c) => ({
 			...c,
 			level: c.count === 0 ? 0 : Math.min(4, Math.ceil((c.count / high) * 4)),
-			label: `${formatShortDate(c.date)}: ${c.count} logged${c.perfect ? ", all goals done" : ""}`,
+			label: m.yearCell(formatShortDate(c.date), c.count, c.perfect),
 		}));
 		const first = days[0].date;
 		const prev = addDays(first, -7);
 		result.push({
 			days,
 			monthLabel: w === 0 || first.getMonth() !== prev.getMonth()
-				? first.toLocaleDateString("en-GB", { month: "short" })
+				? first.toLocaleDateString(dateLocale(), { month: "short" })
 				: "",
 		});
 	}

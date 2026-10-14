@@ -16,7 +16,7 @@
 					<button
 						type="button"
 						class="dt-icon-btn"
-						aria-label="Previous week"
+						:aria-label="m.previousWeek"
 						@click="offset--">
 						<i
 							class="pi pi-chevron-left"
@@ -30,7 +30,7 @@
 					<button
 						type="button"
 						class="dt-icon-btn"
-						aria-label="Next week"
+						:aria-label="m.nextWeek"
 						:disabled="offset >= 0"
 						@click="offset++">
 						<i
@@ -40,14 +40,14 @@
 					<button
 						type="button"
 						class="dt-icon-btn recap-close"
-						aria-label="Close"
+						:aria-label="common.close"
 						@click="visible = false">
 						<i
 							class="pi pi-times"
 							aria-hidden="true"></i>
 					</button>
 				</div>
-				<p class="recap-kicker">{{ offset === 0 ? "This week so far" : "Your week in review" }}</p>
+				<p class="recap-kicker">{{ offset === 0 ? m.thisWeekSoFar : m.weekInReview }}</p>
 				<h2
 					id="recap-title"
 					class="recap-headline">
@@ -62,12 +62,12 @@
 						palette="green"
 						:size="28" />
 					<dd>{{ recap.checkIns }}</dd>
-					<dt>habits logged</dt>
+					<dt>{{ m.habitsLogged(recap.checkIns) }}</dt>
 					<span
 						v-if="recap.deltaPct !== null && recap.deltaPct !== 0"
 						class="recap-delta"
 						:class="{ down: recap.deltaPct < 0 }"
-						>{{ recap.deltaPct > 0 ? "▲" : "▼" }} {{ Math.abs(recap.deltaPct) }}% vs last week</span
+						>{{ recap.deltaPct > 0 ? "▲" : "▼" }} {{ m.vsLastWeek(Math.abs(recap.deltaPct)) }}</span
 					>
 				</div>
 				<div class="recap-kpi">
@@ -76,7 +76,7 @@
 						palette="orange"
 						:size="28" />
 					<dd>{{ recap.goalPct === null ? "—" : `${recap.goalPct}%` }}</dd>
-					<dt>of daily goals</dt>
+					<dt>{{ m.ofDailyGoals }}</dt>
 				</div>
 				<div class="recap-kpi">
 					<PixelIcon
@@ -84,13 +84,13 @@
 						palette="yellow"
 						:size="28" />
 					<dd>{{ recap.perfectDays }}<small>/{{ recap.elapsedDays }}</small></dd>
-					<dt>perfect days</dt>
+					<dt>{{ m.perfectDays(recap.perfectDays) }}</dt>
 				</div>
 			</dl>
 
 			<section
 				class="recap-section"
-				aria-label="Day by day">
+				:aria-label="m.dayByDay">
 				<div
 					class="recap-bars"
 					role="img"
@@ -117,7 +117,7 @@
 						palette="yellow"
 						:size="26" />
 					<span
-						>Best day: <strong>{{ recap.bestDay.weekday }}</strong>
+						>{{ m.bestDay }} <strong>{{ recap.bestDay.weekday }}</strong>
 						<small>{{ bestDayDetail }}</small></span
 					>
 				</li>
@@ -127,8 +127,8 @@
 						:palette="paletteFor(recap.top[0].habit)"
 						:size="26" />
 					<span
-						>Top habit: <strong>{{ displayName(recap.top[0].habit) }}</strong>
-						<small>{{ recap.top[0].count }}× this week</small></span
+						>{{ m.topHabit }} <strong>{{ displayName(recap.top[0].habit) }}</strong>
+						<small>{{ m.timesThisWeek(recap.top[0].count) }}</small></span
 					>
 				</li>
 				<li v-if="habitsStore.streak > 1 && offset >= -1">
@@ -137,8 +137,8 @@
 						palette="orange"
 						:size="26" />
 					<span
-						>Streak: <strong>{{ habitsStore.streak }} days</strong>
-						<small v-if="frozenInWeek">one free pass used ❄️</small></span
+						>{{ m.streak }} <strong>{{ m.streakDays(habitsStore.streak) }}</strong>
+						<small v-if="frozenInWeek">{{ m.freePassUsed }}</small></span
 					>
 				</li>
 				<li
@@ -149,7 +149,7 @@
 						:palette="b.palette"
 						:size="26" />
 					<span
-						>New badge: <strong>{{ b.title }}</strong> <small>{{ b.description }}</small></span
+						>{{ m.newBadge }} <strong>{{ b.title }}</strong> <small>{{ b.description }}</small></span
 					>
 				</li>
 				<li v-if="newBadges.length > 3">
@@ -157,7 +157,7 @@
 						icon="trophy"
 						palette="yellow"
 						:size="26" />
-					<span>…and {{ newBadges.length - 3 }} more new badges</span>
+					<span>{{ m.moreNewBadges(newBadges.length - 3) }}</span>
 				</li>
 			</ul>
 
@@ -171,7 +171,7 @@
 					type="button"
 					class="dt-btn dt-btn-ghost dt-btn-sm"
 					@click="insights.open('badges')">
-					See badges
+					{{ m.seeBadges }}
 				</button>
 				<button
 					type="button"
@@ -181,7 +181,7 @@
 					<i
 						class="pi pi-share-alt"
 						aria-hidden="true"></i>
-					Share my week
+					{{ m.shareWeek }}
 				</button>
 			</div>
 		</div>
@@ -199,6 +199,8 @@ import { useToastStore } from "@/stores/toast";
 import { addDays, daysInRange, formatShortDate, startOfDay, startOfWeek, toDateKey, weekdayName } from "@/utils/date";
 import { displayName, isNegative, paletteFor } from "@/utils/habitCatalog";
 import { buildRecap, recapShareText, type RecapDay } from "@/utils/weeklyRecap";
+import { insightsMessages as m } from "@/i18n/messages/insights";
+import { commonMessages as common } from "@/i18n/messages/common";
 
 const visible = defineModel<boolean>({ default: false });
 const habitsStore = useHabitsStore();
@@ -235,7 +237,7 @@ function recapDay(date: Date): RecapDay {
 	return {
 		key,
 		weekday: weekdayName(date, "long"),
-		short: weekdayName(date, "short").slice(0, 2),
+		short: m.weekdays2[(date.getDay() + 6) % 7],
 		future: key > habitsStore.todayKey,
 		checkIns: groups.filter((g) => !isNegative(g.habit)).reduce((n, g) => n + g.count, 0),
 		goalsDone: goals.done,
@@ -285,23 +287,24 @@ const bars = computed(() => {
 
 const barsAria = computed(
 	() =>
-		"Day by day: " +
-		days.value
-			.filter((d) => !d.future)
-			.map((d) =>
-				d.goalsTotal
-					? `${d.weekday} ${d.goalsDone} of ${d.goalsTotal} goals`
-					: `${d.weekday} ${d.checkIns} logged`,
-			)
-			.join(", "),
+		m.dayByDayAria(
+			days.value
+				.filter((d) => !d.future)
+				.map((d) =>
+					d.goalsTotal
+						? m.dayGoalsAria(d.weekday, d.goalsDone, d.goalsTotal)
+						: m.dayLoggedAria(d.weekday, d.checkIns),
+				)
+				.join(", "),
+		),
 );
 
 const bestDayDetail = computed(() => {
 	const d = recap.value.bestDay;
 	if (!d) return "";
-	if (d.perfect) return "every goal done 🏅";
-	if (d.goalsTotal) return `${d.goalsDone}/${d.goalsTotal} goals`;
-	return `${d.checkIns} habits`;
+	if (d.perfect) return m.everyGoalDone;
+	if (d.goalsTotal) return m.goalsFraction(d.goalsDone, d.goalsTotal);
+	return m.habitsCount(d.checkIns);
 });
 
 const frozenInWeek = computed(() => {
@@ -322,11 +325,11 @@ async function share() {
 			return;
 		}
 		await navigator.clipboard.writeText(text);
-		toast.show("Copied your week — paste it anywhere 📋", { tone: "success" });
+		toast.show(m.copied, { tone: "success" });
 	} catch (err) {
 		// Zamknięcie arkusza udostępniania to nie błąd
 		if ((err as DOMException)?.name === "AbortError") return;
-		toast.error("Couldn't share right now — try again.");
+		toast.error(m.shareFailed);
 	}
 }
 </script>

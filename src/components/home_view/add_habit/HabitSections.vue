@@ -15,7 +15,7 @@
 				type="button"
 				class="dt-link manage-link"
 				@click="managing = !managing">
-				{{ managing ? "Done" : "Manage" }}
+				{{ managing ? m.done : m.manage }}
 			</button>
 		</div>
 		<div class="add-grid">
@@ -35,7 +35,7 @@
 					v-if="managing && section.key === 'yours'"
 					type="button"
 					class="cell-mini is-delete"
-					:aria-label="`Delete ${h.display_name}`"
+					:aria-label="m.deleteHabit(h.display_name)"
 					@click="emit('delete', h)">
 					<i
 						class="pi pi-trash"
@@ -45,7 +45,7 @@
 					v-else-if="countFor(h) > 0"
 					type="button"
 					class="cell-mini"
-					:aria-label="`Remove one ${h.display_name}`"
+					:aria-label="m.removeOneOf(h.display_name)"
 					@click="emit('minus', h)">
 					<i
 						class="pi pi-minus"
@@ -65,6 +65,7 @@ import { displayName } from "@/utils/habitCatalog";
 import HabitTile from "@/components/home_view/HabitTile.vue";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import type { HabitSection } from "./types";
+import { addHabitMessages as m } from "@/i18n/messages/addHabit";
 
 const props = defineProps<{ mode: "log" | "goal"; sections: HabitSection[] }>();
 const emit = defineEmits<{
@@ -97,10 +98,8 @@ function badgeFor(h: Habit) {
 function tileLabel(h: Habit) {
 	const n = countFor(h);
 	const name = displayName(h);
-	if (n === 0) return props.mode === "log" ? `Log ${name}` : `Add goal: ${name}`;
-	return props.mode === "log"
-		? `${name}, logged ${n} ${n === 1 ? "time" : "times"}. Log again`
-		: `${name}, goal ${n} ${n === 1 ? "time" : "times"} a day. Add one more`;
+	if (n === 0) return props.mode === "log" ? m.tileLog(name) : m.tileAddGoal(name);
+	return props.mode === "log" ? m.tileLoggedAgain(name, n) : m.tileGoalMore(name, n);
 }
 </script>
 

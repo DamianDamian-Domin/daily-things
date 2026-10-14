@@ -1,6 +1,7 @@
 import type { Habit } from "@/libs/types";
 import { findCatalogHabit } from "@/utils/habitCatalog";
 import type { PaletteKey } from "@/utils/pixelIcons";
+import { habitsMessages as m } from "@/i18n/messages/habits";
 
 // ==========================================================================
 // Podpowiedzi dla osób, które dopiero zaczynają: gotowe pakiety celów,
@@ -17,71 +18,33 @@ export interface StarterPack {
 	habits: string[];
 }
 
+type PackKey = keyof typeof m.packs;
+
+// Tytuł i opis czytamy przy każdym odczycie — zmieniają się razem z językiem
+function pack(key: PackKey, icon: string, palette: PaletteKey, habits: string[]): StarterPack {
+	return {
+		key,
+		icon,
+		palette,
+		habits,
+		get title() {
+			return m.packs[key].title;
+		},
+		get blurb() {
+			return m.packs[key].blurb;
+		},
+	};
+}
+
 export const STARTER_PACKS: StarterPack[] = [
-	{
-		key: "morning",
-		title: "Fresh mornings",
-		blurb: "Start the day awake and kind to yourself",
-		icon: "sunny",
-		palette: "yellow",
-		habits: ["Make the bed", "Drink water", "Get sunlight"],
-	},
-	{
-		key: "move",
-		title: "Move more",
-		blurb: "A little movement, every single day",
-		icon: "directions_walk",
-		palette: "orange",
-		habits: ["Walking", "Stretching", "Home workout"],
-	},
-	{
-		key: "calm",
-		title: "Calm mind",
-		blurb: "Small pauses that quiet the noise",
-		icon: "self_improvement",
-		palette: "purple",
-		habits: ["Meditation", "Deep breathing", "Practice gratitude"],
-	},
-	{
-		key: "sleep",
-		title: "Better sleep",
-		blurb: "Wind down and wake up rested",
-		icon: "bedtime",
-		palette: "indigo",
-		habits: ["No phone before bed", "Evening routine", "Go to bed early"],
-	},
-	{
-		key: "health",
-		title: "Healthy basics",
-		blurb: "The simple stuff your body loves",
-		icon: "ecg_heart",
-		palette: "green",
-		habits: ["Drink water", "Healthy meal", "Take vitamins"],
-	},
-	{
-		key: "screens",
-		title: "Less screen time",
-		blurb: "Take your attention back",
-		icon: "mobile_off",
-		palette: "teal",
-		habits: ["Unplug for an hour", "Take a screen break", "Limit screen time"],
-	},
-	{
-		key: "learn",
-		title: "Keep learning",
-		blurb: "Grow a little bit smarter daily",
-		icon: "auto_stories",
-		palette: "blue",
-		habits: ["Read a book", "Learn a new word", "Listen to a podcast"],
-	},
-	{
-		key: "focus",
-		title: "Get things done",
-		blurb: "Calm, focused, productive days",
-		icon: "task_alt",
-		palette: "red",
-		habits: ["Plan tomorrow", "Deep work session", "Tidy up workspace"],
-	},
+	pack("morning", "sunny", "yellow", ["Make the bed", "Drink water", "Get sunlight"]),
+	pack("move", "directions_walk", "orange", ["Walking", "Stretching", "Home workout"]),
+	pack("calm", "self_improvement", "purple", ["Meditation", "Deep breathing", "Practice gratitude"]),
+	pack("sleep", "bedtime", "indigo", ["No phone before bed", "Evening routine", "Go to bed early"]),
+	pack("health", "ecg_heart", "green", ["Drink water", "Healthy meal", "Take vitamins"]),
+	pack("screens", "mobile_off", "teal", ["Unplug for an hour", "Take a screen break", "Limit screen time"]),
+	pack("learn", "auto_stories", "blue", ["Read a book", "Learn a new word", "Listen to a podcast"]),
+	pack("focus", "task_alt", "red", ["Plan tomorrow", "Deep work session", "Tidy up workspace"]),
 ];
 
 export function packHabits(pack: StarterPack): Habit[] {
@@ -100,9 +63,8 @@ export function dayPartOf(date: Date = new Date()): DayPart {
 	return "evening";
 }
 
-const BY_PART: Record<DayPart, { title: string; habits: string[] }> = {
+const BY_PART: Record<DayPart, { habits: string[] }> = {
 	morning: {
-		title: "Nice for this morning",
 		habits: [
 			"Drink water",
 			"Make the bed",
@@ -119,7 +81,6 @@ const BY_PART: Record<DayPart, { title: string; habits: string[] }> = {
 		],
 	},
 	afternoon: {
-		title: "Nice for this afternoon",
 		habits: [
 			"Drink water",
 			"Walking",
@@ -136,7 +97,6 @@ const BY_PART: Record<DayPart, { title: string; habits: string[] }> = {
 		],
 	},
 	evening: {
-		title: "Nice for this evening",
 		habits: [
 			"Read a book",
 			"Journaling",
@@ -155,9 +115,10 @@ const BY_PART: Record<DayPart, { title: string; habits: string[] }> = {
 };
 
 export function timelySuggestions(date: Date = new Date()): { title: string; habits: Habit[] } {
-	const part = BY_PART[dayPartOf(date)];
+	const dayPart = dayPartOf(date);
+	const part = BY_PART[dayPart];
 	return {
-		title: part.title,
+		title: m.timely[dayPart],
 		habits: part.habits.map((n) => findCatalogHabit(n)).filter((h): h is Habit => Boolean(h)),
 	};
 }
@@ -165,15 +126,8 @@ export function timelySuggestions(date: Date = new Date()): { title: string; hab
 // --------------------------------------------------------------------------
 // Wskazówki „mikro-nawyki” — jedna na otwarcie okna
 // --------------------------------------------------------------------------
-export const TINY_TIPS = [
-	"Start tiny: one page beats “read more”. You can always do extra.",
-	"Two or three goals are plenty. Add more once they feel easy.",
-	"Pair a new habit with an old one: stretch right after brushing your teeth.",
-	"Make it 2 minutes. Showing up matters more than doing a lot.",
-	"Missed a day? Your streak gets one free pass a week ❄️",
-	"Set a reminder for the goal you forget most often.",
-];
-
+// Teksty w src/i18n/messages/habits.ts (tips)
 export function pickTip(seed = Date.now()): string {
-	return TINY_TIPS[Math.abs(Math.floor(seed / 1000)) % TINY_TIPS.length];
+	const tips = m.tips;
+	return tips[Math.abs(Math.floor(seed / 1000)) % tips.length];
 }

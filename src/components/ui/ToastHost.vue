@@ -21,7 +21,7 @@
 				<button
 					type="button"
 					class="toast-close"
-					aria-label="Dismiss"
+					:aria-label="m.dismiss"
 					@click="toastStore.dismiss(t.id)">
 					<i
 						class="pi pi-times"
@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
 import { useToastStore } from "@/stores/toast";
+import { shellMessages as m } from "@/i18n/messages/shell";
 
 withDefaults(defineProps<{ bottomOffset?: number }>(), { bottomOffset: 0 });
 

@@ -14,13 +14,13 @@
 			<button
 				type="button"
 				class="todo-main"
-				:aria-label="`Open “${todo.text}”`"
+				:aria-label="m.open(todo.text)"
 				@click="emit('open')">
 				<span class="todo-text">{{ todo.text }}</span>
 				<span
 					v-if="!done && todo.description"
 					class="todo-note-icon"
-					aria-label="has notes"
+					:aria-label="m.hasNotes"
 					><i
 						class="pi pi-align-left"
 						aria-hidden="true"></i
@@ -32,7 +32,7 @@
 				class="subtask-chip"
 				:class="{ complete: subDone(todo) === todo.subtasks.length }"
 				:aria-expanded="expanded"
-				:aria-label="`${subDone(todo)} of ${todo.subtasks.length} steps done. ${expanded ? 'Hide' : 'Show'} steps`"
+				:aria-label="m.stepsChip(subDone(todo), todo.subtasks.length, expanded)"
 				@click="emit('toggle-expand')">
 				{{ subDone(todo) }}/{{ todo.subtasks.length }}
 				<i
@@ -69,8 +69,8 @@
 						<input
 							v-model="newStep"
 							class="subtask-input"
-							:aria-label="`Add a step to “${todo.text}”`"
-							placeholder="+ Add a step" />
+							:aria-label="m.addStepTo(todo.text)"
+							:placeholder="m.addStepPlaceholder" />
 					</form>
 				</li>
 			</ul>
@@ -81,6 +81,7 @@
 <script setup lang="ts">
 import type { TodoItem } from "@/libs/types";
 import { subDone } from "./todoUtils";
+import { todosMessages as m } from "@/i18n/messages/todos";
 
 // Jeden wiersz zadania; `done` = wariant uproszczony dla sekcji „ukończone”
 withDefaults(defineProps<{ todo: TodoItem; done?: boolean; expanded?: boolean }>(), {

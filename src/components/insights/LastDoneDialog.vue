@@ -21,14 +21,14 @@
 					<h2
 						id="last-done-title"
 						class="dt-title">
-						When did I last…?
+						{{ m.lastDoneTitle }}
 					</h2>
-					<p class="dt-subtitle">Look up any habit you've logged</p>
+					<p class="dt-subtitle">{{ m.lastDoneSubtitle }}</p>
 				</div>
 				<button
 					type="button"
 					class="dt-icon-btn"
-					aria-label="Close"
+					:aria-label="common.close"
 					@click="visible = false">
 					<i
 						class="pi pi-times"
@@ -45,8 +45,8 @@
 					v-model="query"
 					type="search"
 					class="dt-input"
-					placeholder="e.g. clean the fridge"
-					aria-label="Search your habits"
+					:placeholder="m.searchPlaceholder"
+					:aria-label="m.searchAria"
 					autocomplete="off"
 					spellcheck="false"
 					@keydown.enter.prevent="openFirst" />
@@ -61,18 +61,18 @@
 				<div
 					class="dt-segmented"
 					role="group"
-					aria-label="Sort">
+					:aria-label="m.sort">
 					<button
 						type="button"
 						:aria-pressed="sort === 'recent'"
 						@click="sort = 'recent'">
-						Recent
+						{{ m.sortRecent }}
 					</button>
 					<button
 						type="button"
 						:aria-pressed="sort === 'oldest'"
 						@click="sort = 'oldest'">
-						Longest ago
+						{{ m.sortOldest }}
 					</button>
 				</div>
 			</div>
@@ -94,7 +94,7 @@
 				</ul>
 
 				<template v-if="never.length">
-					<h3 class="dt-section-title ld-never-title">Never logged</h3>
+					<h3 class="dt-section-title ld-never-title">{{ m.neverLogged }}</h3>
 					<ul class="ld-list">
 						<LastDoneRow
 							v-for="row in never"
@@ -112,7 +112,7 @@
 					v-if="loading"
 					class="ld-loading"
 					aria-live="polite">
-					Digging through your history…
+					{{ m.digging }}
 				</p>
 
 				<div
@@ -122,8 +122,8 @@
 						:icon="query ? 'search' : 'potted_plant'"
 						:palette="query ? 'orange' : 'green'"
 						:size="40" />
-					<p v-if="query">No habit matches “{{ query.trim() }}”.</p>
-					<p v-else>Nothing logged yet. Log a habit and you can always look up when you last did it.</p>
+					<p v-if="query">{{ m.noMatch(query.trim()) }}</p>
+					<p v-else>{{ m.nothingLogged }}</p>
 				</div>
 			</div>
 		</div>
@@ -141,6 +141,8 @@ import { useToastStore } from "@/stores/toast";
 import { fromDateKey, type DateKey } from "@/utils/date";
 import { displayName, matchesQuery, normalizeText } from "@/utils/habitCatalog";
 import { averageGap, buildHabitHistory, daysBetween, freshness } from "@/utils/lastDone";
+import { insightsMessages as m } from "@/i18n/messages/insights";
+import { commonMessages as common } from "@/i18n/messages/common";
 import LastDoneRow, { type LastDoneItem } from "./LastDoneRow.vue";
 
 const NEVER_LIMIT = 5;
@@ -226,8 +228,8 @@ const never = computed<LastDoneItem[]>(() => {
 
 const countLabel = computed(() => {
 	const n = logged.value.length;
-	if (normalizedQuery.value) return n === 0 && never.value.length ? "Not in your history yet" : `${n} found`;
-	return `${n} ${n === 1 ? "habit" : "habits"}`;
+	if (normalizedQuery.value) return n === 0 && never.value.length ? m.notInHistory : m.found(n);
+	return m.habitsTotal(n);
 });
 
 function toggle(name: string) {
@@ -249,7 +251,7 @@ function logToday(row: LastDoneItem) {
 	const log = habitsStore.logHabit(row.habit, habitsStore.todayKey);
 	if (!log) return;
 	expanded.value = row.name;
-	toast.undoable(`${displayName(row.habit)} logged for today`, () =>
+	toast.undoable(m.loggedForToday(displayName(row.habit)), () =>
 		habitsStore.removeLog(log.id, habitsStore.todayKey),
 	);
 }

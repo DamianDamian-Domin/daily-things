@@ -1,5 +1,6 @@
 import { useFriendsStore } from "@/stores/friends";
 import { useToastStore } from "@/stores/toast";
+import { friendsMessages as m } from "@/i18n/messages/friends";
 
 // Kopiowanie kodu i udostępnianie zaproszenia (Web Share API, gdy jest)
 export function useInvite() {
@@ -16,13 +17,13 @@ export function useInvite() {
 	}
 
 	async function copyCode(code: string) {
-		if (await copyText(code)) toast.show("Code copied 📋", { tone: "success" });
-		else toast.error("Couldn't copy — your code is " + code);
+		if (await copyText(code)) toast.show(m.codeCopied, { tone: "success" });
+		else toast.error(m.copyFailed(code));
 	}
 
 	async function shareInvite(code: string) {
 		const link = friendsStore.inviteLink(code);
-		const text = `Let's cheer each other on in Daily Things 🌻 My friend code: ${code}`;
+		const text = m.shareText(code);
 		if (typeof navigator.share === "function") {
 			try {
 				await navigator.share({ title: "Daily Things", text, ...(link ? { url: link } : {}) });
@@ -33,9 +34,9 @@ export function useInvite() {
 			}
 		}
 		if (await copyText(link ? `${text}\n${link}` : text)) {
-			toast.show(link ? "Invite link copied 💌" : "Invite copied 💌", { tone: "success" });
+			toast.show(link ? m.inviteLinkCopied : m.inviteCopied, { tone: "success" });
 		} else {
-			toast.error("Couldn't copy — your code is " + code);
+			toast.error(m.copyFailed(code));
 		}
 	}
 

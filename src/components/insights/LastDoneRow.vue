@@ -24,7 +24,7 @@
 			<span
 				class="ld-ago"
 				aria-hidden="true"
-				>{{ row.never ? "never" : agoShort(row.daysAgo) }}</span
+				>{{ row.never ? m.never : agoShort(row.daysAgo) }}</span
 			>
 			<i
 				class="pi pi-chevron-down ld-chevron"
@@ -36,9 +36,9 @@
 			:id="panelId"
 			class="ld-panel">
 			<p class="ld-answer">
-				<template v-if="row.never">You haven't logged this yet.</template>
+				<template v-if="row.never">{{ m.notYetAnswer }}</template>
 				<template v-else>
-					Last time: <strong>{{ agoLabel(row.daysAgo) }}</strong>
+					{{ m.lastTime }} <strong>{{ agoLabel(row.daysAgo) }}</strong>
 					<span class="ld-answer-date">{{ formatLong(row.dates[0]) }}</span>
 				</template>
 			</p>
@@ -46,27 +46,27 @@
 			<p
 				v-if="!row.never"
 				class="ld-facts">
-				<span>on {{ row.dates.length }} {{ row.dates.length === 1 ? "day" : "days" }}</span>
+				<span>{{ m.onDays(row.dates.length) }}</span>
 				<span v-if="rhythm">{{ rhythm }}</span>
 				<span
 					v-if="row.fresh !== 'fresh'"
 					class="ld-due"
-					>{{ row.fresh === "overdue" ? "Overdue" : "Due again" }}</span
+					>{{ row.fresh === "overdue" ? m.overdue : m.dueAgain }}</span
 				>
-				<span v-else-if="nextAround">next around {{ nextAround }}</span>
+				<span v-else-if="nextAround">{{ m.nextAround(nextAround) }}</span>
 			</p>
 
 			<ol
 				v-if="!row.never"
 				class="ld-dates"
-				aria-label="Days you did it">
+				:aria-label="m.datesAria">
 				<li
 					v-for="key in shownDates"
 					:key="key">
 					<button
 						type="button"
 						class="ld-date"
-						:aria-label="`Open ${formatLong(key)}`"
+						:aria-label="m.openDate(formatLong(key))"
 						@click="emit('openDay', key)">
 						<span>{{ formatLong(key) }}</span>
 						<span class="ld-date-ago">{{ agoLabel(daysBetween(key, todayKey)) }}</span>
@@ -78,7 +78,7 @@
 				type="button"
 				class="dt-btn dt-btn-ghost dt-btn-sm ld-more"
 				@click="showAll = true">
-				Show all {{ row.dates.length }}
+				{{ m.showAll(row.dates.length) }}
 			</button>
 
 			<button
@@ -89,7 +89,7 @@
 				<i
 					:class="row.daysAgo === 0 && !row.never ? 'pi pi-check' : 'pi pi-plus'"
 					aria-hidden="true"></i>
-				{{ row.daysAgo === 0 && !row.never ? "Done today" : "Did it today" }}
+				{{ row.daysAgo === 0 && !row.never ? m.doneToday : m.didItToday }}
 			</button>
 		</div>
 	</li>
@@ -103,6 +103,8 @@ import { addDays, fromDateKey, type DateKey } from "@/utils/date";
 import { displayName, paletteFor } from "@/utils/habitCatalog";
 import { agoLabel, agoShort, daysBetween, rhythmLabel, type Freshness } from "@/utils/lastDone";
 import { PALETTES } from "@/utils/pixelIcons";
+import { insightsMessages as m } from "@/i18n/messages/insights";
+import { dateLocale } from "@/i18n";
 
 export interface LastDoneItem {
 	name: string;
@@ -141,8 +143,8 @@ const rhythm = computed(() => rhythmLabel(props.row.gap));
 const shownDates = computed(() => (showAll.value ? props.row.dates : props.row.dates.slice(0, PREVIEW)));
 
 const subline = computed(() => {
-	if (props.row.never) return "Not logged yet";
-	const times = props.row.count === 1 ? "once" : `${props.row.count}×`;
+	if (props.row.never) return m.notLoggedYet;
+	const times = props.row.count === 1 ? m.once : `${props.row.count}×`;
 	return `${formatLong(props.row.dates[0])} · ${times}`;
 });
 
@@ -150,13 +152,13 @@ const subline = computed(() => {
 const nextAround = computed(() => {
 	if (props.row.gap === null || props.row.gap < 2) return null;
 	const next = addDays(fromDateKey(props.row.dates[0]), Math.round(props.row.gap));
-	return next.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+	return next.toLocaleDateString(dateLocale(), { day: "numeric", month: "short" });
 });
 
 function formatLong(key: DateKey) {
 	const date = fromDateKey(key);
 	const sameYear = date.getFullYear() === fromDateKey(props.todayKey).getFullYear();
-	return date.toLocaleDateString("en-GB", {
+	return date.toLocaleDateString(dateLocale(), {
 		weekday: "short",
 		day: "numeric",
 		month: "short",

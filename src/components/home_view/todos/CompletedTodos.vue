@@ -9,7 +9,7 @@
 				<i
 					:class="showCompleted ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
 					aria-hidden="true"></i>
-				{{ todos.length }} completed
+				{{ m.completedCount(todos.length) }}
 			</button>
 			<button
 				type="button"
@@ -18,7 +18,7 @@
 				<i
 					class="pi pi-trash"
 					aria-hidden="true"></i>
-				Clear
+				{{ m.clear }}
 			</button>
 		</div>
 		<Transition name="expand">
@@ -43,6 +43,7 @@ import type { TodoItem as Todo } from "@/libs/types";
 import { useTodosStore } from "@/stores/todos";
 import { useToastStore } from "@/stores/toast";
 import TodoItem from "./TodoItem.vue";
+import { todosMessages as m } from "@/i18n/messages/todos";
 
 // Sekcja „ukończone” — zwijana lista z przyciskiem czyszczenia
 defineProps<{ todos: Todo[] }>();
@@ -60,7 +61,7 @@ const showCompleted = ref(false);
 async function clearCompleted() {
 	const removed = await todosStore.clearCompletedTodos();
 	if (removed.length)
-		toast.undoable(`Cleared ${removed.length} completed`, () => todosStore.restoreTodos(removed));
+		toast.undoable(m.cleared(removed.length), () => todosStore.restoreTodos(removed));
 }
 </script>
 

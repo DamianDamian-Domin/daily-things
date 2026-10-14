@@ -6,7 +6,7 @@
 		<h3
 			id="list-title"
 			class="dt-section-title">
-			Your friends <span class="dt-muted">· {{ friends.length }}</span>
+			{{ m.yourFriends }} <span class="dt-muted">· {{ friends.length }}</span>
 		</h3>
 		<ul class="friend-list">
 			<li
@@ -24,6 +24,7 @@
 // Tylko typy — store znajomych ładuje rodzic (kod społecznościowy jest leniwy)
 import type { FriendRow } from "@/stores/friends";
 import FriendsRow from "@/components/friends/FriendsRow.vue";
+import { friendsMessages as m } from "@/i18n/messages/friends";
 
 // Lista znajomych; kliknięcie wiersza otwiera szczegóły
 defineProps<{ friends: FriendRow[] }>();

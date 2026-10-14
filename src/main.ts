@@ -17,6 +17,7 @@ import "primeicons/primeicons.css";
 import Aura from "@primeuix/themes/aura";
 import { definePreset } from "@primeuix/themes";
 import { useAuthStore } from "@/stores/auth";
+import { syncPrimeVueLocale } from "@/i18n/primevue";
 
 // Ciepły preset: pomarańczowy akcent + „kamienne” (stone) szarości zamiast
 // zimnych zinc/gray. Wartości zgodne z tokenami --dt-* ze style.css.
@@ -125,6 +126,7 @@ app.use(PrimeVue, {
 	},
 });
 app.directive("tooltip", Tooltip);
+syncPrimeVueLocale(app);
 
 // Montujemy dopiero, gdy Firebase powie, kto jest zalogowany — bez „mrugania”
 // ekranu logowania. Do tego czasu widać lekki splash z index.html.

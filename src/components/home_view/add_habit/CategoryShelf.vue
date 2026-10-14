@@ -14,7 +14,7 @@
 			ref="railRef"
 			class="cat-rail"
 			role="radiogroup"
-			aria-label="Category"
+			:aria-label="m.category"
 			@scroll.passive="updateRailEdges"
 			@wheel="onRailWheel"
 			@keydown="onRailKeydown">
@@ -66,6 +66,7 @@ import { SUPER_CATEGORIES } from "@/utils/habitCatalog";
 import { PALETTES } from "@/utils/pixelIcons";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import type { CategoryFilter, FilterKey } from "./types";
+import { addHabitMessages as m } from "@/i18n/messages/addHabit";
 
 const props = defineProps<{ filters: CategoryFilter[] }>();
 const category = defineModel<FilterKey>({ required: true });

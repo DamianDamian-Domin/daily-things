@@ -8,7 +8,7 @@
 				<h2
 					id="todos-title"
 					class="today-title">
-					To-do list
+					{{ m.title }}
 					<span aria-hidden="true">📝</span>
 				</h2>
 				<p class="todos-sub">{{ subline }}</p>
@@ -19,7 +19,7 @@
 				:class="{ 'is-complete': allDone }"
 				:style="{ '--pct': ringPct }"
 				role="img"
-				:aria-label="`${completedCount} of ${totalCount} tasks done`">
+				:aria-label="m.ringLabel(completedCount, totalCount)">
 				<span aria-hidden="true">{{ completedCount }}/{{ totalCount }}</span>
 			</div>
 		</header>
@@ -58,12 +58,12 @@
 					icon="edit_note"
 					palette="indigo"
 					:size="44" />
-				<p>Your list is clear. Add something small you'd like to get done.</p>
+				<p>{{ m.emptyList }}</p>
 			</div>
 			<p
 				v-else-if="activeList.length === 0"
 				class="all-clear">
-				🎉 All clear! Nothing left on your list.
+				{{ m.allClear }}
 			</p>
 
 			<!-- Ukończone -->
@@ -94,6 +94,7 @@ import TodoAddForm from "./todos/TodoAddForm.vue";
 import TodoItem from "./todos/TodoItem.vue";
 import CompletedTodos from "./todos/CompletedTodos.vue";
 import TodoDetailsDialog from "./todos/TodoDetailsDialog.vue";
+import { todosMessages as m } from "@/i18n/messages/todos";
 
 defineProps<{ isActive: boolean }>();
 
@@ -119,9 +120,9 @@ const ringPct = computed(() =>
 
 const subline = computed(() => {
 	const left = activeList.value.length;
-	if (totalCount.value === 0) return "One small thing at a time.";
-	if (left === 0) return "Everything's ticked off. Lovely.";
-	return `${left} ${left === 1 ? "thing" : "things"} left`;
+	if (totalCount.value === 0) return m.sublineEmpty;
+	if (left === 0) return m.sublineAllDone;
+	return m.sublineLeft(left);
 });
 
 // Konfetti, gdy lista zostaje w całości odhaczona — tylko po akcji użytkownika
@@ -143,7 +144,7 @@ async function toggle(todo: Todo, withSound = true) {
 		const id = todo.id;
 		await todosStore.toggleTodo(id);
 		if (!allDone.value)
-			toast.undoable(`Done — ${randomCheer()}`, () => todosStore.toggleTodo(id));
+			toast.undoable(m.doneToast(randomCheer()), () => todosStore.toggleTodo(id));
 	} else {
 		playUncheck();
 		await todosStore.toggleTodo(todo.id);
@@ -207,9 +208,9 @@ async function toggleSub(todo: Todo, subId: string) {
 	const fresh = todosStore.userTodosList.find((t) => t.id === todo.id);
 	// Wszystkie kroki zrobione → proponujemy zamknięcie zadania
 	if (fresh && !fresh.completed && fresh.subtasks?.length && fresh.subtasks.every((s) => s.done)) {
-		toast.show("All steps done! Complete the task?", {
+		toast.show(m.allStepsDone, {
 			tone: "celebrate",
-			actionLabel: "Complete",
+			actionLabel: m.complete,
 			action: () => toggle(fresh),
 			duration: 6000,
 		});

@@ -35,6 +35,7 @@ import type { AvatarConfig } from "@/utils/avatar";
 import type { PaletteKey } from "@/utils/pixelIcons";
 import { addDays, fromDateKey, startOfWeek, toDateKey, type DateKey } from "@/utils/date";
 import { liveStreak } from "@/utils/streak";
+import { friendsMessages as m } from "@/i18n/messages/friends";
 
 // Słuchacze wyłączamy z opóźnieniem — szybkie przełączanie kart nie
 // powoduje ponownego czytania wszystkich profili
@@ -337,7 +338,7 @@ export const useFriendsStore = defineStore("friends", () => {
 			{
 				uid: uid.value ?? "me",
 				isMe: true,
-				name: "You",
+				name: m.you,
 				avatar: profileStore.avatar,
 				done: myDone,
 				total: myTotal,
@@ -373,19 +374,19 @@ export const useFriendsStore = defineStore("friends", () => {
 		const entries = board.value;
 		const meEntry = entries.find((e) => e.isMe);
 		if (!meEntry || entries.length < 2) return "";
-		if (meEntry.total === 0) return "Set a daily goal to join the board 🌱";
+		if (meEntry.total === 0) return m.boardNoGoal;
 		const tied = entries.filter((e) => !e.isMe && e.rank === meEntry.rank);
 		if (meEntry.rank === 1) {
 			return tied.length
-				? `You're sharing the top spot with ${tied[0].name} 🤝`
-				: "You're leading this week ✨ Lovely rhythm.";
+				? m.boardSharedTop(tied[0].name)
+				: m.boardLeading;
 		}
 		// Najbliższa osoba przed nami
 		const ahead = entries.filter((e) => e.rank < meEntry.rank);
 		const target = ahead[ahead.length - 1];
 		const need = Math.ceil(target.ratio * meEntry.total - meEntry.done - 1e-9);
-		if (need <= 0) return `Neck and neck with ${target.name} 🌱`;
-		return `You're #${meEntry.rank} this week. ${need} more ${need === 1 ? "goal" : "goals"} to catch ${target.name} 🌱`;
+		if (need <= 0) return m.boardNeck(target.name);
+		return m.boardBehind(meEntry.rank, need, target.name);
 	});
 
 	// ==========================================
@@ -399,9 +400,9 @@ export const useFriendsStore = defineStore("friends", () => {
 			if (!stats || stats.todayKey !== today) continue;
 			const streak = f.streak ?? 0;
 			if (stats.streakEnd === today && STREAK_MILESTONES.includes(streak)) {
-				list.push({ friend: f, kind: `streak-${streak}`, icon: "local_fire_department", palette: "orange", text: `${f.name} hit a ${streak}-day streak 🔥` });
+				list.push({ friend: f, kind: `streak-${streak}`, icon: "local_fire_department", palette: "orange", text: m.highlightStreak(f.name, streak) });
 			} else if (f.today && f.today.done >= f.today.total) {
-				list.push({ friend: f, kind: "perfect", icon: "star_shine", palette: "yellow", text: `${f.name} finished every goal today 🎉` });
+				list.push({ friend: f, kind: "perfect", icon: "star_shine", palette: "yellow", text: m.highlightPerfect(f.name) });
 			}
 		}
 		return list;
@@ -425,11 +426,11 @@ export const useFriendsStore = defineStore("friends", () => {
 		writeStorage(key, JSON.stringify(seen));
 		const first = fresh[0];
 		if (fresh.length > 1) {
-			toast.show(`${fresh.length} friends are having a great day 🌻`, { tone: "celebrate", duration: 4500 });
+			toast.show(m.manyHighlights(fresh.length), { tone: "celebrate", duration: 4500 });
 		} else if (!hasCheeredToday(first.friend.uid)) {
 			toast.show(first.text, {
 				tone: "celebrate",
-				actionLabel: "High-five",
+				actionLabel: m.highFiveAction,
 				action: () => cheer(first.friend),
 				duration: 6000,
 			});
@@ -447,39 +448,39 @@ export const useFriendsStore = defineStore("friends", () => {
 
 	async function sendRequest(card: CodeCard): Promise<RequestResult> {
 		const me = uid.value;
-		if (!me || authStore.isGuest) return { ok: false, reason: "error", message: "Sign in first." };
+		if (!me || authStore.isGuest) return { ok: false, reason: "error", message: m.signInFirst };
 		if (card.uid === me) {
-			return { ok: false, reason: "self", message: "That's your own code 🙂" };
+			return { ok: false, reason: "self", message: m.ownCode };
 		}
 		const accepted = friendships.value.filter((f) => f.status === "accepted").length;
 		if (accepted >= MAX_FRIENDS) {
-			return { ok: false, reason: "limit", message: `You can have up to ${MAX_FRIENDS} friends.` };
+			return { ok: false, reason: "limit", message: m.limit(MAX_FRIENDS) };
 		}
 		try {
 			const existing =
 				friendships.value.find((f) => f.id === pairIdOf(me, card.uid)) ??
 				(await fetchFriendship(pairIdOf(me, card.uid)));
 			if (existing?.status === "accepted") {
-				return { ok: false, reason: "already", message: `You and ${card.name} are already friends 🌻` };
+				return { ok: false, reason: "already", message: m.alreadyFriends(card.name) };
 			}
 			if (existing && existing.requestedBy === me) {
-				return { ok: false, reason: "pending", message: `Request already sent — waiting for ${card.name}.` };
+				return { ok: false, reason: "pending", message: m.alreadySent(card.name) };
 			}
 			if (existing) {
 				// Druga osoba zaprosiła nas pierwsza — po prostu akceptujemy
 				await acceptFriendRequest(me, card.uid, profileStore.publicName);
 				profileSync.setHasFriends(true);
-				return { ok: true, message: `You and ${card.name} are now friends 🌻` };
+				return { ok: true, message: m.nowFriends(card.name) };
 			}
 			await sendFriendRequest(me, card.uid, profileStore.me, { name: card.name, avatar: card.avatar });
 			profileSync.setHasFriends(true);
-			return { ok: true, message: `Request sent to ${card.name} 💌` };
+			return { ok: true, message: m.requestSent(card.name) };
 		} catch (err) {
 			console.error("Friend request failed", err);
 			return {
 				ok: false,
 				reason: "error",
-				message: "Couldn't send the request — check your connection and try again.",
+				message: m.requestFailed,
 			};
 		}
 	}
@@ -490,10 +491,10 @@ export const useFriendsStore = defineStore("friends", () => {
 		try {
 			await acceptFriendRequest(me, row.uid, profileStore.publicName);
 			profileSync.setHasFriends(true);
-			toast.show(`You and ${row.name} are now friends 🌻`, { tone: "success" });
+			toast.show(m.nowFriends(row.name), { tone: "success" });
 		} catch (err) {
 			console.error("Accept failed", err);
-			toast.error("Couldn't accept the request — try again in a moment.");
+			toast.error(m.acceptFailed);
 		}
 	}
 
@@ -510,7 +511,7 @@ export const useFriendsStore = defineStore("friends", () => {
 			removeFriendship(me, row.uid)
 				.catch((err) => {
 					console.error("Remove friendship failed", err);
-					if (uid.value === me) toast.error("Couldn't update your friends — try again.");
+					if (uid.value === me) toast.error(m.removeFailed);
 				})
 				.finally(() => {
 					const after = new Set(hidden.value);
@@ -529,13 +530,13 @@ export const useFriendsStore = defineStore("friends", () => {
 	}
 
 	function decline(row: RequestRow) {
-		removeWithUndo(row, `Request from ${row.name} declined`);
+		removeWithUndo(row, m.declined(row.name));
 	}
 	function cancel(row: RequestRow) {
-		removeWithUndo(row, `Request to ${row.name} cancelled`);
+		removeWithUndo(row, m.cancelled(row.name));
 	}
 	function unfriend(row: FriendRow) {
-		removeWithUndo(row, `${row.name} removed from friends`);
+		removeWithUndo(row, m.removed(row.name));
 	}
 
 	// ==========================================
@@ -561,14 +562,14 @@ export const useFriendsStore = defineStore("friends", () => {
 		try {
 			await sendCheer(me, row.uid, profileStore.publicName);
 			writeStorage(`dt-cheered:${me}`, JSON.stringify(cheered.value));
-			toast.show(`High-five sent to ${row.name} 👏`, { tone: "celebrate" });
+			toast.show(m.highFiveSent(row.name), { tone: "celebrate" });
 		} catch (err) {
 			cheered.value = previous;
 			console.error("Cheer failed", err);
 			toast.error(
 				errorCode(err) === "permission-denied"
-					? `You just high-fived ${row.name} — give it a minute ✋`
-					: "Couldn't send the high-five — try again.",
+					? m.highFiveTooSoon(row.name)
+					: m.highFiveFailed,
 			);
 		}
 	}
@@ -587,13 +588,13 @@ export const useFriendsStore = defineStore("friends", () => {
 		if (fresh.some((c) => c.kind !== "request")) profileSync.setHasFriends(true);
 		const view = () => carouselStore.setActiveCard("friends");
 		if (fresh.length > 2) {
-			toast.show(`${fresh.length} little notes from friends 🌻`, { actionLabel: "View", action: view });
+			toast.show(m.manyNotes(fresh.length), { actionLabel: m.view, action: view });
 		} else {
 			for (const c of fresh) {
-				if (c.kind === "cheer") toast.show(`${c.name} high-fived you 👏`, { tone: "celebrate", duration: 4500 });
+				if (c.kind === "cheer") toast.show(m.gotHighFive(c.name), { tone: "celebrate", duration: 4500 });
 				else if (c.kind === "accept")
-					toast.show(`${c.name} accepted your friend request 🎉`, { tone: "success", duration: 4500 });
-				else toast.show(`${c.name} wants to be friends 🌱`, { actionLabel: "View", action: view });
+					toast.show(m.gotAccept(c.name), { tone: "success", duration: 4500 });
+				else toast.show(m.gotRequest(c.name), { actionLabel: m.view, action: view });
 			}
 		}
 		clearInbox(

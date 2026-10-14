@@ -1,12 +1,12 @@
 <template>
 	<section
 		class="stats-section"
-		aria-label="Month overview">
+		:aria-label="m.monthOverview">
 		<div
 			class="heat-week"
 			aria-hidden="true">
 			<span
-				v-for="(d, i) in ['M', 'T', 'W', 'T', 'F', 'S', 'S']"
+				v-for="(d, i) in m.weekdayInitials"
 				:key="i"
 				>{{ d }}</span
 			>
@@ -23,28 +23,29 @@
 				class="heat-cell"
 				:class="[`lvl-${day.level}`, { perfect: day.perfect, today: day.isToday }]"
 				:disabled="day.future"
-				:aria-label="`${day.date}: ${day.total} logged${day.perfect ? ', all goals done' : ''}`"
-				v-tooltip.top="day.future ? undefined : `${day.date} · ${day.total} logged`"
+				:aria-label="m.heatAria(day.date, day.total, day.perfect)"
+				v-tooltip.top="day.future ? undefined : m.heatTooltip(day.date, day.total)"
 				@click="emit('open', day.key)">
 				{{ day.dayNum }}
 			</button>
 		</div>
 		<p class="heat-legend">
-			<span>Less</span>
+			<span>{{ m.less }}</span>
 			<span
 				v-for="l in 5"
 				:key="l"
 				class="heat-swatch"
 				:class="`lvl-${l - 1}`"
 				aria-hidden="true"></span>
-			<span>More</span>
-			<span class="heat-gold">🏅 = all goals</span>
+			<span>{{ m.more }}</span>
+			<span class="heat-gold">{{ m.allGoalsLegend }}</span>
 		</p>
 	</section>
 </template>
 
 <script setup lang="ts">
 import type { StatsMonthDay } from "./useStatsData";
+import { statsMessages as m } from "@/i18n/messages/stats";
 
 defineProps<{ days: StatsMonthDay[]; leadingBlanks: number }>();
 const emit = defineEmits<{ open: [key: string] }>();

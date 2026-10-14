@@ -9,16 +9,16 @@
 			>+</span
 		>
 		<span>
-			<strong>{{ query ? `Create “${query.trim()}”` : "Create your own habit" }}</strong>
-			<small>{{
-				breaking ? "Something else you'd like to cut back on?" : "Can't find it? Make it yours."
-			}}</small>
+			<strong>{{ query ? m.createNamed(query.trim()) : m.createOwn }}</strong>
+			<small>{{ breaking ? m.cutBack : m.cantFind }}</small>
 		</span>
 	</button>
 </template>
 
 <script setup lang="ts">
 // Zaproszenie do stworzenia własnego habitu
+import { addHabitMessages as m } from "@/i18n/messages/addHabit";
+
 defineProps<{ query: string; breaking: boolean }>();
 const emit = defineEmits<{ (e: "create"): void }>();
 </script>

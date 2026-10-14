@@ -31,17 +31,17 @@
 									icon="local_fire_department"
 									:palette="friend.streak ? 'orange' : 'gray'"
 									:size="18" />
-								{{ friend.streak ? `${friend.streak}-day streak` : "No streak yet" }}
+								{{ friend.streak ? m.streak(friend.streak) : m.noStreak }}
 							</span>
 							<span>{{ todayLabel }}</span>
 						</template>
-						<template v-else>Keeps their progress private 🌙</template>
+						<template v-else>{{ m.keepsPrivate }}</template>
 					</p>
 				</div>
 				<button
 					type="button"
 					class="dt-icon-btn"
-					aria-label="Close"
+					:aria-label="c.close"
 					@click="visible = false">
 					<i
 						class="pi pi-times"
@@ -56,7 +56,7 @@
 					<h3
 						id="fd-week-title"
 						class="dt-section-title">
-						Last 7 days
+						{{ m.last7 }}
 					</h3>
 					<div
 						class="fd-bars"
@@ -84,7 +84,7 @@
 					<h3
 						id="fd-badges-title"
 						class="dt-section-title">
-						Badges · {{ badges.length }}
+						{{ m.badges(badges.length) }}
 					</h3>
 					<ul class="fd-habits">
 						<li
@@ -108,7 +108,7 @@
 					<h3
 						id="fd-today-title"
 						class="dt-section-title">
-						Today
+						{{ m.today }}
 					</h3>
 					<ul
 						v-if="habits.length"
@@ -140,13 +140,13 @@
 					<p
 						v-else
 						class="fd-note">
-						Nothing logged yet today 🌱
+						{{ m.nothingToday }}
 					</p>
 				</section>
 				<p
 					v-else
 					class="fd-note">
-					{{ friend.name }} keeps habit details private 🌙
+					{{ m.keepsHabitsPrivate(friend.name) }}
 				</p>
 			</template>
 
@@ -156,7 +156,7 @@
 				:class="{ sent: cheered }"
 				:disabled="cheered"
 				@click="friendsStore.cheer(friend)">
-				{{ cheered ? "High-fived today ✓" : `High-five ${friend.name} 👏` }}
+				{{ cheered ? m.highFivedToday : m.highFiveButton(friend.name) }}
 			</button>
 
 			<div class="fd-remove">
@@ -165,25 +165,25 @@
 					type="button"
 					class="dt-btn dt-btn-ghost dt-btn-sm"
 					@click="confirmRemove = true">
-					Remove friend
+					{{ m.removeFriend }}
 				</button>
 				<div
 					v-else
 					class="fd-confirm"
 					role="group"
-					aria-label="Confirm removing friend">
-					<span>Remove {{ friend.name }}?</span>
+					:aria-label="m.confirmRemoveAria">
+					<span>{{ m.removeQuestion(friend.name) }}</span>
 					<button
 						type="button"
 						class="dt-btn dt-btn-danger dt-btn-sm"
 						@click="remove">
-						Remove
+						{{ m.remove }}
 					</button>
 					<button
 						type="button"
 						class="dt-btn dt-btn-ghost dt-btn-sm"
 						@click="confirmRemove = false">
-						Keep
+						{{ m.keep }}
 					</button>
 				</div>
 			</div>
@@ -201,6 +201,8 @@ import { useHabitsStore } from "@/stores/habits";
 import { PALETTES, type PaletteKey } from "@/utils/pixelIcons";
 import { fromDateKey, weekdayName } from "@/utils/date";
 import { ACHIEVEMENTS } from "@/utils/achievements";
+import { friendsMessages as m } from "@/i18n/messages/friends";
+import { commonMessages as c } from "@/i18n/messages/common";
 
 const props = defineProps<{ friendUid: string | null }>();
 const visible = defineModel<boolean>({ default: false });
@@ -223,8 +225,8 @@ const cheered = computed(() =>
 const todayLabel = computed(() => {
 	const f = friend.value;
 	if (!f) return "";
-	if (f.today) return `${f.today.done}/${f.today.total} goals today`;
-	return f.away ? "not here yet today" : "no goals set today";
+	if (f.today) return m.todayGoals(f.today.done, f.today.total);
+	return f.away ? m.notHereYet : m.noGoalsToday;
 });
 
 const week = computed(() =>
@@ -238,9 +240,9 @@ const week = computed(() =>
 
 const weekAria = computed(
 	() =>
-		"Goals done in the last 7 days: " +
+		m.weekAriaPrefix +
 		week.value
-			.map((d) => `${weekdayName(fromDateKey(d.date), "long")} ${d.total ? `${d.done} of ${d.total}` : "no goals"}`)
+			.map((d) => `${weekdayName(fromDateKey(d.date), "long")} ${d.total ? m.dayOf(d.done, d.total) : m.noGoals}`)
 			.join(", "),
 );
 

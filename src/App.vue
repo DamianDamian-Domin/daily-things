@@ -5,7 +5,7 @@
 		<a
 			href="#main"
 			class="skip-link"
-			>Skip to content</a
+			>{{ m.skipToContent }}</a
 		>
 
 		<header
@@ -69,6 +69,7 @@ const InsightsDialogs = defineAsyncComponent(() => import("@/components/insights
 // Obrazkowy przewodnik „Jak to działa” (raz dla nowych, potem z ustawień)
 const HelpTour = defineAsyncComponent(() => import("@/components/help/HelpTour.vue"));
 import ToastHost from "@/components/ui/ToastHost.vue";
+import { shellMessages as m } from "@/i18n/messages/shell";
 
 const route = useRoute();
 const router = useRouter();
@@ -150,7 +151,7 @@ async function loadSession(uid: string) {
 		if (!authStore.isGuest) loadFriends().then((friends) => friends.checkInbox());
 	} catch (err) {
 		console.error("Session load failed", err);
-		toast.error("We couldn't load your data. Check your connection.");
+		toast.error(m.sessionLoadFailed);
 	}
 }
 

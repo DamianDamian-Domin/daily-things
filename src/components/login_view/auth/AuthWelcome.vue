@@ -3,14 +3,10 @@
 		<h2
 			:id="titleId"
 			class="auth-title">
-			{{ authStore.isGuest ? "Keep your progress safe" : "Your cozy daily ritual" }}
+			{{ authStore.isGuest ? m.welcomeGuestTitle : m.welcomeTitle }}
 		</h2>
 		<p class="auth-lead">
-			{{
-				authStore.isGuest
-					? "Create a free account to sync your habits across devices. Everything you've logged comes with you."
-					: "Track small habits, tick off to-dos and watch your streak grow — one gentle day at a time."
-			}}
+			{{ authStore.isGuest ? m.welcomeGuestLead : m.welcomeLead }}
 		</p>
 
 		<div class="auth-actions">
@@ -38,7 +34,7 @@
 						fill="#1976D2"
 						d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z" />
 				</svg>
-				Continue with Google
+				{{ m.continueWithGoogle }}
 			</button>
 			<button
 				type="button"
@@ -47,7 +43,7 @@
 				<i
 					class="pi pi-envelope"
 					aria-hidden="true"></i>
-				{{ authStore.isGuest ? "Sign up with email" : "Continue with email" }}
+				{{ authStore.isGuest ? m.signUpWithEmail : m.continueWithEmail }}
 			</button>
 		</div>
 
@@ -59,40 +55,40 @@
 			<div
 				class="auth-divider"
 				role="separator">
-				<span>or</span>
+				<span>{{ m.or }}</span>
 			</div>
 			<button
 				type="button"
 				class="dt-btn dt-btn-ghost dt-btn-block"
 				:disabled="authStore.busy"
 				@click="emit('dismiss')">
-				Try it first — no account needed
+				{{ m.tryAsGuest }}
 				<i
 					class="pi pi-arrow-right"
 					aria-hidden="true"></i>
 			</button>
 			<p class="auth-fineprint">
-				Guest progress stays on this device. Create an account anytime — nothing gets
-				lost.
+				{{ m.guestFineprint }}
 			</p>
 		</template>
 		<p
 			v-else-if="authStore.isGuest"
 			class="auth-fineprint">
-			Already have an account?
+			{{ m.alreadyHaveAccount }}
 			<button
 				type="button"
 				class="dt-link"
 				@click="emit('switch-mode', 'login')">
-				Sign in
+				{{ m.signIn }}
 			</button>
-			— we'll move your guest progress there.
+			{{ m.guestMoveSuffix }}
 		</p>
 	</section>
 </template>
 
 <script setup lang="ts">
 import { useAuthStore, type AuthDialogMode } from "@/stores/auth";
+import { authMessages as m } from "@/i18n/messages/auth";
 import { isNativePlatform } from "@/utils/platform";
 import AuthErrorBanner from "@/components/login_view/AuthErrorBanner.vue";
 

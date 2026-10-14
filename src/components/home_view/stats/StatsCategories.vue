@@ -5,7 +5,7 @@
 		<h3
 			id="cat-title"
 			class="dt-section-title">
-			Where your energy went
+			{{ m.energy }}
 		</h3>
 		<div
 			class="cat-bar"
@@ -33,6 +33,7 @@
 <script setup lang="ts">
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import type { StatsCategoryShare } from "./useStatsData";
+import { statsMessages as m } from "@/i18n/messages/stats";
 
 defineProps<{ shares: StatsCategoryShare[] }>();
 </script>
