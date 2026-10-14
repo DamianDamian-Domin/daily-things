@@ -101,10 +101,9 @@ async function loadSession(uid: string) {
 		if (authStore.userUid !== uid) return;
 		preferencesStore.hydrate(userDoc);
 		habbitsStore.hydrate(userDoc);
-		todosStore.hydrate(userDoc);
 		profileStore.hydrate(userDoc);
 		remindersStore.hydrate(userDoc);
-		await habbitsStore.loadInitialHistory();
+		await Promise.all([habbitsStore.loadInitialHistory(), todosStore.load(uid, userDoc)]);
 		if (authStore.userUid !== uid) return;
 		// Od teraz profil dla znajomych może się publikować (seria jest już policzona)
 		profileStore.markReady();

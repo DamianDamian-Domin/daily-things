@@ -2,10 +2,12 @@ import {
 	arrayUnion,
 	collection,
 	deleteDoc,
+	deleteField,
 	doc,
 	getDoc,
 	getDocs,
 	query,
+	type QuerySnapshot,
 	setDoc,
 	where,
 	writeBatch,
@@ -20,12 +22,14 @@ import type {
 	UserPreferences,
 } from "@/libs/types";
 import type { AvatarConfig } from "@/utils/avatar";
+import { plain } from "@/utils/plain";
 
 // ==========================================================================
 // Model danych:
-//   users/{uid}                     → profil, todos[], dailyGoals[], recentlyUsed[],
+//   users/{uid}                     → profil, dailyGoals[], recentlyUsed[],
 //                                      customHabbits[], reminders[], preferences{}
 //   users/{uid}/habbits/{YYYY-MM-DD} → { date, habbits[], goalsSnapshot[] }
+//   users/{uid}/todos/{todoId}       → TodoItem (z podzadaniami w środku)
 // Funkcje „Znajomi” (profiles, friendCodes, friendships) → services/friends.ts
 // ==========================================================================
 
@@ -33,7 +37,9 @@ export interface UserDoc {
 	isAnonymous?: boolean;
 	email?: string;
 	createdAt?: unknown;
-	todos?: TodoItem[];
+	// Stary format: wszystkie zadania w jednej tablicy. Przenoszone do
+	// users/{uid}/todos przy pierwszym wczytaniu (migrateLegacyTodos).
+	todos?: unknown[];
 	dailyGoals?: Goal[];
 	recentlyUsed?: string[];
 	customHabbits?: Habbit[];
@@ -49,6 +55,23 @@ export const userDocRef = (uid: string) => doc(db, "users", uid);
 export const daysCollectionRef = (uid: string) => collection(db, "users", uid, "habbits");
 export const dayDocRef = (uid: string, dateKey: string) =>
 	doc(db, "users", uid, "habbits", dateKey);
+export const todosCollectionRef = (uid: string) => collection(db, "users", uid, "todos");
+export const todoDocRef = (uid: string, todoId: string) => doc(db, "users", uid, "todos", todoId);
+
+// Batch Firestore ma limit 500 operacji — zostawiamy zapas
+const BATCH_LIMIT = 450;
+
+async function inBatches<T>(items: T[], apply: (batch: ReturnType<typeof writeBatch>, item: T) => void) {
+	for (let i = 0; i < items.length; i += BATCH_LIMIT) {
+		const batch = writeBatch(db);
+		items.slice(i, i + BATCH_LIMIT).forEach((item) => apply(batch, item));
+		await batch.commit();
+	}
+}
+
+async function deleteAll(snap: QuerySnapshot) {
+	await inBatches(snap.docs, (batch, d) => batch.delete(d.ref));
+}
 
 // Jeden odczyt dokumentu użytkownika na sesję zamiast kilku (todos, cele,
 // ostatnie, preferencje czytały go wcześniej osobno — 4-5 odczytów).
@@ -78,6 +101,49 @@ export async function fetchDays(uid: string, startKey: string, endKey: string): 
 	});
 }
 
+// ==========================================================================
+// Zadania — jeden dokument na zadanie, więc zmiana jednego nie wysyła
+// całej listy, a dokument użytkownika nie rośnie w nieskończoność (limit 1 MB)
+// ==========================================================================
+export async function fetchTodos(uid: string): Promise<TodoItem[]> {
+	const snap = await getDocs(todosCollectionRef(uid));
+	return snap.docs.map((d) => ({ ...(d.data() as TodoItem), id: d.id }));
+}
+
+export async function saveTodo(uid: string, todo: TodoItem) {
+	await setDoc(todoDocRef(uid, todo.id), plain(todo));
+}
+
+export async function saveTodos(uid: string, todos: TodoItem[]) {
+	await inBatches(todos, (batch, todo) => batch.set(todoDocRef(uid, todo.id), plain(todo)));
+}
+
+export async function deleteTodos(uid: string, ids: string[]) {
+	await inBatches(ids, (batch, id) => batch.delete(todoDocRef(uid, id)));
+}
+
+// Stara tablica users/{uid}.todos → lista zadań. Jeszcze starszy format
+// grupował zadania po datach ({ date, todos[] }) — spłaszczamy go.
+export function normalizeLegacyTodos(raw: unknown): TodoItem[] {
+	if (!Array.isArray(raw)) return [];
+	const flat = raw.flatMap((entry) =>
+		entry && typeof entry === "object" && "date" in entry && Array.isArray((entry as { todos?: unknown }).todos)
+			? ((entry as { todos: unknown[] }).todos)
+			: [entry],
+	);
+	return flat
+		.filter((t): t is TodoItem => !!t && typeof t === "object" && typeof (t as TodoItem).id === "string")
+		.map((t) => ({ ...t, text: typeof t.text === "string" ? t.text : "", completed: !!t.completed }));
+}
+
+// Jednorazowe przeniesienie: najpierw zapis dokumentów, na końcu usunięcie
+// tablicy. Gdy coś się nie uda, tablica zostaje i próba powtórzy się przy
+// następnym wczytaniu (zapis po id jest idempotentny).
+export async function migrateLegacyTodos(uid: string, todos: TodoItem[]) {
+	await saveTodos(uid, todos);
+	await setDoc(userDocRef(uid), { todos: deleteField() }, { merge: true });
+}
+
 async function fetchAllDays(uid: string): Promise<DayEntry[]> {
 	const snap = await getDocs(daysCollectionRef(uid));
 	return snap.docs.map((d) => ({ date: d.id, ...(d.data() as Omit<DayEntry, "date">) }));
@@ -89,17 +155,26 @@ async function fetchAllDays(uid: string): Promise<DayEntry[]> {
 export interface ExportedUserData {
 	user: UserDoc;
 	days: DayEntry[];
+	todos: TodoItem[];
+}
+
+// Zadania z kolekcji + te, które jeszcze siedzą w starej tablicy
+async function fetchAllTodos(uid: string, user: UserDoc): Promise<TodoItem[]> {
+	const todos = await fetchTodos(uid);
+	const ids = new Set(todos.map((t) => t.id));
+	return [...todos, ...normalizeLegacyTodos(user.todos).filter((t) => !ids.has(t.id))];
 }
 
 export async function exportUserData(uid: string): Promise<ExportedUserData> {
 	const [user, days] = await Promise.all([fetchUserDoc(uid), fetchAllDays(uid)]);
-	return { user, days };
+	const todos = await fetchAllTodos(uid, user);
+	return { user, days, todos };
 }
 
 export function hasMeaningfulData(data: ExportedUserData): boolean {
 	return (
 		data.days.some((d) => (d.habbits?.length ?? 0) > 0) ||
-		(data.user.todos?.length ?? 0) > 0 ||
+		data.todos.length > 0 ||
 		(data.user.dailyGoals?.length ?? 0) > 0
 	);
 }
@@ -108,11 +183,11 @@ export function hasMeaningfulData(data: ExportedUserData): boolean {
 export async function mergeUserData(targetUid: string, source: ExportedUserData) {
 	const target = await fetchUserDoc(targetUid);
 
-	const existingTodoIds = new Set((target.todos ?? []).map((t) => t.id));
-	const todos = [
-		...(target.todos ?? []),
-		...(source.user.todos ?? []).filter((t) => !existingTodoIds.has(t.id)),
-	];
+	const existingTodoIds = new Set((await fetchAllTodos(targetUid, target)).map((t) => t.id));
+	await saveTodos(
+		targetUid,
+		source.todos.filter((t) => !existingTodoIds.has(t.id)),
+	);
 	const dailyGoals = target.dailyGoals?.length ? target.dailyGoals : source.user.dailyGoals ?? [];
 	const recentlyUsed = [
 		...new Set([...(source.user.recentlyUsed ?? []), ...(target.recentlyUsed ?? [])]),
@@ -124,7 +199,6 @@ export async function mergeUserData(targetUid: string, source: ExportedUserData)
 	];
 
 	await saveUserFields(targetUid, {
-		todos,
 		dailyGoals,
 		recentlyUsed,
 		customHabbits,
@@ -157,17 +231,7 @@ export async function deleteAllUserData(uid: string) {
 	// Moduł znajomych ładujemy dopiero tutaj (rzadka operacja)
 	const { deleteSocialData } = await import("@/services/friends");
 	await deleteSocialData(uid, userDoc.friendCode);
-	const days = await getDocs(daysCollectionRef(uid));
-	let batch = writeBatch(db);
-	let ops = 0;
-	for (const d of days.docs) {
-		batch.delete(d.ref);
-		if (++ops === 450) {
-			await batch.commit();
-			batch = writeBatch(db);
-			ops = 0;
-		}
-	}
-	if (ops > 0) await batch.commit();
+	await deleteAll(await getDocs(daysCollectionRef(uid)));
+	await deleteAll(await getDocs(todosCollectionRef(uid)));
 	await deleteDoc(userDocRef(uid));
 }

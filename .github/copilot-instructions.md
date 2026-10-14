@@ -26,7 +26,8 @@ You are a **senior software engineer** focused on modern, accessible, mobile-fir
 - Path alias `@` → `src`. All domain types in `src/libs/types.ts`.
 
 ## Data model (Firestore)
-- `users/{uid}` → `todos[]` (with `subtasks[]`), `dailyGoals[]`, `recentlyUsed[]`, `customHabbits[]`, `reminders[]`, `preferences{}`
+- `users/{uid}` → `dailyGoals[]`, `recentlyUsed[]`, `customHabbits[]`, `reminders[]`, `preferences{}`
+- `users/{uid}/todos/{todoId}` → one `TodoItem` per document (with `subtasks[]` inside). Writes send only the changed todos. A legacy `users/{uid}.todos[]` array is moved here on first load (`migrateLegacyTodos`) and then removed.
 - `users/{uid}/habbits/{YYYY-MM-DD}` → `{ date, habbits: HabbitLog[], goalsSnapshot: GoalRef[] }`
 - A goal "3× a day" = three goal entries with the same `name`.
 - New logs are slim (`{ id, name, at }`); display data is resolved from the catalog by `name` (`resolveHabbit`). **Never rename `name` in the catalog** — it is the stored key.
