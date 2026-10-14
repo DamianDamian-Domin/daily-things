@@ -32,6 +32,7 @@ import {
 } from "@/services/friends";
 import type { AvatarConfig } from "@/utils/avatar";
 import { addDays, fromDateKey, startOfWeek, toDateKey, type DateKey } from "@/utils/date";
+import { liveStreak } from "@/utils/streak";
 
 // Słuchacze wyłączamy z opóźnieniem — szybkie przełączanie kart nie
 // powoduje ponownego czytania wszystkich profili
@@ -95,13 +96,6 @@ function writeStorage(key: string, value: string | null, session = false) {
 
 function errorCode(err: unknown): string | undefined {
 	return (err as { code?: string })?.code;
-}
-
-// Czy seria znajomego wciąż trwa z perspektywy naszego „dziś”
-function liveStreak(stats: ProfileStats | null, today: DateKey): number {
-	if (!stats) return 0;
-	const yesterday = toDateKey(addDays(fromDateKey(today), -1));
-	return stats.streakEnd >= yesterday ? stats.streak : 0;
 }
 
 export const useFriendsStore = defineStore("friends", () => {
