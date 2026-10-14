@@ -252,6 +252,32 @@
     "origin": "system"
   },
   {
+    "name": "Push-ups",
+    "icon": "exercise",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "strength",
+      "home"
+    ],
+    "display_name": "Push-ups",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
+    "name": "Plank",
+    "icon": "sports_gymnastics",
+    "severity": "success",
+    "tags": [
+      "fitness",
+      "core",
+      "strength"
+    ],
+    "display_name": "Plank",
+    "category": "Fitness & Movement",
+    "origin": "system"
+  },
+  {
     "name": "Play soccer",
     "icon": "sports_soccer",
     "severity": "success",
@@ -1075,7 +1101,8 @@
     ],
     "display_name": "Wash produce",
     "category": "Nutrition & Food",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "Reduce food waste",
@@ -1102,6 +1129,45 @@
       "home"
     ],
     "display_name": "Baking",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Eat vegetables",
+    "icon": "grocery",
+    "severity": "success",
+    "tags": [
+      "food",
+      "health",
+      "vegetables"
+    ],
+    "display_name": "Eat veggies",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Eat fruit",
+    "icon": "nutrition",
+    "severity": "success",
+    "tags": [
+      "food",
+      "health",
+      "fruit"
+    ],
+    "display_name": "Eat fruit",
+    "category": "Nutrition & Food",
+    "origin": "system"
+  },
+  {
+    "name": "Intermittent fasting",
+    "icon": "schedule",
+    "severity": "success",
+    "tags": [
+      "food",
+      "health",
+      "fasting"
+    ],
+    "display_name": "Fasting window",
     "category": "Nutrition & Food",
     "origin": "system"
   },
@@ -1313,7 +1379,8 @@
     ],
     "display_name": "Digital detox",
     "category": "Mental Health & Mindfulness",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "Self-care",
@@ -1789,7 +1856,8 @@
     ],
     "display_name": "Reminders",
     "category": "Productivity & Work",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "Limit notifications",
@@ -2097,7 +2165,8 @@
     ],
     "display_name": "Credit score",
     "category": "Finance",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "Review insurance",
@@ -2138,6 +2207,19 @@
       "discipline"
     ],
     "display_name": "Invest",
+    "category": "Finance",
+    "origin": "system"
+  },
+  {
+    "name": "Review budget",
+    "icon": "account_balance_wallet",
+    "severity": "success",
+    "tags": [
+      "money",
+      "budget",
+      "planning"
+    ],
+    "display_name": "Review budget",
     "category": "Finance",
     "origin": "system"
   },
@@ -2447,7 +2529,8 @@
     ],
     "display_name": "Unsubscribe",
     "category": "Home & Chores",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "Check the mailbox",
@@ -2461,7 +2544,8 @@
     ],
     "display_name": "Check mail",
     "category": "Home & Chores",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "Sweep the porch",
@@ -2614,6 +2698,189 @@
       "productivity"
     ],
     "display_name": "DIY project",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Clean the oven",
+    "icon": "oven",
+    "severity": "success",
+    "tags": [
+      "cleaning",
+      "kitchen",
+      "home"
+    ],
+    "display_name": "Clean oven",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Defrost the freezer",
+    "icon": "ac_unit",
+    "severity": "success",
+    "tags": [
+      "cleaning",
+      "kitchen",
+      "fridge"
+    ],
+    "display_name": "Defrost freezer",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Descale the kettle",
+    "icon": "kettle",
+    "severity": "success",
+    "tags": [
+      "cleaning",
+      "kitchen",
+      "limescale"
+    ],
+    "display_name": "Descale kettle",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Clean the dishwasher",
+    "icon": "dishwasher",
+    "severity": "success",
+    "tags": [
+      "cleaning",
+      "kitchen",
+      "filter"
+    ],
+    "display_name": "Clean dishwasher",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Clean the washing machine",
+    "icon": "local_laundry_service",
+    "severity": "success",
+    "tags": [
+      "cleaning",
+      "laundry",
+      "home"
+    ],
+    "display_name": "Clean washer",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Clean the range hood",
+    "icon": "range_hood",
+    "severity": "success",
+    "tags": [
+      "cleaning",
+      "kitchen",
+      "filter"
+    ],
+    "display_name": "Clean range hood",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Change towels",
+    "icon": "dry_cleaning",
+    "severity": "success",
+    "tags": [
+      "laundry",
+      "bathroom",
+      "home"
+    ],
+    "display_name": "Change towels",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Wash the curtains",
+    "icon": "curtains",
+    "severity": "success",
+    "tags": [
+      "cleaning",
+      "laundry",
+      "home"
+    ],
+    "display_name": "Wash curtains",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Clean the drains",
+    "icon": "plumbing",
+    "severity": "success",
+    "tags": [
+      "cleaning",
+      "bathroom",
+      "sink"
+    ],
+    "display_name": "Clean drains",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Replace water filter",
+    "icon": "filter_alt",
+    "severity": "success",
+    "tags": [
+      "kitchen",
+      "water",
+      "maintenance"
+    ],
+    "display_name": "Water filter",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Read utility meters",
+    "icon": "electric_meter",
+    "severity": "success",
+    "tags": [
+      "bills",
+      "electricity",
+      "water",
+      "gas"
+    ],
+    "display_name": "Read meters",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Mow the lawn",
+    "icon": "agriculture",
+    "severity": "success",
+    "tags": [
+      "garden",
+      "yard",
+      "outdoors"
+    ],
+    "display_name": "Mow the lawn",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Repot plants",
+    "icon": "potted_plant",
+    "severity": "success",
+    "tags": [
+      "plants",
+      "garden",
+      "home"
+    ],
+    "display_name": "Repot plants",
+    "category": "Home & Chores",
+    "origin": "system"
+  },
+  {
+    "name": "Check first-aid kit",
+    "icon": "medical_services",
+    "severity": "success",
+    "tags": [
+      "safety",
+      "health",
+      "expiry"
+    ],
+    "display_name": "First-aid kit",
     "category": "Home & Chores",
     "origin": "system"
   },
@@ -2839,6 +3106,34 @@
     ],
     "display_name": "Pet care",
     "category": "Pets",
+    "origin": "system",
+    "retired": true
+  },
+  {
+    "name": "Flea and tick treatment",
+    "icon": "pest_control",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "health",
+      "dog",
+      "cat"
+    ],
+    "display_name": "Flea treatment",
+    "category": "Pets",
+    "origin": "system"
+  },
+  {
+    "name": "Deworm the pet",
+    "icon": "pill",
+    "severity": "success",
+    "tags": [
+      "pets",
+      "health",
+      "vet"
+    ],
+    "display_name": "Deworm pet",
+    "category": "Pets",
     "origin": "system"
   },
   {
@@ -3049,6 +3344,33 @@
     ],
     "display_name": "Wash hands",
     "category": "Personal Hygiene & Grooming",
+    "origin": "system",
+    "retired": true
+  },
+  {
+    "name": "Haircut",
+    "icon": "content_cut",
+    "severity": "success",
+    "tags": [
+      "hair",
+      "grooming",
+      "barber"
+    ],
+    "display_name": "Haircut",
+    "category": "Personal Hygiene & Grooming",
+    "origin": "system"
+  },
+  {
+    "name": "Replace toothbrush",
+    "icon": "dentistry",
+    "severity": "success",
+    "tags": [
+      "teeth",
+      "hygiene",
+      "dental"
+    ],
+    "display_name": "New toothbrush",
+    "category": "Personal Hygiene & Grooming",
     "origin": "system"
   },
   {
@@ -3091,7 +3413,8 @@
     ],
     "display_name": "Temperature",
     "category": "Health Monitoring",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "Track mood",
@@ -3220,6 +3543,45 @@
     "origin": "system"
   },
   {
+    "name": "Blood test",
+    "icon": "bloodtype",
+    "severity": "success",
+    "tags": [
+      "health",
+      "checkup",
+      "doctor"
+    ],
+    "display_name": "Blood test",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "Eye exam",
+    "icon": "ophthalmology",
+    "severity": "success",
+    "tags": [
+      "health",
+      "checkup",
+      "eyes"
+    ],
+    "display_name": "Eye exam",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
+    "name": "Get vaccinated",
+    "icon": "vaccines",
+    "severity": "success",
+    "tags": [
+      "health",
+      "doctor",
+      "flu"
+    ],
+    "display_name": "Vaccination",
+    "category": "Health Monitoring",
+    "origin": "system"
+  },
+  {
     "name": "Refuel the car",
     "icon": "local_gas_station",
     "severity": "success",
@@ -3314,6 +3676,47 @@
       "daily"
     ],
     "display_name": "Check weather",
+    "category": "Transport & Car",
+    "origin": "system",
+    "retired": true
+  },
+  {
+    "name": "Car service",
+    "icon": "car_repair",
+    "severity": "success",
+    "tags": [
+      "car",
+      "maintenance",
+      "mechanic"
+    ],
+    "display_name": "Car service",
+    "category": "Transport & Car",
+    "origin": "system"
+  },
+  {
+    "name": "Change tires",
+    "icon": "tire_repair",
+    "severity": "success",
+    "tags": [
+      "car",
+      "winter",
+      "summer",
+      "maintenance"
+    ],
+    "display_name": "Swap tires",
+    "category": "Transport & Car",
+    "origin": "system"
+  },
+  {
+    "name": "Check oil level",
+    "icon": "oil_barrel",
+    "severity": "success",
+    "tags": [
+      "car",
+      "maintenance",
+      "engine"
+    ],
+    "display_name": "Check oil",
     "category": "Transport & Car",
     "origin": "system"
   },
@@ -3514,6 +3917,19 @@
     "origin": "system"
   },
   {
+    "name": "Visit family",
+    "icon": "family_restroom",
+    "severity": "success",
+    "tags": [
+      "family",
+      "relationships",
+      "visit"
+    ],
+    "display_name": "Visit family",
+    "category": "Family & Relationships",
+    "origin": "system"
+  },
+  {
     "name": "Socialize",
     "icon": "groups",
     "severity": "success",
@@ -3623,7 +4039,8 @@
     ],
     "display_name": "Community event",
     "category": "Social & Community",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "Donate clothes",
@@ -3706,6 +4123,19 @@
       "gratitude"
     ],
     "display_name": "Write letter",
+    "category": "Social & Community",
+    "origin": "system"
+  },
+  {
+    "name": "Call a friend",
+    "icon": "call",
+    "severity": "success",
+    "tags": [
+      "friends",
+      "social",
+      "connection"
+    ],
+    "display_name": "Call a friend",
     "category": "Social & Community",
     "origin": "system"
   },
@@ -3902,7 +4332,7 @@
       "wellness"
     ],
     "display_name": "Aromatherapy",
-    "category": "Outdoors & Nature",
+    "category": "Mental Health & Mindfulness",
     "origin": "system"
   },
   {
@@ -3945,7 +4375,8 @@
     ],
     "display_name": "Watch clouds",
     "category": "Outdoors & Nature",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "Plan a trip",
@@ -4141,7 +4572,8 @@
     ],
     "display_name": "Charge devices",
     "category": "Digital Wellbeing & Tech",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "Clear phone storage",
@@ -4169,7 +4601,8 @@
     ],
     "display_name": "Organize files",
     "category": "Digital Wellbeing & Tech",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "Cold shower",
@@ -4333,7 +4766,8 @@
     ],
     "display_name": "Endless scrolling",
     "category": "Digital Wellbeing & Tech",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "eating junk food late at night",
@@ -4357,7 +4791,8 @@
     ],
     "display_name": "No plan for the day",
     "category": "Productivity & Work",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "doomscrolling social media",
@@ -4417,7 +4852,8 @@
     ],
     "display_name": "Skipping workouts",
     "category": "Fitness & Movement",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "working until burnout",
@@ -4477,7 +4913,8 @@
     ],
     "display_name": "No meal prep",
     "category": "Nutrition & Food",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "leaving tasks to the last minute",
@@ -4537,7 +4974,8 @@
     ],
     "display_name": "Ignoring to-dos",
     "category": "Productivity & Work",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "not drinking enough water",
@@ -4549,7 +4987,8 @@
     ],
     "display_name": "Not enough water",
     "category": "Nutrition & Food",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "drinking too much caffeine",
@@ -4693,7 +5132,8 @@
     ],
     "display_name": "Online impulse buys",
     "category": "Finance",
-    "origin": "system"
+    "origin": "system",
+    "retired": true
   },
   {
     "name": "oversharing on social media",

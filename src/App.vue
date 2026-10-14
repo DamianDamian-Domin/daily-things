@@ -24,11 +24,15 @@
 		<MobileTabBar v-if="showChrome && isMobileLayout" />
 
 		<CookiesConsentBanner
-			v-if="!isLoginRoute && !authStore.isAuthDialogOpen"
+			v-if="!isLoginRoute && !authStore.isAuthDialogOpen && !help.isOpen"
 			:bottom-offset="bottomOffset" />
 		<AuthDialog v-if="authDialogNeeded" />
 		<AvatarEditor v-if="avatarEditorNeeded" />
 		<InsightsDialogs v-if="insightsNeeded" />
+		<HelpTour
+			v-if="helpNeeded"
+			:model-value="help.isOpen && !authStore.isAuthDialogOpen"
+			@update:model-value="!$event && help.close()" />
 		<ToastHost :bottom-offset="bottomOffset" />
 	</div>
 </template>
@@ -45,11 +49,13 @@ import { useProfileStore } from "@/stores/profile";
 import { useRemindersStore } from "@/stores/reminders";
 import { useAchievementsStore } from "@/stores/achievements";
 import { useInsightsStore } from "@/stores/insights";
+import { useHelpStore } from "@/stores/help";
 import { hasStoredInvite, loadFriends, loadProfileSync, peekFriends } from "@/stores/social";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 import { fetchUserDoc } from "@/services/userData";
 import { isNativePlatform } from "@/utils/platform";
 import { useLayout } from "@/utils/useLayout";
+import { isReturningUser } from "@/utils/onboarding";
 
 import NavBar from "@/components/navbar/NavBar.vue";
 import MobileTabBar from "@/components/navbar/MobileTabBar.vue";
@@ -60,6 +66,8 @@ const AuthDialog = defineAsyncComponent(() => import("@/components/login_view/Au
 const AvatarEditor = defineAsyncComponent(() => import("@/components/friends/AvatarEditor.vue"));
 // Odznaki, podsumowanie tygodnia i rok — wspólne okna otwierane z kilku miejsc
 const InsightsDialogs = defineAsyncComponent(() => import("@/components/insights/InsightsDialogs.vue"));
+// Obrazkowy przewodnik „Jak to działa” (raz dla nowych, potem z ustawień)
+const HelpTour = defineAsyncComponent(() => import("@/components/help/HelpTour.vue"));
 import ToastHost from "@/components/ui/ToastHost.vue";
 
 const route = useRoute();
@@ -74,6 +82,7 @@ const remindersStore = useRemindersStore();
 const achievementsStore = useAchievementsStore();
 const insights = useInsightsStore();
 const carouselStore = useCarouselStore();
+const help = useHelpStore();
 
 // ==========================================
 // UKŁAD (mobile / desktop)
@@ -103,6 +112,13 @@ watch(
 		if (panel) insightsNeeded.value = true;
 	},
 );
+const helpNeeded = ref(false);
+watch(
+	() => help.isOpen,
+	(open) => {
+		if (open) helpNeeded.value = true;
+	},
+);
 const showChrome = computed(() => !isLoginRoute.value);
 const bottomOffset = computed(() => (showChrome.value && isMobileLayout.value ? 68 : 0));
 
@@ -122,6 +138,14 @@ async function loadSession(uid: string) {
 		if (authStore.userUid !== uid) return;
 		// Od teraz profil dla znajomych może się publikować (seria jest już policzona)
 		profileStore.markReady();
+		// Nowy użytkownik: raz pokazujemy, do czego służy aplikacja
+		help.maybeShowOnce(
+			isReturningUser({
+				dailyGoals: habitsStore.dailyGoalsList,
+				recentHabits: habitsStore.recentHabits,
+				dayCount: Object.keys(habitsStore.days).length,
+			}),
+		);
 		// Konta: czy ktoś przybił piątkę / zaprosił (1 zapytanie, kod ładowany w tle)
 		if (!authStore.isGuest) loadFriends().then((friends) => friends.checkInbox());
 	} catch (err) {

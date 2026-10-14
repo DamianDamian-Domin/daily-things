@@ -43,8 +43,18 @@ export const useTodosStore = defineStore("todos", () => {
 	const sortedTodos = computed(() => [...activeTodos.value, ...completedTodos.value]);
 
 	async function load(uid: string, userDoc: UserDoc) {
-		const todos = await fetchTodos(uid);
 		const legacy = normalizeLegacyTodos(userDoc.todos);
+		let todos: TodoItem[];
+		try {
+			todos = await fetchTodos(uid);
+		} catch (err) {
+			// Bez listy zadań reszta aplikacji (nawyki, znajomi) i tak ma działać,
+			// np. gdy reguły Firestore jeszcze nie znają kolekcji todos.
+			// Pokazujemy starą tablicę i nie migrujemy — spróbujemy przy kolejnym wczytaniu.
+			console.error("Loading todos failed", err);
+			if (authStore.userUid === uid) userTodosList.value = legacy;
+			return;
+		}
 		if (legacy.length > 0 || Array.isArray(userDoc.todos)) {
 			// Stara tablica w dokumencie użytkownika → osobne dokumenty.
 			// W tle: offline zapis czeka na sieć, a lista działa od razu.

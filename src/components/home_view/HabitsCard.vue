@@ -14,18 +14,30 @@
 				</h2>
 				<p class="today-sub">{{ subline }}</p>
 			</div>
-			<div
-				v-if="habitsStore.streak > 0"
-				class="streak-chip"
-				:class="{ 'at-risk': habitsStore.streakAtRisk }"
-				role="img"
-				:aria-label="`${habitsStore.streak}-day streak`"
-				v-tooltip.bottom="streakTooltip">
-				<PixelIcon
-					icon="local_fire_department"
-					:palette="habitsStore.streakAtRisk ? 'gray' : 'orange'"
-					:size="22" />
-				<span>{{ habitsStore.streak }}</span>
+			<div class="today-head-actions">
+				<button
+					type="button"
+					class="dt-icon-btn"
+					aria-label="When did I last…? Search your history"
+					v-tooltip.bottom="'When did I last…?'"
+					@click="insights.open('lastDone')">
+					<i
+						class="pi pi-history"
+						aria-hidden="true"></i>
+				</button>
+				<div
+					v-if="habitsStore.streak > 0"
+					class="streak-chip"
+					:class="{ 'at-risk': habitsStore.streakAtRisk }"
+					role="img"
+					:aria-label="`${habitsStore.streak}-day streak`"
+					v-tooltip.bottom="streakTooltip">
+					<PixelIcon
+						icon="local_fire_department"
+						:palette="habitsStore.streakAtRisk ? 'gray' : 'orange'"
+						:size="22" />
+					<span>{{ habitsStore.streak }}</span>
+				</div>
 			</div>
 		</header>
 
@@ -244,6 +256,15 @@
 					@click="removeAll">
 					Remove all
 				</button>
+				<button
+					type="button"
+					class="dt-btn dt-btn-ghost dt-btn-sm"
+					@click="openHistory">
+					<i
+						class="pi pi-history"
+						aria-hidden="true"></i>
+					History
+				</button>
 			</div>
 		</Popover>
 
@@ -267,6 +288,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { usePreferencesStore } from "@/stores/userPreferences";
 import { useRemindersStore } from "@/stores/reminders";
+import { useInsightsStore } from "@/stores/insights";
 import { useSound } from "@/utils/useSound";
 import { useConfetti } from "@/utils/useConfetti";
 import { randomCheer } from "@/utils/useCompliment";
@@ -289,6 +311,7 @@ const authStore = useAuthStore();
 const toast = useToastStore();
 const preferences = usePreferencesStore();
 const remindersStore = useRemindersStore();
+const insights = useInsightsStore();
 const { playHabitCheck, playUncheck, playVictory } = useSound();
 const { launch: launchConfetti } = useConfetti();
 
@@ -489,6 +512,14 @@ async function removeAll() {
 		);
 }
 
+// „Kiedy ostatnio” z rozwiniętą historią tego habitu
+function openHistory() {
+	const group = stepperGroup.value;
+	if (!group) return;
+	stepperRef.value?.hide();
+	insights.open("lastDone", { habit: group.name });
+}
+
 // Zmiana dnia zamyka stepper
 watch(
 	() => habitsStore.selectedKey,
@@ -551,6 +582,12 @@ const remindersLabel = computed(() =>
 }
 .today-greeting {
 	min-width: 0;
+}
+.today-head-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	flex-shrink: 0;
 }
 .today-title {
 	font-size: var(--dt-text-lg);

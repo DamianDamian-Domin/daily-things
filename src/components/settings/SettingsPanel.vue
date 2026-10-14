@@ -130,6 +130,33 @@
 
 		<section
 			class="settings-group"
+			aria-labelledby="settings-help">
+			<h3
+				id="settings-help"
+				class="settings-heading">
+				Help
+			</h3>
+			<button
+				type="button"
+				class="settings-link"
+				@click="openHelp">
+				<span
+					class="settings-icon"
+					aria-hidden="true"
+					><i class="pi pi-question-circle"></i
+				></span>
+				<span class="settings-text">
+					<span class="settings-label">How Daily Things works</span>
+					<span class="settings-desc">A quick picture tour of the app</span>
+				</span>
+				<i
+					class="pi pi-chevron-right settings-chevron"
+					aria-hidden="true"></i>
+			</button>
+		</section>
+
+		<section
+			class="settings-group"
 			aria-labelledby="settings-privacy">
 			<h3
 				id="settings-privacy"
@@ -199,17 +226,24 @@ import LegalDocumentsDialog from "@/components/legal/LegalDocumentsDialog.vue";
 import { usePreferencesStore } from "@/stores/userPreferences";
 import { useCookieConsentStore } from "@/stores/cookieConsent";
 import { useAuthStore } from "@/stores/auth";
+import { useHelpStore } from "@/stores/help";
 
 const emit = defineEmits<{ (e: "close"): void }>();
 
 const preferences = usePreferencesStore();
 const cookieConsent = useCookieConsentStore();
 const authStore = useAuthStore();
+const help = useHelpStore();
 const legalRef = ref<InstanceType<typeof LegalDocumentsDialog> | null>(null);
 
 function manageCookies() {
 	cookieConsent.reopenBanner();
 	emit("close");
+}
+
+function openHelp() {
+	emit("close");
+	help.open();
 }
 
 function openLegal(doc: "privacy" | "terms") {
