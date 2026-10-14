@@ -28,6 +28,9 @@
 					@decline="friendsStore.decline"
 					@cancel="friendsStore.cancel" />
 
+				<!-- ============ CHWILE DO ŚWIĘTOWANIA ============ -->
+				<FriendsHighlights v-if="friendsStore.highlights.length" />
+
 				<!-- ============ TEN TYDZIEŃ ============ -->
 				<FriendsWeekBoard
 					v-if="hasFriends"
@@ -96,6 +99,7 @@ import { useInvite } from "@/utils/useInvite";
 import FriendsHeader from "@/components/friends/FriendsHeader.vue";
 import FriendsEmpty from "@/components/friends/FriendsEmpty.vue";
 import FriendsRequests from "@/components/friends/FriendsRequests.vue";
+import FriendsHighlights from "@/components/friends/FriendsHighlights.vue";
 import FriendsWeekBoard from "@/components/friends/FriendsWeekBoard.vue";
 import FriendsList from "@/components/friends/FriendsList.vue";
 const AddFriendDialog = defineAsyncComponent(

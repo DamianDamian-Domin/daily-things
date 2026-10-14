@@ -52,6 +52,8 @@ export interface UserDoc {
 	// Własny awatar (brak = domyślny wyliczony z UID) i kod znajomego
 	avatar?: AvatarConfig;
 	friendCode?: string;
+	// Zdobyte odznaki: id → kiedy (ms)
+	achievements?: Record<string, number>;
 }
 
 export const userDocRef = (uid: string) => doc(db, "users", uid);

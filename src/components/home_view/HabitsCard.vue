@@ -127,11 +127,16 @@
 					<p>
 						Pick 2–3 small things you'd like to do every day. Tapping a goal logs it — that's it.
 					</p>
+					<StarterPacks
+						v-if="habitsStore.isSelectedToday"
+						title="Not sure where to start?"
+						compact
+						:limit="4" />
 					<button
 						type="button"
 						class="dt-btn dt-btn-soft dt-btn-sm"
 						@click="openDialog('goal')">
-						Choose goals
+						{{ habitsStore.isSelectedToday ? "Or choose your own" : "Choose goals" }}
 					</button>
 				</div>
 			</section>
@@ -275,6 +280,7 @@ const RemindersDialog = defineAsyncComponent(
 	() => import("@/components/home_view/RemindersDialog.vue"),
 );
 import PixelIcon from "@/components/ui/PixelIcon.vue";
+import StarterPacks from "@/components/home_view/StarterPacks.vue";
 
 defineProps<{ isActive: boolean }>();
 
@@ -646,6 +652,10 @@ const remindersLabel = computed(() =>
 	gap: 0.5rem;
 	text-align: center;
 	padding: 0.25rem 0.5rem 0.35rem;
+}
+.goals-empty :deep(.packs) {
+	margin: 0.25rem 0;
+	text-align: left;
 }
 .goals-empty p {
 	margin: 0;

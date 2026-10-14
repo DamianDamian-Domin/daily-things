@@ -23,6 +23,7 @@ import {
 } from "@/services/userData";
 import {
 	addDays,
+	fromDateKey,
 	monthBounds,
 	monthKeyOf,
 	monthsInRange,
@@ -32,7 +33,7 @@ import {
 	type DateKey,
 } from "@/utils/date";
 import { CATALOG, findCatalogHabit, resolveHabit } from "@/utils/habitCatalog";
-import { countStreak } from "@/utils/streak";
+import { streakDetails } from "@/utils/streak";
 
 const RECENT_LIMIT = 12;
 const MAX_STREAK_LOOKBACK_MONTHS = 24;
@@ -175,7 +176,10 @@ export const useHabitsStore = defineStore("habits", () => {
 		return logsOn(key).length > 0;
 	}
 
-	const streak = computed(() => countStreak(hasLogsOn, todayKey.value));
+	// Liczba dni z rzędu z co najmniej jednym wpisem (jeden opuszczony dzień
+	// na tydzień jest „zamrażany” i nie zrywa serii — utils/streak.ts)
+	const streakInfo = computed(() => streakDetails(hasLogsOn, todayKey.value));
+	const streak = computed(() => streakInfo.value.count);
 
 	// Seria trwa, ale dziś jeszcze nic nie zapisano — delikatne przypomnienie
 	const streakAtRisk = computed(() => streak.value > 0 && !hasLogsOn(todayKey.value));
@@ -186,8 +190,9 @@ export const useHabitsStore = defineStore("habits", () => {
 		if (!oldest) return false;
 		const [y, m] = oldest.split("-").map(Number);
 		const firstLoaded = new Date(y, m - 1, 1);
-		const streakStart = addDays(startOfDay(), -(streak.value - (hasLogsOn(todayKey.value) ? 1 : 0)));
-		return streak.value > 0 && streakStart <= addDays(firstLoaded, 0);
+		const startKey = streakInfo.value.startKey;
+		// +1 dzień: zamrożenie może „przeskoczyć” na niewczytany miesiąc
+		return startKey !== null && fromDateKey(startKey) <= addDays(firstLoaded, 1);
 	}
 
 	// ==========================================================================
@@ -468,6 +473,20 @@ export const useHabitsStore = defineStore("habits", () => {
 		await persistGoals(previous);
 	}
 
+	// Kilka celów naraz (pakiety startowe) — jeden zapis zamiast kilku
+	async function addDailyGoals(habits: Array<Habit | GoalRef>) {
+		const have = new Set(dailyGoalsList.value.map((g) => g.name));
+		const fresh = habits.filter((h) => !have.has(h.name));
+		if (fresh.length === 0) return 0;
+		const previous = [...dailyGoalsList.value];
+		dailyGoalsList.value = [
+			...dailyGoalsList.value,
+			...fresh.map((h) => slim(h, { id: nanoid(), name: h.name }) as Goal),
+		];
+		await persistGoals(previous);
+		return fresh.length;
+	}
+
 	async function removeGoalInstance(name: string) {
 		const idx = dailyGoalsList.value.map((g) => g.name).lastIndexOf(name);
 		if (idx === -1) return;
@@ -629,6 +648,7 @@ export const useHabitsStore = defineStore("habits", () => {
 		goalsFor,
 		dayGoalsProgress,
 		streak,
+		streakInfo,
 		streakAtRisk,
 		// wczytywanie
 		hydrate,
@@ -644,6 +664,7 @@ export const useHabitsStore = defineStore("habits", () => {
 		reorderSelected,
 		// cele
 		addDailyGoal,
+		addDailyGoals,
 		removeGoalInstance,
 		removeGoal,
 		restoreGoals,

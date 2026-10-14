@@ -28,6 +28,7 @@
 			:bottom-offset="bottomOffset" />
 		<AuthDialog v-if="authDialogNeeded" />
 		<AvatarEditor v-if="avatarEditorNeeded" />
+		<InsightsDialogs v-if="insightsNeeded" />
 		<ToastHost :bottom-offset="bottomOffset" />
 	</div>
 </template>
@@ -42,6 +43,8 @@ import { usePreferencesStore } from "@/stores/userPreferences";
 import { useToastStore } from "@/stores/toast";
 import { useProfileStore } from "@/stores/profile";
 import { useRemindersStore } from "@/stores/reminders";
+import { useAchievementsStore } from "@/stores/achievements";
+import { useInsightsStore } from "@/stores/insights";
 import { hasStoredInvite, loadFriends, loadProfileSync, peekFriends } from "@/stores/social";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 import { fetchUserDoc } from "@/services/userData";
@@ -55,6 +58,8 @@ import CookiesConsentBanner from "@/components/CookiesConsentBanner.vue";
 // użytkownicy nigdy go nie pobiorą)
 const AuthDialog = defineAsyncComponent(() => import("@/components/login_view/AuthDialog.vue"));
 const AvatarEditor = defineAsyncComponent(() => import("@/components/friends/AvatarEditor.vue"));
+// Odznaki, podsumowanie tygodnia i rok — wspólne okna otwierane z kilku miejsc
+const InsightsDialogs = defineAsyncComponent(() => import("@/components/insights/InsightsDialogs.vue"));
 import ToastHost from "@/components/ui/ToastHost.vue";
 
 const route = useRoute();
@@ -66,6 +71,8 @@ const preferencesStore = usePreferencesStore();
 const toast = useToastStore();
 const profileStore = useProfileStore();
 const remindersStore = useRemindersStore();
+const achievementsStore = useAchievementsStore();
+const insights = useInsightsStore();
 const carouselStore = useCarouselStore();
 
 // ==========================================
@@ -89,6 +96,13 @@ watch(
 		if (open) avatarEditorNeeded.value = true;
 	},
 );
+const insightsNeeded = ref(false);
+watch(
+	() => insights.panel,
+	(panel) => {
+		if (panel) insightsNeeded.value = true;
+	},
+);
 const showChrome = computed(() => !isLoginRoute.value);
 const bottomOffset = computed(() => (showChrome.value && isMobileLayout.value ? 68 : 0));
 
@@ -103,6 +117,7 @@ async function loadSession(uid: string) {
 		habitsStore.hydrate(userDoc);
 		profileStore.hydrate(userDoc);
 		remindersStore.hydrate(userDoc);
+		achievementsStore.hydrate(userDoc);
 		await Promise.all([habitsStore.loadInitialHistory(), todosStore.load(uid, userDoc)]);
 		if (authStore.userUid !== uid) return;
 		// Od teraz profil dla znajomych może się publikować (seria jest już policzona)
@@ -122,6 +137,8 @@ watch(
 		todosStore.clearData();
 		profileStore.clear();
 		remindersStore.clear();
+		achievementsStore.clear();
+		insights.close();
 		peekFriends()?.clear();
 
 		if (!uid) {

@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
+import { useAchievementsStore } from "@/stores/achievements";
 import { useAuthStore } from "@/stores/auth";
 import { useHabitsStore } from "@/stores/habits";
 import { useProfileStore } from "@/stores/profile";
@@ -48,6 +49,7 @@ export const useProfileSyncStore = defineStore("profileSync", () => {
 	const habitsStore = useHabitsStore();
 	const preferences = usePreferencesStore();
 	const profile = useProfileStore();
+	const achievements = useAchievementsStore();
 
 	const uid = computed(() => authStore.userUid);
 	const active = computed(() => profile.isSocial && profile.ready);
@@ -147,6 +149,7 @@ export const useProfileSyncStore = defineStore("profileSync", () => {
 			todayDone: progress.done,
 			todayTotal: progress.total,
 			last7,
+			badges: [...achievements.unlockedIds],
 		};
 	}
 

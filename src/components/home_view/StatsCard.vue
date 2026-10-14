@@ -59,7 +59,12 @@
 			<!-- KPI -->
 			<StatsKpis
 				:streak="habitsStore.streak"
-				:summary="summary" />
+				:summary="summary"
+				:freeze-used="freezeUsed" />
+
+			<StatsInsights
+				:period="period"
+				:offset="offset" />
 
 			<!-- TYDZIEŃ: dzień po dniu -->
 			<StatsWeekList
@@ -98,11 +103,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useHabitsStore } from "@/stores/habits";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
+import { addDays, startOfDay, toDateKey } from "@/utils/date";
 import StatsKpis from "./stats/StatsKpis.vue";
+import StatsInsights from "./stats/StatsInsights.vue";
 import StatsWeekList from "./stats/StatsWeekList.vue";
 import StatsMonthHeatmap from "./stats/StatsMonthHeatmap.vue";
 import StatsTopHabits from "./stats/StatsTopHabits.vue";
@@ -113,6 +120,12 @@ defineProps<{ isActive: boolean }>();
 
 const habitsStore = useHabitsStore();
 const carouselStore = useCarouselStore();
+
+// Zamrożenie serii w ostatnim tygodniu (jeden opuszczony dzień nie zrywa serii)
+const freezeUsed = computed(() => {
+	const weekAgo = toDateKey(addDays(startOfDay(), -7));
+	return habitsStore.streak > 0 && habitsStore.streakInfo.frozen.some((k) => k >= weekAgo);
+});
 
 const period = ref<StatsPeriod>("week");
 const offset = ref(0);

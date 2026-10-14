@@ -78,6 +78,30 @@
 				</section>
 
 				<section
+					v-if="badges.length"
+					class="fd-section"
+					aria-labelledby="fd-badges-title">
+					<h3
+						id="fd-badges-title"
+						class="dt-section-title">
+						Badges · {{ badges.length }}
+					</h3>
+					<ul class="fd-habits">
+						<li
+							v-for="b in badges"
+							:key="b.id"
+							class="fd-habit fd-badge"
+							v-tooltip.top="`${b.title}: ${b.description}`">
+							<PixelIcon
+								:icon="b.icon"
+								:palette="b.palette"
+								:size="28" />
+							<span class="sr-only">{{ b.title }}</span>
+						</li>
+					</ul>
+				</section>
+
+				<section
 					v-if="habits"
 					class="fd-section"
 					aria-labelledby="fd-today-title">
@@ -176,6 +200,7 @@ import { useFriendsStore, type FriendRow } from "@/stores/friends";
 import { useHabitsStore } from "@/stores/habits";
 import { PALETTES, type PaletteKey } from "@/utils/pixelIcons";
 import { fromDateKey, weekdayName } from "@/utils/date";
+import { ACHIEVEMENTS } from "@/utils/achievements";
 
 const props = defineProps<{ friendUid: string | null }>();
 const visible = defineModel<boolean>({ default: false });
@@ -228,6 +253,12 @@ const habits = computed(() => {
 		...h,
 		palette: (h.palette in PALETTES ? h.palette : "orange") as PaletteKey,
 	}));
+});
+
+// Odznaki znajomego (kolejność jak w katalogu odznak)
+const badges = computed(() => {
+	const owned = new Set(stats.value?.badges ?? []);
+	return ACHIEVEMENTS.filter((a) => owned.has(a.id));
 });
 
 function remove() {
@@ -394,5 +425,8 @@ function remove() {
 	gap: 0.5rem;
 	font-size: var(--dt-text-sm);
 	color: var(--dt-text-2);
+}
+.fd-badge {
+	background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--dt-gold) 12%, var(--dt-surface)), color-mix(in srgb, var(--dt-gold) 30%, var(--dt-surface)));
 }
 </style>

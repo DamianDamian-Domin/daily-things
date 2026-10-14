@@ -41,10 +41,11 @@ export const useToastStore = defineStore("toast", () => {
 			actionLabel: options.actionLabel,
 			action: options.action,
 		};
-		// Nowy komunikat z „Cofnij” zastępuje poprzedni (bez piętrzenia przy
-		// szybkim klikaniu); poza tym maksymalnie 3 naraz.
+		// Nowy komunikat z „Cofnij” zastępuje poprzedni z tą samą akcją (bez
+		// piętrzenia przy szybkim klikaniu); poza tym maksymalnie 3 naraz.
 		if (toast.action) {
-			for (const t of toasts.value.filter((t) => t.action)) dismiss(t.id);
+			for (const t of toasts.value.filter((t) => t.action && t.actionLabel === toast.actionLabel))
+				dismiss(t.id);
 		}
 		toasts.value = [...toasts.value.slice(-2), toast];
 		const duration = options.duration ?? (options.action ? 5000 : 2800);

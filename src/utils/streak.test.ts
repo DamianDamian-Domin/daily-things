@@ -23,13 +23,18 @@ describe("countStreak", () => {
 		expect(countStreak(logged("2026-10-11", "2026-10-12", "2026-10-13"), "2026-10-13")).toBe(3);
 	});
 
-	it("stops at the first gap", () => {
-		expect(countStreak(logged("2026-10-09", "2026-10-11", "2026-10-12"), "2026-10-13")).toBe(2);
+	it("bridges one missed day with a freeze, without counting it", () => {
+		expect(countStreak(logged("2026-10-09", "2026-10-11", "2026-10-12"), "2026-10-13")).toBe(3);
+		expect(countStreak(logged("2026-10-10", "2026-10-11"), "2026-10-13")).toBe(2);
+		expect(countStreak(logged("2026-10-11", "2026-10-13"), "2026-10-13")).toBe(2);
 	});
 
-	it("is broken when yesterday was missed", () => {
-		expect(countStreak(logged("2026-10-10", "2026-10-11"), "2026-10-13")).toBe(0);
-		expect(countStreak(logged("2026-10-11", "2026-10-13"), "2026-10-13")).toBe(1);
+	it("is broken by two missed days in a row", () => {
+		expect(countStreak(logged("2026-10-09", "2026-10-10"), "2026-10-13")).toBe(0);
+	});
+
+	it("allows only one freeze per week", () => {
+		expect(countStreak(logged("2026-10-08", "2026-10-10", "2026-10-12"), "2026-10-13")).toBe(2);
 	});
 
 	it("runs across month and year boundaries", () => {

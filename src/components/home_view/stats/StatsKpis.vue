@@ -8,6 +8,13 @@
 			<dt>Current streak</dt>
 			<dd>
 				{{ streak }} <small>{{ streak === 1 ? "day" : "days" }}</small>
+				<span
+					v-if="freezeUsed"
+					class="kpi-freeze"
+					v-tooltip.top="'One missed day a week won\'t break your streak'"
+					aria-label="A free pass saved your streak this week"
+					>❄️</span
+				>
 			</dd>
 		</div>
 		<div class="kpi">
@@ -35,7 +42,7 @@
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import type { StatsSummary } from "./useStatsData";
 
-defineProps<{ streak: number; summary: StatsSummary }>();
+defineProps<{ streak: number; summary: StatsSummary; freezeUsed?: boolean }>();
 </script>
 
 <style scoped>
@@ -75,5 +82,10 @@ defineProps<{ streak: number; summary: StatsSummary }>();
 	font-size: 0.7rem;
 	font-weight: 600;
 	color: var(--dt-text-3);
+}
+.kpi-freeze {
+	margin-left: 0.15rem;
+	font-size: 0.85em;
+	cursor: help;
 }
 </style>
