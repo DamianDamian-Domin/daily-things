@@ -167,7 +167,7 @@ import Dialog from "primevue/dialog";
 import PixelAvatar from "@/components/ui/PixelAvatar.vue";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import { useFriendsStore, type FriendRow } from "@/stores/friends";
-import { useHabbitsStore } from "@/stores/habbits";
+import { useHabitsStore } from "@/stores/habits";
 import { PALETTES, type PaletteKey } from "@/utils/pixelIcons";
 import { fromDateKey, weekdayName } from "@/utils/date";
 
@@ -175,7 +175,7 @@ const props = defineProps<{ friendUid: string | null }>();
 const visible = defineModel<boolean>({ default: false });
 
 const friendsStore = useFriendsStore();
-const habbitsStore = useHabbitsStore();
+const habitsStore = useHabitsStore();
 const confirmRemove = ref(false);
 
 // Zawsze świeże dane z magazynu (profil zmienia się na żywo)
@@ -217,7 +217,7 @@ const weekAria = computed(
 const habits = computed(() => {
 	const profile = friend.value?.profile;
 	if (!profile?.sharing.habits || !profile.todayHabits) return null;
-	if (profile.stats?.todayKey !== habbitsStore.todayKey) return [];
+	if (profile.stats?.todayKey !== habitsStore.todayKey) return [];
 	return profile.todayHabits.map((h) => ({
 		...h,
 		palette: (h.palette in PALETTES ? h.palette : "orange") as PaletteKey,

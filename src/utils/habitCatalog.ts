@@ -1,8 +1,8 @@
-import habbitListData from "@/assets/habbitList.json";
-import type { GoalRef, Habbit, HabbitLog } from "@/libs/types";
+import habitListData from "@/assets/habitList.json";
+import type { GoalRef, Habit, HabitLog } from "@/libs/types";
 import type { PaletteKey } from "@/utils/pixelIcons";
 
-export const CATALOG = habbitListData as Habbit[];
+export const CATALOG = habitListData as Habit[];
 
 const BY_NAME = new Map(CATALOG.map((h) => [h.name, h]));
 
@@ -170,14 +170,14 @@ const SOURCE_TO_SUPER = new Map<string, SuperCategory>();
 for (const def of SUPER_CATEGORIES)
 	for (const src of def.sources) SOURCE_TO_SUPER.set(src, def);
 
-export function superCategoryOf(habbit: Pick<Habbit, "category" | "origin">): SuperCategory | null {
-	if (habbit.origin === "user") return CUSTOM_CATEGORY;
-	if (!habbit.category) return null;
-	return SOURCE_TO_SUPER.get(habbit.category) ?? null;
+export function superCategoryOf(habit: Pick<Habit, "category" | "origin">): SuperCategory | null {
+	if (habit.origin === "user") return CUSTOM_CATEGORY;
+	if (!habit.category) return null;
+	return SOURCE_TO_SUPER.get(habit.category) ?? null;
 }
 
 // Dobre na start — gdy użytkownik nie ma jeszcze historii
-export const STARTER_HABBITS = [
+export const STARTER_HABITS = [
 	"Drink water",
 	"Walking",
 	"Read a book",
@@ -192,19 +192,19 @@ export const STARTER_HABBITS = [
 	"Call family",
 ];
 
-export function findCatalogHabbit(name: string): Habbit | undefined {
+export function findCatalogHabit(name: string): Habit | undefined {
 	return BY_NAME.get(name);
 }
 
-// Zamienia zapisany wpis (stary pełny lub nowy „odchudzony”) na pełny Habbit.
+// Zamienia zapisany wpis (stary pełny lub nowy „odchudzony”) na pełny Habit.
 // Katalog ma pierwszeństwo, więc poprawki ikon/nazw działają też dla historii.
-export function resolveHabbit(
-	entry: HabbitLog | GoalRef | Habbit,
-	customHabbits: Habbit[] = [],
-): Habbit {
+export function resolveHabit(
+	entry: HabitLog | GoalRef | Habit,
+	customHabits: Habit[] = [],
+): Habit {
 	const fromCatalog = BY_NAME.get(entry.name);
 	if (fromCatalog) return fromCatalog;
-	const custom = customHabbits.find((h) => h.name === entry.name);
+	const custom = customHabits.find((h) => h.name === entry.name);
 	if (custom) return custom;
 	return {
 		name: entry.name,
@@ -213,16 +213,16 @@ export function resolveHabbit(
 		tags: entry.tags || [],
 		origin: entry.origin || "user",
 		display_name: entry.display_name || entry.name,
-		category: (entry as HabbitLog).category,
+		category: (entry as HabitLog).category,
 	};
 }
 
-export function displayName(habbit: Pick<Habbit, "display_name" | "name">): string {
-	return habbit.display_name || habbit.name;
+export function displayName(habit: Pick<Habit, "display_name" | "name">): string {
+	return habit.display_name || habit.name;
 }
 
-export function isNegative(habbit: Pick<Habbit, "severity">): boolean {
-	return habbit.severity === "danger";
+export function isNegative(habit: Pick<Habit, "severity">): boolean {
+	return habit.severity === "danger";
 }
 
 // Ikony, które powinny mieć „swój” kolor niezależnie od kategorii
@@ -289,11 +289,11 @@ const ICON_PALETTE: Record<string, PaletteKey> = {
 	savings: "pink",
 };
 
-export function paletteFor(habbit: Pick<Habbit, "icon" | "severity" | "category" | "origin">): PaletteKey {
-	if (habbit.severity === "danger") return "plum";
-	const byIcon = ICON_PALETTE[habbit.icon];
+export function paletteFor(habit: Pick<Habit, "icon" | "severity" | "category" | "origin">): PaletteKey {
+	if (habit.severity === "danger") return "plum";
+	const byIcon = ICON_PALETTE[habit.icon];
 	if (byIcon) return byIcon;
-	return superCategoryOf(habbit)?.palette ?? "orange";
+	return superCategoryOf(habit)?.palette ?? "orange";
 }
 
 // Wyszukiwanie bez polskich/obcych znaków diakrytycznych
@@ -304,10 +304,10 @@ export function normalizeText(input: string): string {
 		.replace(/[̀-ͯ]/g, "");
 }
 
-export function matchesQuery(habbit: Habbit, normalizedQuery: string): boolean {
+export function matchesQuery(habit: Habit, normalizedQuery: string): boolean {
 	if (!normalizedQuery) return true;
-	if (normalizeText(habbit.name).includes(normalizedQuery)) return true;
-	if (habbit.display_name && normalizeText(habbit.display_name).includes(normalizedQuery))
+	if (normalizeText(habit.name).includes(normalizedQuery)) return true;
+	if (habit.display_name && normalizeText(habit.display_name).includes(normalizedQuery))
 		return true;
-	return habbit.tags?.some((t) => normalizeText(t).includes(normalizedQuery)) ?? false;
+	return habit.tags?.some((t) => normalizeText(t).includes(normalizedQuery)) ?? false;
 }

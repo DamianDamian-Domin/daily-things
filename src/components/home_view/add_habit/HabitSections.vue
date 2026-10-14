@@ -24,7 +24,7 @@
 				:key="section.key + h.name"
 				class="add-cell">
 				<HabitTile
-					:habbit="h"
+					:habit="h"
 					show-label
 					:tooltip="false"
 					:badge="badgeFor(h)"
@@ -59,8 +59,8 @@
 <script setup lang="ts">
 // Sekcje z siatką kafelków: dodawanie (stuknięcie), odejmowanie (−) i usuwanie własnych
 import { computed } from "vue";
-import type { Habbit } from "@/libs/types";
-import { useHabbitsStore } from "@/stores/habbits";
+import type { Habit } from "@/libs/types";
+import { useHabitsStore } from "@/stores/habits";
 import { displayName } from "@/utils/habitCatalog";
 import HabitTile from "@/components/home_view/HabitTile.vue";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
@@ -68,33 +68,33 @@ import type { HabitSection } from "./types";
 
 const props = defineProps<{ mode: "log" | "goal"; sections: HabitSection[] }>();
 const emit = defineEmits<{
-	(e: "tap", h: Habbit): void;
-	(e: "minus", h: Habbit): void;
-	(e: "delete", h: Habbit): void;
+	(e: "tap", h: Habit): void;
+	(e: "minus", h: Habit): void;
+	(e: "delete", h: Habit): void;
 }>();
 const managing = defineModel<boolean>("managing", { required: true });
 
-const habbitsStore = useHabbitsStore();
+const habitsStore = useHabitsStore();
 
 const goalCounts = computed(() => {
 	const counts: Record<string, number> = {};
-	for (const g of habbitsStore.dailyGoalsList) counts[g.name] = (counts[g.name] ?? 0) + 1;
+	for (const g of habitsStore.dailyGoalsList) counts[g.name] = (counts[g.name] ?? 0) + 1;
 	return counts;
 });
 
-function countFor(h: Habbit) {
+function countFor(h: Habit) {
 	return props.mode === "log"
-		? (habbitsStore.selectedCounts[h.name] ?? 0)
+		? (habitsStore.selectedCounts[h.name] ?? 0)
 		: (goalCounts.value[h.name] ?? 0);
 }
 
-function badgeFor(h: Habbit) {
+function badgeFor(h: Habit) {
 	const n = countFor(h);
 	if (n === 0) return null;
 	return props.mode === "goal" || n > 1 ? `×${n}` : "✓";
 }
 
-function tileLabel(h: Habbit) {
+function tileLabel(h: Habit) {
 	const n = countFor(h);
 	const name = displayName(h);
 	if (n === 0) return props.mode === "log" ? `Log ${name}` : `Add goal: ${name}`;

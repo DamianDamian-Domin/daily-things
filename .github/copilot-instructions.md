@@ -28,9 +28,10 @@ You are a **senior software engineer** focused on modern, accessible, mobile-fir
 ## Data model (Firestore)
 - `users/{uid}` → `dailyGoals[]`, `recentlyUsed[]`, `customHabbits[]`, `reminders[]`, `preferences{}`
 - `users/{uid}/todos/{todoId}` → one `TodoItem` per document (with `subtasks[]` inside). Writes send only the changed todos. A legacy `users/{uid}.todos[]` array is moved here on first load (`migrateLegacyTodos`) and then removed.
-- `users/{uid}/habbits/{YYYY-MM-DD}` → `{ date, habbits: HabbitLog[], goalsSnapshot: GoalRef[] }`
+- `users/{uid}/habbits/{YYYY-MM-DD}` → `{ date, habbits: HabitLog[], goalsSnapshot: GoalRef[] }` (read as `DayEntry.habits`)
+- **Stored keys keep the old spelling** (`habbits` collection and field, `customHabbits`). Code says `habit` everywhere else; the service layer maps the keys (`DAY_LOGS_FIELD`, `toDayEntry`). Never rename stored keys without a data migration.
 - A goal "3× a day" = three goal entries with the same `name`.
-- New logs are slim (`{ id, name, at }`); display data is resolved from the catalog by `name` (`resolveHabbit`). **Never rename `name` in the catalog** — it is the stored key.
+- New logs are slim (`{ id, name, at }`); display data is resolved from the catalog by `name` (`resolveHabit`). **Never rename `name` in the catalog** — it is the stored key.
 - `users/{uid}.avatar` (own avatar; absent = default from uid), `users/{uid}.friendCode`, `preferences.shareProgress` / `shareHabits`.
 - All Firestore access goes through `src/services/userData.ts` (private data) and `src/services/friends.ts` (social).
 

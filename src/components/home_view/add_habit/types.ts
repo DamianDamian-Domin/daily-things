@@ -1,4 +1,4 @@
-import type { Habbit } from "@/libs/types";
+import type { Habit } from "@/libs/types";
 import type { SuperCategoryKey } from "@/utils/habitCatalog";
 import type { PaletteKey } from "@/utils/pixelIcons";
 
@@ -19,5 +19,5 @@ export interface HabitSection {
 	title: string;
 	icon: string;
 	palette: PaletteKey;
-	items: Habbit[];
+	items: Habit[];
 }

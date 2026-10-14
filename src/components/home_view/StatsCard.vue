@@ -58,7 +58,7 @@
 		<div class="stats-scroll">
 			<!-- KPI -->
 			<StatsKpis
-				:streak="habbitsStore.streak"
+				:streak="habitsStore.streak"
 				:summary="summary" />
 
 			<!-- TYDZIEŃ: dzień po dniu -->
@@ -76,8 +76,8 @@
 
 			<!-- TOP HABITY -->
 			<StatsTopHabits
-				v-if="topHabbits.length"
-				:habbits="topHabbits" />
+				v-if="topHabits.length"
+				:habits="topHabits" />
 
 			<!-- KATEGORIE -->
 			<StatsCategories
@@ -99,7 +99,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { useHabbitsStore } from "@/stores/habbits";
+import { useHabitsStore } from "@/stores/habits";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import StatsKpis from "./stats/StatsKpis.vue";
@@ -111,7 +111,7 @@ import { useStatsData, type StatsPeriod } from "./stats/useStatsData";
 
 defineProps<{ isActive: boolean }>();
 
-const habbitsStore = useHabbitsStore();
+const habitsStore = useHabitsStore();
 const carouselStore = useCarouselStore();
 
 const period = ref<StatsPeriod>("week");
@@ -122,13 +122,13 @@ function setPeriod(p: StatsPeriod) {
 	offset.value = 0;
 }
 
-const { periodLabel, days, weekDays, monthDays, monthLeadingBlanks, summary, topHabbits, categoryShares } =
+const { periodLabel, days, weekDays, monthDays, monthLeadingBlanks, summary, topHabits, categoryShares } =
 	useStatsData(period, offset);
 
 function openDay(key: string) {
 	const d = days.value.find((x) => x.key === key);
 	if (!d || d.future) return;
-	habbitsStore.setDate(d.dateObj);
+	habitsStore.setDate(d.dateObj);
 	carouselStore.setActiveCard("manage");
 }
 </script>

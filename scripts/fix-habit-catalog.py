@@ -6,7 +6,7 @@ poprawiamy tylko `icon`, `display_name` i `category`.
 import json
 import pathlib
 
-PATH = pathlib.Path(__file__).resolve().parent.parent / "src/assets/habbitList.json"
+PATH = pathlib.Path(__file__).resolve().parent.parent / "src/assets/habitList.json"
 
 # name -> (icon | None, display_name | None)
 FIXES = {

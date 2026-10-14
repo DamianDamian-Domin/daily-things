@@ -24,8 +24,8 @@
 								:key="g.name"
 								class="mini-tile">
 								<PixelIcon
-									:icon="g.habbit.icon"
-									:palette="paletteFor(g.habbit)"
+									:icon="g.habit.icon"
+									:palette="paletteFor(g.habit)"
 									:size="24" />
 								<span
 									v-if="g.count > 1"

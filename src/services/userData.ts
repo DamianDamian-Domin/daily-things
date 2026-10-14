@@ -16,7 +16,9 @@ import { db } from "@/firebase";
 import type {
 	DayEntry,
 	Goal,
-	Habbit,
+	GoalRef,
+	Habit,
+	HabitLog,
 	HabitReminder,
 	TodoItem,
 	UserPreferences,
@@ -42,7 +44,8 @@ export interface UserDoc {
 	todos?: unknown[];
 	dailyGoals?: Goal[];
 	recentlyUsed?: string[];
-	customHabbits?: Habbit[];
+	// Klucz w Firestore zostaje ze starą pisownią (zob. DAY_LOGS_FIELD)
+	customHabbits?: Habit[];
 	preferences?: Partial<UserPreferences>;
 	// Godziny przypomnień o celach (powiadomienia planuje urządzenie)
 	reminders?: HabitReminder[];
@@ -52,9 +55,29 @@ export interface UserDoc {
 }
 
 export const userDocRef = (uid: string) => doc(db, "users", uid);
-export const daysCollectionRef = (uid: string) => collection(db, "users", uid, "habbits");
+// Klucze w Firestore zostają ze starą pisownią „habbits” — zmiana wymagałaby
+// migracji wszystkich zapisanych danych. W kodzie dzień ma pole `habits`.
+const DAYS_COLLECTION = "habbits";
+export const DAY_LOGS_FIELD = "habbits";
+
+// Dokument dnia tak, jak leży w Firestore
+interface StoredDay {
+	date?: string;
+	habbits?: HabitLog[];
+	goalsSnapshot?: GoalRef[];
+}
+
+function toDayEntry(id: string, data: StoredDay): DayEntry {
+	return {
+		date: data.date ?? id,
+		habits: Array.isArray(data.habbits) ? data.habbits : [],
+		goalsSnapshot: Array.isArray(data.goalsSnapshot) ? data.goalsSnapshot : undefined,
+	};
+}
+
+export const daysCollectionRef = (uid: string) => collection(db, "users", uid, DAYS_COLLECTION);
 export const dayDocRef = (uid: string, dateKey: string) =>
-	doc(db, "users", uid, "habbits", dateKey);
+	doc(db, "users", uid, DAYS_COLLECTION, dateKey);
 export const todosCollectionRef = (uid: string) => collection(db, "users", uid, "todos");
 export const todoDocRef = (uid: string, todoId: string) => doc(db, "users", uid, "todos", todoId);
 
@@ -91,14 +114,7 @@ export async function fetchDays(uid: string, startKey: string, endKey: string): 
 		where("date", "<=", endKey),
 	);
 	const snap = await getDocs(q);
-	return snap.docs.map((d) => {
-		const data = d.data() as Partial<DayEntry>;
-		return {
-			date: data.date ?? d.id,
-			habbits: Array.isArray(data.habbits) ? data.habbits : [],
-			goalsSnapshot: Array.isArray(data.goalsSnapshot) ? data.goalsSnapshot : undefined,
-		};
-	});
+	return snap.docs.map((d) => toDayEntry(d.id, d.data() as StoredDay));
 }
 
 // ==========================================================================
@@ -146,7 +162,7 @@ export async function migrateLegacyTodos(uid: string, todos: TodoItem[]) {
 
 async function fetchAllDays(uid: string): Promise<DayEntry[]> {
 	const snap = await getDocs(daysCollectionRef(uid));
-	return snap.docs.map((d) => ({ date: d.id, ...(d.data() as Omit<DayEntry, "date">) }));
+	return snap.docs.map((d) => toDayEntry(d.id, d.data() as StoredDay));
 }
 
 // ==========================================================================
@@ -173,7 +189,7 @@ export async function exportUserData(uid: string): Promise<ExportedUserData> {
 
 export function hasMeaningfulData(data: ExportedUserData): boolean {
 	return (
-		data.days.some((d) => (d.habbits?.length ?? 0) > 0) ||
+		data.days.some((d) => (d.habits?.length ?? 0) > 0) ||
 		data.todos.length > 0 ||
 		(data.user.dailyGoals?.length ?? 0) > 0
 	);
@@ -193,7 +209,7 @@ export async function mergeUserData(targetUid: string, source: ExportedUserData)
 		...new Set([...(source.user.recentlyUsed ?? []), ...(target.recentlyUsed ?? [])]),
 	].slice(0, 12);
 	const customNames = new Set((target.customHabbits ?? []).map((h) => h.name));
-	const customHabbits = [
+	const customHabits = [
 		...(target.customHabbits ?? []),
 		...(source.user.customHabbits ?? []).filter((h) => !customNames.has(h.name)),
 	];
@@ -201,7 +217,7 @@ export async function mergeUserData(targetUid: string, source: ExportedUserData)
 	await saveUserFields(targetUid, {
 		dailyGoals,
 		recentlyUsed,
-		customHabbits,
+		customHabbits: customHabits,
 		...(!target.reminders?.length && source.user.reminders?.length
 			? { reminders: source.user.reminders }
 			: {}),
@@ -209,14 +225,14 @@ export async function mergeUserData(targetUid: string, source: ExportedUserData)
 	});
 
 	for (const day of source.days) {
-		if (!day.habbits?.length) continue;
+		if (!day.habits?.length) continue;
 		const ref = dayDocRef(targetUid, day.date);
 		const existing = await getDoc(ref);
 		await setDoc(
 			ref,
 			{
 				date: day.date,
-				habbits: arrayUnion(...day.habbits),
+				[DAY_LOGS_FIELD]: arrayUnion(...day.habits),
 				...(existing.exists() || !day.goalsSnapshot ? {} : { goalsSnapshot: day.goalsSnapshot }),
 			},
 			{ merge: true },

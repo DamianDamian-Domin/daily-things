@@ -1,10 +1,10 @@
-export type HabbitSeverity = "success" | "danger";
+export type HabitSeverity = "success" | "danger";
 
-// Pozycja katalogu habitów (src/assets/habbitList.json) lub własny habit użytkownika
-export interface Habbit {
+// Pozycja katalogu habitów (src/assets/habitList.json) lub własny habit użytkownika
+export interface Habit {
 	name: string; // stabilny klucz zapisywany w Firestore — nie zmieniać
 	icon: string;
-	severity: HabbitSeverity | string;
+	severity: HabitSeverity | string;
 	tags: string[];
 	origin: string; // "system" | "user"
 	display_name: string;
@@ -12,9 +12,9 @@ export interface Habbit {
 	id?: string;
 }
 
-// Pojedyncze odhaczenie habitu w danym dniu (users/{uid}/habbits/{YYYY-MM-DD}.habbits[])
-// Nowe wpisy zapisujemy „odchudzone” (id, name, at); stare wpisy mają pełną kopię Habbit.
-export interface HabbitLog {
+// Pojedyncze odhaczenie habitu w danym dniu (users/{uid}/habits/{YYYY-MM-DD}.habits[])
+// Nowe wpisy zapisujemy „odchudzone” (id, name, at); stare wpisy mają pełną kopię Habit.
+export interface HabitLog {
 	id: string;
 	name: string;
 	at?: number; // znacznik czasu odhaczenia (ms)
@@ -38,7 +38,7 @@ export interface GoalRef {
 
 export interface DayEntry {
 	date: string;
-	habbits: HabbitLog[];
+	habits: HabitLog[];
 	goalsSnapshot?: GoalRef[];
 }
 
@@ -54,15 +54,15 @@ export interface HabitReminder {
 	time: string;
 }
 
-export interface GroupedHabbit {
+export interface GroupedHabit {
 	name: string;
-	habbit: Habbit;
+	habit: Habit;
 	count: number;
 }
 
 export interface GroupedGoal {
 	name: string;
-	habbit: Habbit;
+	habit: Habit;
 	target: number;
 	done: number;
 }

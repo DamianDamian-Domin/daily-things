@@ -140,14 +140,14 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
 import Dialog from "primevue/dialog";
-import type { Habbit } from "@/libs/types";
-import { useHabbitsStore } from "@/stores/habbits";
+import type { Habit } from "@/libs/types";
+import { useHabitsStore } from "@/stores/habits";
 import { useSound } from "@/utils/useSound";
 import {
 	CUSTOM_CATEGORY,
-	STARTER_HABBITS,
+	STARTER_HABITS,
 	SUPER_CATEGORIES,
-	findCatalogHabbit,
+	findCatalogHabit,
 	isNegative,
 	matchesQuery,
 	normalizeText,
@@ -164,7 +164,7 @@ const props = defineProps<{ mode: "log" | "goal" }>();
 const emit = defineEmits<{ (e: "logged"): void }>();
 const visible = defineModel<boolean>({ default: false });
 
-const habbitsStore = useHabbitsStore();
+const habitsStore = useHabitsStore();
 const { playHabitCheck, playUncheck } = useSound();
 
 // Filtry „specjalne” (poza kategoriami katalogu)
@@ -195,7 +195,7 @@ const managing = ref(false);
 const recentSnapshot = ref<string[]>([]);
 
 const logTitle = computed(() =>
-	habbitsStore.isSelectedToday ? "What did you do today?" : "What did you do that day?",
+	habitsStore.isSelectedToday ? "What did you do today?" : "What did you do that day?",
 );
 
 function onShow() {
@@ -204,7 +204,7 @@ function onShow() {
 	sessionAdds.value = 0;
 	creating.value = false;
 	managing.value = false;
-	recentSnapshot.value = [...habbitsStore.recentHabbits];
+	recentSnapshot.value = [...habitsStore.recentHabits];
 	nextTick(() => shelfRef.value?.reset());
 	// Na telefonie nie otwieramy od razu klawiatury — zasłoniłaby listę
 	if (window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
@@ -221,12 +221,12 @@ watch([query, category], () => {
 // ==========================================================================
 // Celem może być tylko coś, czego chcemy robić więcej — bez złych nawyków
 const pool = computed(() =>
-	habbitsStore.allHabbitsList.filter((h) => props.mode === "log" || !isNegative(h)),
+	habitsStore.allHabitsList.filter((h) => props.mode === "log" || !isNegative(h)),
 );
 
 // Kafelki filtrów — tylko te, w których coś jest (w trybie celów nie ma złych nawyków)
 const filters = computed<CategoryFilter[]>(() => {
-	const has = (test: (h: Habbit) => boolean) => pool.value.some(test);
+	const has = (test: (h: Habit) => boolean) => pool.value.some(test);
 	const list: CategoryFilter[] = [ALL_FILTER];
 	if (has((h) => h.origin === "user")) list.push(CUSTOM_CATEGORY);
 	if (has(isNegative)) list.push(NEGATIVE_FILTER);
@@ -240,7 +240,7 @@ watch(filters, (list) => {
 	if (!list.some((f) => f.key === category.value)) category.value = "all";
 });
 
-function inFilter(h: Habbit, key: FilterKey = category.value) {
+function inFilter(h: Habit, key: FilterKey = category.value) {
 	if (key === "all") return true;
 	if (key === "negative") return isNegative(h);
 	return superCategoryOf(h)?.key === key;
@@ -283,11 +283,11 @@ const sections = computed<HabitSection[]>(() => {
 
 	const result: HabitSection[] = [];
 	const shown = new Set<string>();
-	const take = (items: Habbit[]) => items.filter((h) => !shown.has(h.name) && shown.add(h.name));
+	const take = (items: Habit[]) => items.filter((h) => !shown.has(h.name) && shown.add(h.name));
 
 	if (props.mode === "goal") {
-		const current = [...new Set(habbitsStore.dailyGoalsList.map((g) => g.name))].map((name) =>
-			habbitsStore.resolve({ name }),
+		const current = [...new Set(habitsStore.dailyGoalsList.map((g) => g.name))].map((name) =>
+			habitsStore.resolve({ name }),
 		);
 		if (current.length)
 			result.push({ key: "current", title: "Your goals", icon: "flag", palette: "yellow", items: take(current) });
@@ -300,10 +300,10 @@ const sections = computed<HabitSection[]>(() => {
 
 	const recent = recentSnapshot.value
 		.map((name) => pool.value.find((h) => h.name === name))
-		.filter((h): h is Habbit => Boolean(h));
+		.filter((h): h is Habit => Boolean(h));
 	const suggested = recent.length
 		? recent
-		: STARTER_HABBITS.map((n) => findCatalogHabbit(n)).filter((h): h is Habbit => Boolean(h));
+		: STARTER_HABITS.map((n) => findCatalogHabit(n)).filter((h): h is Habit => Boolean(h));
 	const suggestedItems = take(suggested.slice(0, 12));
 	if (suggestedItems.length)
 		result.push({
@@ -337,7 +337,7 @@ const emptyText = computed(() => {
 
 const summary = computed(() => {
 	if (props.mode === "goal") {
-		const total = habbitsStore.dailyGoalsList.length;
+		const total = habitsStore.dailyGoalsList.length;
 		return total ? `${total} ${total === 1 ? "goal" : "goals"} a day` : "No goals yet";
 	}
 	if (sessionAdds.value === 0) return "Nothing added yet";
@@ -347,27 +347,27 @@ const summary = computed(() => {
 // ==========================================================================
 // Akcje
 // ==========================================================================
-async function onTap(h: Habbit) {
+async function onTap(h: Habit) {
 	if (managing.value) return;
 	if (props.mode === "log") {
 		playHabitCheck();
-		if (habbitsStore.logHabbit(h)) {
+		if (habitsStore.logHabit(h)) {
 			sessionAdds.value++;
 			emit("logged");
 		}
 	} else {
 		playHabitCheck();
-		await habbitsStore.addDailyGoal(h);
+		await habitsStore.addDailyGoal(h);
 	}
 }
 
-async function onMinus(h: Habbit) {
+async function onMinus(h: Habit) {
 	playUncheck();
 	if (props.mode === "log") {
-		const removed = habbitsStore.unlogHabbit(h.name);
+		const removed = habitsStore.unlogHabit(h.name);
 		if (removed && sessionAdds.value > 0) sessionAdds.value--;
 	} else {
-		await habbitsStore.removeGoalInstance(h.name);
+		await habitsStore.removeGoalInstance(h.name);
 	}
 }
 
@@ -396,19 +396,19 @@ function startCreating() {
 
 async function submitCustom() {
 	if (!customName.value.trim()) return;
-	const habbit = await habbitsStore.createCustomHabbit(
+	const habit = await habitsStore.createCustomHabit(
 		customName.value,
 		customIcon.value,
 		customNegative.value,
 	);
 	creating.value = false;
 	query.value = "";
-	await onTap(habbit);
+	await onTap(habit);
 }
 
-async function deleteCustom(h: Habbit) {
-	await habbitsStore.deleteCustomHabbit(h.name);
-	if (!habbitsStore.customHabbits.length) managing.value = false;
+async function deleteCustom(h: Habit) {
+	await habitsStore.deleteCustomHabit(h.name);
+	if (!habitsStore.customHabits.length) managing.value = false;
 }
 </script>
 

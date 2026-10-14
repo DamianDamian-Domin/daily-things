@@ -1,6 +1,6 @@
 import { computed, watch, type Ref } from "vue";
-import type { GroupedHabbit, Habbit } from "@/libs/types";
-import { useHabbitsStore } from "@/stores/habbits";
+import type { GroupedHabit, Habit } from "@/libs/types";
+import { useHabitsStore } from "@/stores/habits";
 import {
 	addDays,
 	daysInRange,
@@ -27,7 +27,7 @@ export interface StatsDay {
 	isToday: boolean;
 	total: number;
 	perfect: boolean;
-	groups: GroupedHabbit[];
+	groups: GroupedHabit[];
 }
 
 export interface StatsMonthDay extends StatsDay {
@@ -41,7 +41,7 @@ export interface StatsSummary {
 	elapsedDays: number;
 }
 
-export interface StatsTopHabbit extends GroupedHabbit {
+export interface StatsTopHabit extends GroupedHabit {
 	pct: number;
 }
 
@@ -57,7 +57,7 @@ export interface StatsCategoryShare {
 
 // Wszystkie wyliczenia statystyk dla wybranego okresu (tydzień/miesiąc + przesunięcie)
 export function useStatsData(period: Ref<StatsPeriod>, offset: Ref<number>) {
-	const habbitsStore = useHabbitsStore();
+	const habitsStore = useHabitsStore();
 
 	const range = computed(() => {
 		const today = startOfDay();
@@ -79,21 +79,21 @@ export function useStatsData(period: Ref<StatsPeriod>, offset: Ref<number>) {
 
 	// Doczytujemy tylko brakujące miesiące (store cache'uje je na całą sesję)
 	watch(
-		[range, () => habbitsStore.dailyGoalsList],
-		() => habbitsStore.ensureRange(range.value.start, range.value.end),
+		[range, () => habitsStore.dailyGoalsList],
+		() => habitsStore.ensureRange(range.value.start, range.value.end),
 		{ immediate: true },
 	);
 
 	// ==========================================
 	// DANE DNI
 	// ==========================================
-	const todayKey = computed(() => habbitsStore.todayKey);
+	const todayKey = computed(() => habitsStore.todayKey);
 
 	const days = computed<StatsDay[]>(() =>
 		daysInRange(range.value.start, range.value.end).map((date) => {
 			const key = toDateKey(date);
-			const logs = habbitsStore.logsOn(key);
-			const goals = habbitsStore.dayGoalsProgress(key);
+			const logs = habitsStore.logsOn(key);
+			const goals = habitsStore.dayGoalsProgress(key);
 			return {
 				key,
 				dateObj: date,
@@ -104,7 +104,7 @@ export function useStatsData(period: Ref<StatsPeriod>, offset: Ref<number>) {
 				isToday: key === todayKey.value,
 				total: logs.length,
 				perfect: goals.perfect,
-				groups: habbitsStore.groupLogs(logs).sort((a, b) => b.count - a.count),
+				groups: habitsStore.groupLogs(logs).sort((a, b) => b.count - a.count),
 			};
 		}),
 	);
@@ -131,7 +131,7 @@ export function useStatsData(period: Ref<StatsPeriod>, offset: Ref<number>) {
 			elapsedDays++;
 			total += d.total;
 			if (d.perfect) perfectDays++;
-			for (const g of d.groups) if (!isNegative(g.habbit)) positive += g.count;
+			for (const g of d.groups) if (!isNegative(g.habit)) positive += g.count;
 		}
 		return { total, positive, perfectDays, elapsedDays };
 	});
@@ -140,18 +140,18 @@ export function useStatsData(period: Ref<StatsPeriod>, offset: Ref<number>) {
 	// TOP I KATEGORIE
 	// ==========================================
 	const totals = computed(() => {
-		const map = new Map<string, { name: string; habbit: Habbit; count: number }>();
+		const map = new Map<string, { name: string; habit: Habit; count: number }>();
 		for (const d of days.value) {
 			for (const g of d.groups) {
 				const entry = map.get(g.name);
 				if (entry) entry.count += g.count;
-				else map.set(g.name, { name: g.name, habbit: g.habbit, count: g.count });
+				else map.set(g.name, { name: g.name, habit: g.habit, count: g.count });
 			}
 		}
 		return [...map.values()].sort((a, b) => b.count - a.count);
 	});
 
-	const topHabbits = computed<StatsTopHabbit[]>(() => {
+	const topHabits = computed<StatsTopHabit[]>(() => {
 		const top = totals.value.slice(0, 8);
 		const max = top[0]?.count ?? 1;
 		return top.map((t) => ({ ...t, pct: Math.max(6, Math.round((t.count / max) * 100)) }));
@@ -161,8 +161,8 @@ export function useStatsData(period: Ref<StatsPeriod>, offset: Ref<number>) {
 		const map = new Map<string, Omit<StatsCategoryShare, "pct">>();
 		let sum = 0;
 		for (const t of totals.value) {
-			if (isNegative(t.habbit)) continue;
-			const cat = superCategoryOf(t.habbit) ?? CUSTOM_CATEGORY;
+			if (isNegative(t.habit)) continue;
+			const cat = superCategoryOf(t.habit) ?? CUSTOM_CATEGORY;
 			const entry = map.get(cat.key);
 			if (entry) entry.count += t.count;
 			else
@@ -190,7 +190,7 @@ export function useStatsData(period: Ref<StatsPeriod>, offset: Ref<number>) {
 		monthDays,
 		monthLeadingBlanks,
 		summary,
-		topHabbits,
+		topHabits,
 		categoryShares,
 	};
 }

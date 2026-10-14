@@ -55,14 +55,14 @@ VITE_PUBLIC_URL=
 src/
   services/userData.ts     private Firestore data (users/**) — paths + reads/writes
   services/friends.ts      social Firestore data (profiles, friendCodes, friendships, cheers)
-  stores/                  auth, habbits, todos, userPreferences, toast, profile (my avatar/code)
+  stores/                  auth, habits, todos, userPreferences, toast, profile (my avatar/code)
                            + lazy: friends (listeners, requests), profileSync (publishing), social (loader)
   utils/date.ts            LOCAL date keys (YYYY-MM-DD) + formatting
   utils/habitCatalog.ts    catalog, categories, palettes, search
   utils/pixelIcons.ts      renders pixel sprites to cached SVG data URLs
   utils/avatar.ts          procedural pixel-art avatars (layered 32×32 masks → SVG data URL)
   components/ui/           PixelIcon, PixelAvatar, ToastHost
-  components/home_view/    HabbitsCard, HabitTile, AddHabitDialog, ToDosCard, StatsCard, FriendsCard, DatePicker
+  components/home_view/    HabitsCard, HabitTile, AddHabitDialog, ToDosCard, StatsCard, FriendsCard, DatePicker
   components/friends/      AvatarEditor, AddFriendDialog, FriendDetailDialog
   components/settings/     AccountSheet, ProfilePanel, SettingsPanel
   style.css                design tokens (--dt-*) + shared component classes (.dt-btn, .dt-card…)

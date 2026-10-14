@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { computed, ref, shallowRef } from "vue";
 import type { Unsubscribe } from "firebase/firestore";
 import { useAuthStore } from "@/stores/auth";
-import { useHabbitsStore } from "@/stores/habbits";
+import { useHabitsStore } from "@/stores/habits";
 import { useProfileStore } from "@/stores/profile";
 import { useProfileSyncStore } from "@/stores/profileSync";
 import { INVITE_KEY } from "@/stores/social";
@@ -106,7 +106,7 @@ function liveStreak(stats: ProfileStats | null, today: DateKey): number {
 
 export const useFriendsStore = defineStore("friends", () => {
 	const authStore = useAuthStore();
-	const habbitsStore = useHabbitsStore();
+	const habitsStore = useHabitsStore();
 	const profileStore = useProfileStore();
 	const profileSync = useProfileSyncStore();
 	const toast = useToastStore();
@@ -247,7 +247,7 @@ export const useFriendsStore = defineStore("friends", () => {
 	const visible = computed(() => friendships.value.filter((f) => !hidden.value.has(f.id)));
 
 	const friends = computed<FriendRow[]>(() => {
-		const today = habbitsStore.todayKey;
+		const today = habitsStore.todayKey;
 		return visible.value
 			.filter((f) => f.status === "accepted")
 			.map((f) => {
@@ -289,7 +289,7 @@ export const useFriendsStore = defineStore("friends", () => {
 	// TABLICA TYGODNIA (% celów od poniedziałku; remis → dłuższa seria)
 	// ==========================================
 	const weekKeys = computed(() => {
-		const today = fromDateKey(habbitsStore.todayKey);
+		const today = fromDateKey(habitsStore.todayKey);
 		const keys: DateKey[] = [];
 		for (let d = startOfWeek(today); d <= today; d = addDays(d, 1)) keys.push(toDateKey(d));
 		return keys;
@@ -315,7 +315,7 @@ export const useFriendsStore = defineStore("friends", () => {
 		let myDone = 0;
 		let myTotal = 0;
 		for (const key of weekKeys.value) {
-			const day = habbitsStore.dayGoalsProgress(key);
+			const day = habitsStore.dayGoalsProgress(key);
 			myDone += day.done;
 			myTotal += day.total;
 		}
@@ -329,7 +329,7 @@ export const useFriendsStore = defineStore("friends", () => {
 				total: myTotal,
 				ratio: myTotal ? myDone / myTotal : 0,
 				pct: myTotal ? Math.round((myDone / myTotal) * 100) : 0,
-				streak: habbitsStore.streak,
+				streak: habitsStore.streak,
 			},
 		];
 		for (const f of friends.value) {
@@ -488,14 +488,14 @@ export const useFriendsStore = defineStore("friends", () => {
 		}
 	}
 	function hasCheeredToday(friendUid: string) {
-		return cheered.value[friendUid] === habbitsStore.todayKey;
+		return cheered.value[friendUid] === habitsStore.todayKey;
 	}
 
 	async function cheer(row: FriendRow) {
 		const me = uid.value;
 		if (!me || hasCheeredToday(row.uid)) return;
 		const previous = { ...cheered.value };
-		cheered.value = { ...cheered.value, [row.uid]: habbitsStore.todayKey };
+		cheered.value = { ...cheered.value, [row.uid]: habitsStore.todayKey };
 		try {
 			await sendCheer(me, row.uid, profileStore.publicName);
 			writeStorage(`dt-cheered:${me}`, JSON.stringify(cheered.value));

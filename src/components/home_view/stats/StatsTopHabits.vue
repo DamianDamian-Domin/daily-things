@@ -9,20 +9,20 @@
 		</h3>
 		<ul class="bars">
 			<li
-				v-for="h in habbits"
+				v-for="h in habits"
 				:key="h.name"
 				class="bar-row">
 				<PixelIcon
-					:icon="h.habbit.icon"
-					:palette="paletteFor(h.habbit)"
+					:icon="h.habit.icon"
+					:palette="paletteFor(h.habit)"
 					:size="26" />
-				<span class="bar-name">{{ h.habbit.display_name }}</span>
+				<span class="bar-name">{{ h.habit.display_name }}</span>
 				<span
 					class="bar-track"
 					aria-hidden="true">
 					<span
 						class="bar-fill"
-						:class="{ negative: h.habbit.severity === 'danger' }"
+						:class="{ negative: h.habit.severity === 'danger' }"
 						:style="{ width: `${h.pct}%` }"></span>
 				</span>
 				<span class="bar-count">{{ h.count }}×</span>
@@ -34,9 +34,9 @@
 <script setup lang="ts">
 import { paletteFor } from "@/utils/habitCatalog";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
-import type { StatsTopHabbit } from "./useStatsData";
+import type { StatsTopHabit } from "./useStatsData";
 
-defineProps<{ habbits: StatsTopHabbit[] }>();
+defineProps<{ habits: StatsTopHabit[] }>();
 </script>
 
 <style scoped>

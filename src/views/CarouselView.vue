@@ -114,7 +114,7 @@ import { useLayout } from "@/utils/useLayout";
 
 import ToDosCard from "../components/home_view/ToDosCard.vue";
 import StatsCard from "../components/home_view/StatsCard.vue";
-import HabbitsCard from "@/components/home_view/HabbitsCard.vue";
+import HabitsCard from "@/components/home_view/HabitsCard.vue";
 // Karta Znajomi w osobnym pliku JS — pobierana dopiero, gdy ma się pokazać
 import { defineAsyncComponent } from "vue";
 const FriendsCard = defineAsyncComponent(() => import("@/components/home_view/FriendsCard.vue"));
@@ -126,7 +126,7 @@ const TRANSITION_DURATION_MS = 420;
 const isAnimating = ref(false);
 
 const cardComponentMap = {
-	manage: HabbitsCard,
+	manage: HabitsCard,
 	textAdd: ToDosCard,
 	stats: StatsCard,
 	friends: FriendsCard,

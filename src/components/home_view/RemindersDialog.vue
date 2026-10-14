@@ -55,8 +55,8 @@
 					class="rem-row">
 					<span class="rem-icon">
 						<PixelIcon
-							:icon="row.habbit.icon"
-							:palette="paletteFor(row.habbit)"
+							:icon="row.habit.icon"
+							:palette="paletteFor(row.habit)"
 							:size="28" />
 					</span>
 					<span class="rem-name">
@@ -127,7 +127,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import Dialog from "primevue/dialog";
-import { useHabbitsStore } from "@/stores/habbits";
+import { useHabitsStore } from "@/stores/habits";
 import { useRemindersStore } from "@/stores/reminders";
 import { useToastStore } from "@/stores/toast";
 import { displayName, paletteFor } from "@/utils/habitCatalog";
@@ -135,7 +135,7 @@ import PixelIcon from "@/components/ui/PixelIcon.vue";
 
 const visible = defineModel<boolean>({ default: false });
 
-const habbitsStore = useHabbitsStore();
+const habitsStore = useHabitsStore();
 const remindersStore = useRemindersStore();
 const toast = useToastStore();
 
@@ -144,11 +144,11 @@ const DEFAULT_TIME = "09:00";
 // Jeden wiersz na cel (cel „3× dziennie” to wciąż jedno przypomnienie)
 const rows = computed(() => {
 	const seen = new Map<string, number>();
-	for (const g of habbitsStore.dailyGoalsList) seen.set(g.name, (seen.get(g.name) ?? 0) + 1);
+	for (const g of habitsStore.dailyGoalsList) seen.set(g.name, (seen.get(g.name) ?? 0) + 1);
 	return [...seen.entries()].map(([name, target]) => {
-		const goal = habbitsStore.dailyGoalsList.find((g) => g.name === name)!;
-		const habbit = habbitsStore.resolve(goal);
-		return { name, target, habbit, label: displayName(habbit), time: remindersStore.timeFor(name) };
+		const goal = habitsStore.dailyGoalsList.find((g) => g.name === name)!;
+		const habit = habitsStore.resolve(goal);
+		return { name, target, habit, label: displayName(habit), time: remindersStore.timeFor(name) };
 	});
 });
 

@@ -7,14 +7,20 @@ import type {
 	Goal,
 	GoalRef,
 	GroupedGoal,
-	GroupedHabbit,
-	Habbit,
-	HabbitLog,
+	GroupedHabit,
+	Habit,
+	HabitLog,
 } from "@/libs/types";
 import { useAuthStore } from "@/stores/auth";
 import { plain } from "@/utils/plain";
 import { useToastStore } from "@/stores/toast";
-import { dayDocRef, fetchDays, saveUserFields, type UserDoc } from "@/services/userData";
+import {
+	DAY_LOGS_FIELD,
+	dayDocRef,
+	fetchDays,
+	saveUserFields,
+	type UserDoc,
+} from "@/services/userData";
 import {
 	addDays,
 	monthBounds,
@@ -25,13 +31,13 @@ import {
 	todayKey as computeTodayKey,
 	type DateKey,
 } from "@/utils/date";
-import { CATALOG, findCatalogHabbit, resolveHabbit } from "@/utils/habitCatalog";
+import { CATALOG, findCatalogHabit, resolveHabit } from "@/utils/habitCatalog";
 
 const RECENT_LIMIT = 12;
 const MAX_STREAK_LOOKBACK_MONTHS = 24;
 const SAVE_ERROR = "Couldn't save that — check your connection and try again.";
 
-export const useHabbitsStore = defineStore("habbits", () => {
+export const useHabitsStore = defineStore("habits", () => {
 	const authStore = useAuthStore();
 	const toast = useToastStore();
 	const uid = computed(() => authStore.userUid);
@@ -43,8 +49,8 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	const selectedDate = ref<Date>(startOfDay());
 	const days = ref<Record<DateKey, DayEntry>>({});
 	const dailyGoalsList = ref<Goal[]>([]);
-	const recentHabbits = ref<string[]>([]);
-	const customHabbits = ref<Habbit[]>([]);
+	const recentHabits = ref<string[]>([]);
+	const customHabits = ref<Habit[]>([]);
 	const isHistoryLoading = ref(false);
 
 	// Cache doładowanych miesięcy — każdy miesiąc czytamy z Firestore raz na sesję
@@ -72,10 +78,10 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	// ==========================================================================
 	// KATALOG
 	// ==========================================================================
-	const allHabbitsList = computed<Habbit[]>(() => [...customHabbits.value, ...CATALOG]);
+	const allHabitsList = computed<Habit[]>(() => [...customHabits.value, ...CATALOG]);
 
-	function resolve(entry: HabbitLog | GoalRef | Habbit): Habbit {
-		return resolveHabbit(entry, customHabbits.value);
+	function resolve(entry: HabitLog | GoalRef | Habit): Habit {
+		return resolveHabit(entry, customHabits.value);
 	}
 
 	// ==========================================================================
@@ -84,8 +90,8 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	const selectedKey = computed(() => toDateKey(selectedDate.value));
 	const isSelectedToday = computed(() => selectedKey.value === todayKey.value);
 
-	function logsOn(key: DateKey): HabbitLog[] {
-		return days.value[key]?.habbits ?? [];
+	function logsOn(key: DateKey): HabitLog[] {
+		return days.value[key]?.habits ?? [];
 	}
 
 	function countsOn(key: DateKey): Record<string, number> {
@@ -94,19 +100,19 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		return counts;
 	}
 
-	function groupLogs(logs: HabbitLog[]): GroupedHabbit[] {
-		const map = new Map<string, GroupedHabbit>();
+	function groupLogs(logs: HabitLog[]): GroupedHabit[] {
+		const map = new Map<string, GroupedHabit>();
 		for (const log of logs) {
 			const group = map.get(log.name);
 			if (group) group.count++;
-			else map.set(log.name, { name: log.name, habbit: resolve(log), count: 1 });
+			else map.set(log.name, { name: log.name, habit: resolve(log), count: 1 });
 		}
 		return [...map.values()];
 	}
 
 	const selectedLogs = computed(() => logsOn(selectedKey.value));
 	const selectedCounts = computed(() => countsOn(selectedKey.value));
-	const groupedSelectedDayHabbits = computed(() => groupLogs(selectedLogs.value));
+	const groupedSelectedDayHabits = computed(() => groupLogs(selectedLogs.value));
 
 	// ==========================================================================
 	// CELE
@@ -130,7 +136,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		for (const goal of goals) {
 			const group = map.get(goal.name);
 			if (group) group.target++;
-			else map.set(goal.name, { name: goal.name, habbit: resolve(goal), target: 1, done: 0 });
+			else map.set(goal.name, { name: goal.name, habit: resolve(goal), target: 1, done: 0 });
 		}
 		for (const group of map.values()) group.done = Math.min(counts[group.name] ?? 0, group.target);
 		return [...map.values()];
@@ -199,8 +205,8 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	function mergeRemoteDay(remote: DayEntry) {
 		const local = days.value[remote.date];
 		if (local && pendingDays.get(remote.date)) {
-			const known = new Set(local.habbits.map((l) => l.id));
-			local.habbits.push(...remote.habbits.filter((l) => !known.has(l.id)));
+			const known = new Set(local.habits.map((l) => l.id));
+			local.habits.push(...remote.habits.filter((l) => !known.has(l.id)));
 			local.goalsSnapshot ??= remote.goalsSnapshot;
 			return;
 		}
@@ -258,8 +264,8 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 	function hydrate(userDoc: UserDoc) {
 		dailyGoalsList.value = Array.isArray(userDoc.dailyGoals) ? userDoc.dailyGoals : [];
-		recentHabbits.value = Array.isArray(userDoc.recentlyUsed) ? userDoc.recentlyUsed : [];
-		customHabbits.value = Array.isArray(userDoc.customHabbits) ? userDoc.customHabbits : [];
+		recentHabits.value = Array.isArray(userDoc.recentlyUsed) ? userDoc.recentlyUsed : [];
+		customHabits.value = Array.isArray(userDoc.customHabbits) ? userDoc.customHabbits : [];
 	}
 
 	// ==========================================================================
@@ -275,15 +281,15 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	}
 
 	function localDay(key: DateKey): DayEntry {
-		if (!days.value[key]) days.value[key] = { date: key, habbits: [] };
+		if (!days.value[key]) days.value[key] = { date: key, habits: [] };
 		return days.value[key];
 	}
 
 	// Nowe wpisy zapisujemy „odchudzone” — nazwa jest kluczem do katalogu.
 	// Własne habity niosą ikonę i nazwę, żeby historia przetrwała ich usunięcie.
-	function slim<T extends GoalRef>(habbit: Habbit | GoalRef, base: T): T {
-		if (findCatalogHabbit(habbit.name)) return base;
-		const resolved = resolve(habbit);
+	function slim<T extends GoalRef>(habit: Habit | GoalRef, base: T): T {
+		if (findCatalogHabit(habit.name)) return base;
+		const resolved = resolve(habit);
 		return {
 			...base,
 			icon: resolved.icon,
@@ -303,53 +309,53 @@ export const useHabbitsStore = defineStore("habbits", () => {
 
 	// Zapisy są optymistyczne: stan lokalny zmienia się od razu, a zapis do
 	// Firestore leci w tle (offline trafia do kolejki). Przy błędzie cofamy zmianę.
-	function logHabbit(habbit: Habbit, key: DateKey = selectedKey.value): HabbitLog | null {
+	function logHabit(habit: Habit, key: DateKey = selectedKey.value): HabitLog | null {
 		const currentUid = uid.value;
 		if (!currentUid) {
 			authStore.openAuthDialog("welcome");
 			return null;
 		}
-		const log: HabbitLog = slim(habbit, { id: nanoid(), name: habbit.name, at: Date.now() });
+		const log: HabitLog = slim(habit, { id: nanoid(), name: habit.name, at: Date.now() });
 		const snapshot = snapshotToWrite(key);
 		const entry = localDay(key);
-		entry.habbits.push(log);
+		entry.habits.push(log);
 		if (snapshot) entry.goalsSnapshot = snapshot;
-		touchRecent(habbit.name);
+		touchRecent(habit.name);
 
 		beginWrite(key);
 		setDoc(
 			dayDocRef(currentUid, key),
 			{
 				date: key,
-				habbits: arrayUnion(log),
+				[DAY_LOGS_FIELD]: arrayUnion(log),
 				...(snapshot ? { goalsSnapshot: snapshot } : {}),
 			},
 			{ merge: true },
 		)
 			.catch((err) => {
-				console.error("logHabbit failed", err);
-				const idx = entry.habbits.findIndex((l) => l.id === log.id);
-				if (idx !== -1) entry.habbits.splice(idx, 1);
+				console.error("logHabit failed", err);
+				const idx = entry.habits.findIndex((l) => l.id === log.id);
+				if (idx !== -1) entry.habits.splice(idx, 1);
 				toast.error(SAVE_ERROR);
 			})
 			.finally(() => endWrite(key));
 		return log;
 	}
 
-	function removeLog(logId: string, key: DateKey = selectedKey.value): HabbitLog | null {
+	function removeLog(logId: string, key: DateKey = selectedKey.value): HabitLog | null {
 		const currentUid = uid.value;
 		const entry = days.value[key];
 		if (!currentUid || !entry) return null;
-		const idx = entry.habbits.findIndex((l) => l.id === logId);
+		const idx = entry.habits.findIndex((l) => l.id === logId);
 		if (idx === -1) return null;
-		const removed = plain(entry.habbits[idx]);
-		entry.habbits.splice(idx, 1);
+		const removed = plain(entry.habits[idx]);
+		entry.habits.splice(idx, 1);
 
 		beginWrite(key);
-		updateDoc(dayDocRef(currentUid, key), { habbits: arrayRemove(removed) })
+		updateDoc(dayDocRef(currentUid, key), { [DAY_LOGS_FIELD]: arrayRemove(removed) })
 			.catch((err) => {
 				console.error("removeLog failed", err);
-				entry.habbits.splice(Math.min(idx, entry.habbits.length), 0, removed);
+				entry.habits.splice(Math.min(idx, entry.habits.length), 0, removed);
 				toast.error(SAVE_ERROR);
 			})
 			.finally(() => endWrite(key));
@@ -357,7 +363,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	}
 
 	// Usuwa ostatnie odhaczenie danego habitu (np. „−1” przy myciu zębów 3×)
-	function unlogHabbit(name: string, key: DateKey = selectedKey.value): HabbitLog | null {
+	function unlogHabit(name: string, key: DateKey = selectedKey.value): HabitLog | null {
 		const logs = logsOn(key);
 		for (let i = logs.length - 1; i >= 0; i--) {
 			if (logs[i].name === name) return removeLog(logs[i].id, key);
@@ -365,9 +371,9 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		return null;
 	}
 
-	function removeAllLogs(name: string, key: DateKey = selectedKey.value): HabbitLog[] {
+	function removeAllLogs(name: string, key: DateKey = selectedKey.value): HabitLog[] {
 		const toRemove = logsOn(key).filter((l) => l.name === name);
-		const removed: HabbitLog[] = [];
+		const removed: HabitLog[] = [];
 		for (const log of [...toRemove].reverse()) {
 			const r = removeLog(log.id, key);
 			if (r) removed.push(r);
@@ -376,22 +382,22 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	}
 
 	// Cofnięcie usunięcia — przywracamy dokładnie ten sam wpis (to samo id)
-	function restoreLogs(logs: HabbitLog[], key: DateKey = selectedKey.value) {
+	function restoreLogs(logs: HabitLog[], key: DateKey = selectedKey.value) {
 		const currentUid = uid.value;
 		if (!currentUid || logs.length === 0) return;
 		const copies = logs.map((l) => plain(l));
 		const entry = localDay(key);
-		entry.habbits.push(...copies);
+		entry.habits.push(...copies);
 		beginWrite(key);
 		setDoc(
 			dayDocRef(currentUid, key),
-			{ date: key, habbits: arrayUnion(...copies) },
+			{ date: key, [DAY_LOGS_FIELD]: arrayUnion(...copies) },
 			{ merge: true },
 		)
 			.catch((err) => {
 				console.error("restoreLogs failed", err);
 				const ids = new Set(copies.map((l) => l.id));
-				entry.habbits = entry.habbits.filter((l) => !ids.has(l.id));
+				entry.habits = entry.habits.filter((l) => !ids.has(l.id));
 				toast.error(SAVE_ERROR);
 			})
 			.finally(() => endWrite(key));
@@ -402,16 +408,16 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		const key = selectedKey.value;
 		const entry = days.value[key];
 		if (!currentUid || !entry) return;
-		const byName = new Map<string, HabbitLog[]>();
-		for (const log of entry.habbits) {
+		const byName = new Map<string, HabitLog[]>();
+		for (const log of entry.habits) {
 			if (!byName.has(log.name)) byName.set(log.name, []);
 			byName.get(log.name)!.push(log);
 		}
-		entry.habbits = names.flatMap((n) => byName.get(n) ?? []);
+		entry.habits = names.flatMap((n) => byName.get(n) ?? []);
 		beginWrite(key);
 		try {
 			await updateDoc(dayDocRef(currentUid, key), {
-				habbits: entry.habbits.map((l) => plain(l)),
+				[DAY_LOGS_FIELD]: entry.habits.map((l) => plain(l)),
 			});
 		} catch (err) {
 			console.error("reorder failed", err);
@@ -426,7 +432,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	// ==========================================================================
 	let recentTimer: ReturnType<typeof setTimeout> | null = null;
 	function touchRecent(name: string) {
-		recentHabbits.value = [name, ...recentHabbits.value.filter((n) => n !== name)].slice(
+		recentHabits.value = [name, ...recentHabits.value.filter((n) => n !== name)].slice(
 			0,
 			RECENT_LIMIT,
 		);
@@ -434,7 +440,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		const currentUid = uid.value;
 		recentTimer = setTimeout(() => {
 			if (!currentUid || uid.value !== currentUid) return;
-			saveUserFields(currentUid, { recentlyUsed: [...recentHabbits.value] }).catch((err) =>
+			saveUserFields(currentUid, { recentlyUsed: [...recentHabits.value] }).catch((err) =>
 				console.warn("recentlyUsed save failed", err),
 			);
 		}, 1500);
@@ -462,11 +468,11 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		}
 	}
 
-	async function addDailyGoal(habbit: Habbit | GoalRef) {
+	async function addDailyGoal(habit: Habit | GoalRef) {
 		const previous = [...dailyGoalsList.value];
 		dailyGoalsList.value = [
 			...dailyGoalsList.value,
-			slim(habbit, { id: nanoid(), name: habbit.name }) as Goal,
+			slim(habit, { id: nanoid(), name: habit.name }) as Goal,
 		];
 		await persistGoals(previous);
 	}
@@ -527,35 +533,35 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	// Stuknięcie w cel: dopóki nie osiągnięto celu → +1, potem → cofnij jedno
 	function tapGoal(goal: GroupedGoal) {
 		if (goal.done < goal.target) {
-			return logHabbit(goal.habbit) ? ("logged" as const) : null;
+			return logHabit(goal.habit) ? ("logged" as const) : null;
 		}
-		return unlogHabbit(goal.name) ? ("unlogged" as const) : null;
+		return unlogHabit(goal.name) ? ("unlogged" as const) : null;
 	}
 
 	// ==========================================================================
 	// WŁASNE HABITY
 	// ==========================================================================
-	async function saveCustomHabbits(previous: Habbit[]) {
+	async function saveCustomHabits(previous: Habit[]) {
 		const currentUid = uid.value;
 		if (!currentUid) return;
 		try {
 			await saveUserFields(currentUid, {
-				customHabbits: customHabbits.value.map((h) => plain(h)),
+				customHabbits: customHabits.value.map((h) => plain(h)),
 			});
 		} catch (err) {
-			console.error("saveCustomHabbits failed", err);
-			customHabbits.value = previous;
+			console.error("saveCustomHabits failed", err);
+			customHabits.value = previous;
 			toast.error(SAVE_ERROR);
 		}
 	}
 
-	async function createCustomHabbit(label: string, icon: string, negative = false) {
+	async function createCustomHabit(label: string, icon: string, negative = false) {
 		const displayName = label.trim().slice(0, 40);
-		const existing = allHabbitsList.value.find(
+		const existing = allHabitsList.value.find(
 			(h) => (h.display_name || h.name).toLowerCase() === displayName.toLowerCase(),
 		);
 		if (existing) return existing;
-		const habbit: Habbit = {
+		const habit: Habit = {
 			name: `u_${nanoid(10)}`,
 			display_name: displayName,
 			icon,
@@ -564,16 +570,16 @@ export const useHabbitsStore = defineStore("habbits", () => {
 			origin: "user",
 			category: "Your habits",
 		};
-		const previous = [...customHabbits.value];
-		customHabbits.value = [habbit, ...customHabbits.value];
-		saveCustomHabbits(previous);
-		return habbit;
+		const previous = [...customHabits.value];
+		customHabits.value = [habit, ...customHabits.value];
+		saveCustomHabits(previous);
+		return habit;
 	}
 
-	async function deleteCustomHabbit(name: string) {
-		const previous = [...customHabbits.value];
-		customHabbits.value = customHabbits.value.filter((h) => h.name !== name);
-		await saveCustomHabbits(previous);
+	async function deleteCustomHabit(name: string) {
+		const previous = [...customHabits.value];
+		customHabits.value = customHabits.value.filter((h) => h.name !== name);
+		await saveCustomHabits(previous);
 	}
 
 	// ==========================================================================
@@ -597,8 +603,8 @@ export const useHabbitsStore = defineStore("habbits", () => {
 	function clearData() {
 		days.value = {};
 		dailyGoalsList.value = [];
-		recentHabbits.value = [];
-		customHabbits.value = [];
+		recentHabits.value = [];
+		customHabits.value = [];
 		loadedMonths.clear();
 		pendingMonths.clear();
 		pendingDays.clear();
@@ -614,9 +620,9 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		isSelectedToday,
 		days,
 		dailyGoalsList,
-		recentHabbits,
-		customHabbits,
-		allHabbitsList,
+		recentHabits,
+		customHabits,
+		allHabitsList,
 		isHistoryLoading,
 		// odczyt
 		resolve,
@@ -626,7 +632,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		hasLogsOn,
 		selectedLogs,
 		selectedCounts,
-		groupedSelectedDayHabbits,
+		groupedSelectedDayHabits,
 		groupedGoals,
 		goalsProgress,
 		goalsFor,
@@ -639,8 +645,8 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		ensureRange,
 		ensureMonth,
 		// wpisy
-		logHabbit,
-		unlogHabbit,
+		logHabit,
+		unlogHabit,
 		removeLog,
 		removeAllLogs,
 		restoreLogs,
@@ -654,8 +660,8 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		reorderGoals,
 		tapGoal,
 		// własne habity
-		createCustomHabbit,
-		deleteCustomHabbit,
+		createCustomHabit,
+		deleteCustomHabit,
 		// daty
 		setDate,
 		changeDate,
