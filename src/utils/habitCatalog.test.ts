@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Habit } from "@/libs/types";
+import { STARTER_PACKS, timelySuggestions } from "@/utils/starterPacks";
+import pixelIcons from "@/assets/pixelIcons.json";
 import {
 	CATALOG,
 	CUSTOM_CATEGORY,
@@ -35,6 +37,31 @@ describe("catalog data", () => {
 
 	it("only suggests starter habits that exist in the catalog", () => {
 		expect(STARTER_HABITS.filter((name) => !findCatalogHabit(name))).toEqual([]);
+	});
+
+	it("never suggests retired habits", () => {
+		const suggested = [
+			...STARTER_HABITS,
+			...STARTER_PACKS.flatMap((p) => p.habits),
+			...[6, 14, 21].flatMap((hour) =>
+				timelySuggestions(new Date(2026, 0, 1, hour)).habits.map((h) => h.name),
+			),
+		];
+		expect(suggested.filter((name) => !CATALOG.some((h) => h.name === name))).toEqual([]);
+	});
+
+	it("has a pixel icon for every catalog habit", () => {
+		const icons = (pixelIcons as { icons: Record<string, string> }).icons;
+		expect(CATALOG.filter((h) => !icons[h.icon]).map((h) => h.name)).toEqual([]);
+	});
+});
+
+describe("retired habits", () => {
+	it("are hidden from the catalog but still resolve for old history", () => {
+		expect(CATALOG.some((h) => h.retired)).toBe(false);
+		const old = findCatalogHabit("Check the weather");
+		expect(old?.retired).toBe(true);
+		expect(resolveHabit({ name: "Check the weather" } as Habit)).toBe(old);
 	});
 });
 

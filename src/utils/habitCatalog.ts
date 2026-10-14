@@ -2,9 +2,13 @@ import habitListData from "@/assets/habitList.json";
 import type { GoalRef, Habit, HabitLog } from "@/libs/types";
 import type { PaletteKey } from "@/utils/pixelIcons";
 
-export const CATALOG = habitListData as Habit[];
+const ALL_HABITS = habitListData as Habit[];
 
-const BY_NAME = new Map(CATALOG.map((h) => [h.name, h]));
+// Wycofanych habitów nie da się już dodać, ale zostają w BY_NAME,
+// żeby stare wpisy (zapisane samą nazwą) dalej miały ikonę i nazwę.
+export const CATALOG = ALL_HABITS.filter((h) => !h.retired);
+
+const BY_NAME = new Map(ALL_HABITS.map((h) => [h.name, h]));
 
 // ==========================================================================
 // Kategorie — 21 surowych kategorii z katalogu zgrupowane w 12 czytelnych.
