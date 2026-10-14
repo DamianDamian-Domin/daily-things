@@ -1,3 +1,6 @@
+import { dateLocale } from "@/i18n";
+import { commonMessages as m } from "@/i18n/messages/common";
+
 // Wszystkie klucze dni liczymy w LOKALNEJ strefie czasowej użytkownika.
 // Wcześniej używaliśmy UTC, przez co np. w Polsce habit dodany o 0:30
 // trafiał do poprzedniego dnia, a w USA wieczorem — do następnego.
@@ -77,12 +80,11 @@ export function isoWeek(date: Date): number {
 	return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }
 
-const LOCALE = "en-GB";
 
 export function formatDayTitle(date: Date): { weekday: string; full: string } {
 	return {
-		weekday: date.toLocaleDateString(LOCALE, { weekday: "long" }),
-		full: date.toLocaleDateString(LOCALE, {
+		weekday: date.toLocaleDateString(dateLocale(), { weekday: "long" }),
+		full: date.toLocaleDateString(dateLocale(), {
 			day: "numeric",
 			month: "long",
 			year: "numeric",
@@ -95,17 +97,17 @@ export function formatShortDate(date: Date): string {
 }
 
 export function formatMonth(date: Date): string {
-	return date.toLocaleDateString(LOCALE, { month: "long", year: "numeric" });
+	return date.toLocaleDateString(dateLocale(), { month: "long", year: "numeric" });
 }
 
 export function weekdayName(date: Date, style: "long" | "short" = "long"): string {
-	return date.toLocaleDateString(LOCALE, { weekday: style });
+	return date.toLocaleDateString(dateLocale(), { weekday: style });
 }
 
 export function partOfDay(date: Date = new Date()) {
 	const hour = date.getHours();
-	if (hour < 5) return { greeting: "Good night", emoji: "🌙" };
-	if (hour < 12) return { greeting: "Good morning", emoji: "☀️" };
-	if (hour < 18) return { greeting: "Good afternoon", emoji: "🌤️" };
-	return { greeting: "Good evening", emoji: "🌙" };
+	if (hour < 5) return { greeting: m.goodNight, emoji: "🌙" };
+	if (hour < 12) return { greeting: m.goodMorning, emoji: "☀️" };
+	if (hour < 18) return { greeting: m.goodAfternoon, emoji: "🌤️" };
+	return { greeting: m.goodEvening, emoji: "🌙" };
 }
