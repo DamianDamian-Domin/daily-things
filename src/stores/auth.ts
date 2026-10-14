@@ -111,7 +111,7 @@ export const useAuthStore = defineStore("auth", () => {
 	// Niemutowalny „snapshot” użytkownika — nowy obiekt przy każdej zmianie,
 	// więc wszystkie zależne computed przeliczają się poprawnie.
 	const current = computed(() => {
-		userVersion.value;
+		void userVersion.value; // zależność reaktywna
 		const u = user.value;
 		if (!u) return null;
 		return {

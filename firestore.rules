@@ -57,6 +57,17 @@ service cloud.firestore {
           && request.resource.data.habbits is list
           && request.resource.data.habbits.size() <= 500;
       }
+
+      // Jeden dokument na zadanie: users/{uid}/todos/{todoId}
+      match /todos/{todoId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.id == todoId
+          && request.resource.data.text is string
+          && request.resource.data.text.size() <= 2000
+          && (!('subtasks' in request.resource.data)
+            || (request.resource.data.subtasks is list && request.resource.data.subtasks.size() <= 200));
+      }
     }
 
     // ------------------------------------------------------------------

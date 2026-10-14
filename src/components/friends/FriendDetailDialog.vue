@@ -78,6 +78,30 @@
 				</section>
 
 				<section
+					v-if="badges.length"
+					class="fd-section"
+					aria-labelledby="fd-badges-title">
+					<h3
+						id="fd-badges-title"
+						class="dt-section-title">
+						Badges · {{ badges.length }}
+					</h3>
+					<ul class="fd-habits">
+						<li
+							v-for="b in badges"
+							:key="b.id"
+							class="fd-habit fd-badge"
+							v-tooltip.top="`${b.title}: ${b.description}`">
+							<PixelIcon
+								:icon="b.icon"
+								:palette="b.palette"
+								:size="28" />
+							<span class="sr-only">{{ b.title }}</span>
+						</li>
+					</ul>
+				</section>
+
+				<section
 					v-if="habits"
 					class="fd-section"
 					aria-labelledby="fd-today-title">
@@ -92,19 +116,25 @@
 						<li
 							v-for="h in habits"
 							:key="h.icon + h.name"
-							class="fd-habit"
-							v-tooltip.top="h.name">
-							<PixelIcon
-								:icon="h.icon"
-								:palette="h.palette"
-								:size="28" />
+							class="fd-habit">
+							<span class="fd-habit-face">
+								<PixelIcon
+									:icon="h.icon"
+									:palette="h.palette"
+									:size="28" />
+								<span
+									v-if="h.count > 1"
+									class="fd-count"
+									aria-hidden="true"
+									>{{ h.count }}</span
+								>
+							</span>
+							<span class="fd-habit-name">{{ h.name }}</span>
 							<span
 								v-if="h.count > 1"
-								class="fd-count"
-								aria-hidden="true"
-								>{{ h.count }}</span
+								class="sr-only"
+								>× {{ h.count }}</span
 							>
-							<span class="sr-only">{{ h.name }}{{ h.count > 1 ? ` × ${h.count}` : "" }}</span>
 						</li>
 					</ul>
 					<p
@@ -167,15 +197,16 @@ import Dialog from "primevue/dialog";
 import PixelAvatar from "@/components/ui/PixelAvatar.vue";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import { useFriendsStore, type FriendRow } from "@/stores/friends";
-import { useHabbitsStore } from "@/stores/habbits";
+import { useHabitsStore } from "@/stores/habits";
 import { PALETTES, type PaletteKey } from "@/utils/pixelIcons";
 import { fromDateKey, weekdayName } from "@/utils/date";
+import { ACHIEVEMENTS } from "@/utils/achievements";
 
 const props = defineProps<{ friendUid: string | null }>();
 const visible = defineModel<boolean>({ default: false });
 
 const friendsStore = useFriendsStore();
-const habbitsStore = useHabbitsStore();
+const habitsStore = useHabitsStore();
 const confirmRemove = ref(false);
 
 // Zawsze świeże dane z magazynu (profil zmienia się na żywo)
@@ -217,11 +248,17 @@ const weekAria = computed(
 const habits = computed(() => {
 	const profile = friend.value?.profile;
 	if (!profile?.sharing.habits || !profile.todayHabits) return null;
-	if (profile.stats?.todayKey !== habbitsStore.todayKey) return [];
+	if (profile.stats?.todayKey !== habitsStore.todayKey) return [];
 	return profile.todayHabits.map((h) => ({
 		...h,
 		palette: (h.palette in PALETTES ? h.palette : "orange") as PaletteKey,
 	}));
+});
+
+// Odznaki znajomego (kolejność jak w katalogu odznak)
+const badges = computed(() => {
+	const owned = new Set(stats.value?.badges ?? []);
+	return ACHIEVEMENTS.filter((a) => owned.has(a.id));
 });
 
 function remove() {
@@ -312,12 +349,20 @@ function remove() {
 .fd-habits {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.4rem;
+	gap: 0.6rem 0.2rem;
 	margin: 0;
 	padding: 0;
 	list-style: none;
 }
+/* Kwadracik z ikoną i nazwą pod spodem — same ikony były nieczytelne */
 .fd-habit {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.25rem;
+	width: 4rem;
+}
+.fd-habit-face {
 	position: relative;
 	display: grid;
 	place-items: center;
@@ -325,6 +370,19 @@ function remove() {
 	height: 2.6rem;
 	border-radius: 0.8rem;
 	background: var(--dt-surface-sunken);
+}
+.fd-habit-name {
+	max-width: 100%;
+	font-size: 0.72rem;
+	font-weight: 600;
+	line-height: 1.2;
+	color: var(--dt-text-2);
+	text-align: center;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	word-break: break-word;
 }
 .fd-count {
 	position: absolute;
@@ -367,5 +425,8 @@ function remove() {
 	gap: 0.5rem;
 	font-size: var(--dt-text-sm);
 	color: var(--dt-text-2);
+}
+.fd-badge {
+	background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--dt-gold) 12%, var(--dt-surface)), color-mix(in srgb, var(--dt-gold) 30%, var(--dt-surface)));
 }
 </style>

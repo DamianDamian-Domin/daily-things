@@ -92,6 +92,8 @@ watch(
 .sheet {
 	display: flex;
 	flex-direction: column;
+	flex: 1 1 auto;
+	min-height: 0;
 	height: 100%;
 	max-height: 100%;
 	background: var(--dt-surface);
@@ -124,6 +126,8 @@ watch(
 
 <style>
 .account-sheet.p-drawer {
+	display: flex;
+	flex-direction: column;
 	border: none;
 	background: var(--dt-surface);
 	box-shadow: var(--dt-shadow-lg);

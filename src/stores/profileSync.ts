@@ -1,7 +1,8 @@
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
+import { useAchievementsStore } from "@/stores/achievements";
 import { useAuthStore } from "@/stores/auth";
-import { useHabbitsStore } from "@/stores/habbits";
+import { useHabitsStore } from "@/stores/habits";
 import { useProfileStore } from "@/stores/profile";
 import { usePreferencesStore } from "@/stores/userPreferences";
 import { saveUserFields } from "@/services/userData";
@@ -45,9 +46,10 @@ function writeStorage(key: string, value: string) {
 
 export const useProfileSyncStore = defineStore("profileSync", () => {
 	const authStore = useAuthStore();
-	const habbitsStore = useHabbitsStore();
+	const habitsStore = useHabitsStore();
 	const preferences = usePreferencesStore();
 	const profile = useProfileStore();
+	const achievements = useAchievementsStore();
 
 	const uid = computed(() => authStore.userUid);
 	const active = computed(() => profile.isSocial && profile.ready);
@@ -132,35 +134,36 @@ export const useProfileSyncStore = defineStore("profileSync", () => {
 	// STATYSTYKI
 	// ==========================================
 	function buildStats(): ProfileStats {
-		const today = habbitsStore.todayKey;
+		const today = habitsStore.todayKey;
 		const todayDate = fromDateKey(today);
-		const progress = habbitsStore.dayGoalsProgress(today);
+		const progress = habitsStore.dayGoalsProgress(today);
 		const last7 = Array.from({ length: 7 }, (_, i) => {
 			const key = toDateKey(addDays(todayDate, i - 6));
-			const day = habbitsStore.dayGoalsProgress(key);
+			const day = habitsStore.dayGoalsProgress(key);
 			return { date: key, done: day.done, total: day.total };
 		});
 		return {
-			streak: habbitsStore.streak,
-			streakEnd: habbitsStore.hasLogsOn(today) ? today : toDateKey(addDays(todayDate, -1)),
+			streak: habitsStore.streak,
+			streakEnd: habitsStore.hasLogsOn(today) ? today : toDateKey(addDays(todayDate, -1)),
 			todayKey: today,
 			todayDone: progress.done,
 			todayTotal: progress.total,
 			last7,
+			badges: [...achievements.unlockedIds],
 		};
 	}
 
 	// Tylko pozytywne habity — negatywnych nigdy nie pokazujemy znajomym
 	function buildHabits(): SharedHabit[] {
-		const logs = habbitsStore.logsOn(habbitsStore.todayKey);
-		return habbitsStore
+		const logs = habitsStore.logsOn(habitsStore.todayKey);
+		return habitsStore
 			.groupLogs(logs)
-			.filter((g) => !isNegative(g.habbit))
+			.filter((g) => !isNegative(g.habit))
 			.slice(0, SHARED_HABITS_LIMIT)
 			.map((g) => ({
-				name: g.habbit.display_name || g.name,
-				icon: g.habbit.icon,
-				palette: paletteFor(g.habbit),
+				name: g.habit.display_name || g.name,
+				icon: g.habit.icon,
+				palette: paletteFor(g.habit),
 				count: g.count,
 			}));
 	}

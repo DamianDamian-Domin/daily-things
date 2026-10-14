@@ -3,7 +3,7 @@ import { defineStore } from "pinia";
 import type { HabitReminder } from "@/libs/types";
 import { saveUserFields, type UserDoc } from "@/services/userData";
 import { useAuthStore } from "@/stores/auth";
-import { useHabbitsStore } from "@/stores/habbits";
+import { useHabitsStore } from "@/stores/habits";
 import { useToastStore } from "@/stores/toast";
 import { displayName } from "@/utils/habitCatalog";
 import { isNativePlatform } from "@/utils/platform";
@@ -30,7 +30,7 @@ const loadPlugin = () =>
 
 export const useRemindersStore = defineStore("reminders", () => {
 	const authStore = useAuthStore();
-	const habbitsStore = useHabbitsStore();
+	const habitsStore = useHabitsStore();
 	const toast = useToastStore();
 
 	const reminders = ref<HabitReminder[]>([]);
@@ -45,7 +45,7 @@ export const useRemindersStore = defineStore("reminders", () => {
 	// Przypomnienia dotyczą tylko aktualnych celów — po usunięciu celu wpis
 	// zostaje (wróci razem z celem), ale nic nie dzwoni
 	const activeReminders = computed(() => {
-		const goals = new Set(habbitsStore.dailyGoalsList.map((g) => g.name));
+		const goals = new Set(habitsStore.dailyGoalsList.map((g) => g.name));
 		return reminders.value.filter((r) => goals.has(r.name));
 	});
 
@@ -122,16 +122,16 @@ export const useRemindersStore = defineStore("reminders", () => {
 	function buildNotifications() {
 		const now = Date.now();
 		const today = startOfDay();
-		const counts = habbitsStore.countsOn(habbitsStore.todayKey);
+		const counts = habitsStore.countsOn(habitsStore.todayKey);
 		const notifications = [];
 		let id = 1;
 		for (const reminder of activeReminders.value) {
-			const goals = habbitsStore.dailyGoalsList.filter((g) => g.name === reminder.name);
-			const habbit = habbitsStore.resolve(goals[0]);
+			const goals = habitsStore.dailyGoalsList.filter((g) => g.name === reminder.name);
+			const habit = habitsStore.resolve(goals[0]);
 			const target = goals.length;
 			const doneToday = (counts[reminder.name] ?? 0) >= target;
 			const [hour, minute] = reminder.time.split(":").map(Number);
-			const name = displayName(habbit);
+			const name = displayName(habit);
 			for (let d = 0; d < DAYS_AHEAD; d++) {
 				const at = addDays(today, d);
 				at.setHours(hour, minute, 0, 0);
@@ -205,11 +205,11 @@ export const useRemindersStore = defineStore("reminders", () => {
 		// Sygnatura tego, co wpływa na harmonogram: godziny, cele, dzisiejsze postępy, dzień
 		watch(
 			() => {
-				const counts = habbitsStore.countsOn(habbitsStore.todayKey);
+				const counts = habitsStore.countsOn(habitsStore.todayKey);
 				return JSON.stringify([
-					habbitsStore.todayKey,
+					habitsStore.todayKey,
 					activeReminders.value,
-					habbitsStore.dailyGoalsList.map((g) => g.name),
+					habitsStore.dailyGoalsList.map((g) => g.name),
 					activeReminders.value.map((r) => counts[r.name] ?? 0),
 					permission.value,
 				]);

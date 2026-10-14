@@ -43,7 +43,7 @@ export function useSound() {
 	// Podłączamy nasz nowy store z preferencjami
 	const preferencesStore = usePreferencesStore();
 
-	// Dźwięk zaznaczenia todo / habbitu — przyjemny "ding" w górę
+	// Dźwięk zaznaczenia todo / habitu — przyjemny "ding" w górę
 	function playCheck() {
 		if (!preferencesStore.soundEnabled) return;
 
@@ -66,7 +66,7 @@ export function useSound() {
 		playTone(600, 0.1, "sine", 0.12);
 	}
 
-	// Dźwięk kliknięcia habbitu (zaznaczenie) — szybki "pop" z lekkim przytłumieniem
+	// Dźwięk kliknięcia habitu (zaznaczenie) — szybki "pop" z lekkim przytłumieniem
 	function playHabitCheck() {
 		if (!preferencesStore.soundEnabled) return;
 

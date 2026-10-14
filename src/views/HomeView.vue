@@ -22,6 +22,8 @@
 			</p>
 		</div>
 
+		<RecapBanner />
+
 		<CarouselView class="home-carousel" />
 	</div>
 </template>
@@ -31,6 +33,7 @@ import { computed, ref } from "vue";
 import { useLayout } from "@/utils/useLayout";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 import DatePicker from "@/components/home_view/DatePicker.vue";
+import RecapBanner from "@/components/insights/RecapBanner.vue";
 import CarouselView from "./CarouselView.vue";
 
 const carouselStore = useCarouselStore();

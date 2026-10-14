@@ -28,6 +28,7 @@
 			:bottom-offset="bottomOffset" />
 		<AuthDialog v-if="authDialogNeeded" />
 		<AvatarEditor v-if="avatarEditorNeeded" />
+		<InsightsDialogs v-if="insightsNeeded" />
 		<ToastHost :bottom-offset="bottomOffset" />
 	</div>
 </template>
@@ -36,12 +37,14 @@
 import { computed, defineAsyncComponent, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
-import { useHabbitsStore } from "@/stores/habbits";
+import { useHabitsStore } from "@/stores/habits";
 import { useTodosStore } from "@/stores/todos";
 import { usePreferencesStore } from "@/stores/userPreferences";
 import { useToastStore } from "@/stores/toast";
 import { useProfileStore } from "@/stores/profile";
 import { useRemindersStore } from "@/stores/reminders";
+import { useAchievementsStore } from "@/stores/achievements";
+import { useInsightsStore } from "@/stores/insights";
 import { hasStoredInvite, loadFriends, loadProfileSync, peekFriends } from "@/stores/social";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 import { fetchUserDoc } from "@/services/userData";
@@ -55,17 +58,21 @@ import CookiesConsentBanner from "@/components/CookiesConsentBanner.vue";
 // użytkownicy nigdy go nie pobiorą)
 const AuthDialog = defineAsyncComponent(() => import("@/components/login_view/AuthDialog.vue"));
 const AvatarEditor = defineAsyncComponent(() => import("@/components/friends/AvatarEditor.vue"));
+// Odznaki, podsumowanie tygodnia i rok — wspólne okna otwierane z kilku miejsc
+const InsightsDialogs = defineAsyncComponent(() => import("@/components/insights/InsightsDialogs.vue"));
 import ToastHost from "@/components/ui/ToastHost.vue";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
-const habbitsStore = useHabbitsStore();
+const habitsStore = useHabitsStore();
 const todosStore = useTodosStore();
 const preferencesStore = usePreferencesStore();
 const toast = useToastStore();
 const profileStore = useProfileStore();
 const remindersStore = useRemindersStore();
+const achievementsStore = useAchievementsStore();
+const insights = useInsightsStore();
 const carouselStore = useCarouselStore();
 
 // ==========================================
@@ -89,6 +96,13 @@ watch(
 		if (open) avatarEditorNeeded.value = true;
 	},
 );
+const insightsNeeded = ref(false);
+watch(
+	() => insights.panel,
+	(panel) => {
+		if (panel) insightsNeeded.value = true;
+	},
+);
 const showChrome = computed(() => !isLoginRoute.value);
 const bottomOffset = computed(() => (showChrome.value && isMobileLayout.value ? 68 : 0));
 
@@ -100,11 +114,11 @@ async function loadSession(uid: string) {
 		const userDoc = await fetchUserDoc(uid);
 		if (authStore.userUid !== uid) return;
 		preferencesStore.hydrate(userDoc);
-		habbitsStore.hydrate(userDoc);
-		todosStore.hydrate(userDoc);
+		habitsStore.hydrate(userDoc);
 		profileStore.hydrate(userDoc);
 		remindersStore.hydrate(userDoc);
-		await habbitsStore.loadInitialHistory();
+		achievementsStore.hydrate(userDoc);
+		await Promise.all([habitsStore.loadInitialHistory(), todosStore.load(uid, userDoc)]);
 		if (authStore.userUid !== uid) return;
 		// Od teraz profil dla znajomych może się publikować (seria jest już policzona)
 		profileStore.markReady();
@@ -119,10 +133,12 @@ async function loadSession(uid: string) {
 watch(
 	() => [authStore.userUid, authStore.dataRevision] as const,
 	async ([uid]) => {
-		habbitsStore.clearData();
+		habitsStore.clearData();
 		todosStore.clearData();
 		profileStore.clear();
 		remindersStore.clear();
+		achievementsStore.clear();
+		insights.close();
 		peekFriends()?.clear();
 
 		if (!uid) {

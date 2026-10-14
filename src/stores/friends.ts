@@ -1,8 +1,9 @@
 import { defineStore } from "pinia";
-import { computed, ref, shallowRef } from "vue";
+import { computed, ref, shallowRef, watch } from "vue";
 import type { Unsubscribe } from "firebase/firestore";
+import { useAchievementsStore } from "@/stores/achievements";
 import { useAuthStore } from "@/stores/auth";
-import { useHabbitsStore } from "@/stores/habbits";
+import { useHabitsStore } from "@/stores/habits";
 import { useProfileStore } from "@/stores/profile";
 import { useProfileSyncStore } from "@/stores/profileSync";
 import { INVITE_KEY } from "@/stores/social";
@@ -31,7 +32,9 @@ import {
 	type PublicProfile,
 } from "@/services/friends";
 import type { AvatarConfig } from "@/utils/avatar";
+import type { PaletteKey } from "@/utils/pixelIcons";
 import { addDays, fromDateKey, startOfWeek, toDateKey, type DateKey } from "@/utils/date";
+import { liveStreak } from "@/utils/streak";
 
 // Słuchacze wyłączamy z opóźnieniem — szybkie przełączanie kart nie
 // powoduje ponownego czytania wszystkich profili
@@ -51,6 +54,16 @@ export interface FriendRow {
 	// Znajomy jeszcze dziś nie zaglądał (dane z poprzedniego dnia)
 	away: boolean;
 }
+
+export interface FriendHighlight {
+	friend: FriendRow;
+	kind: string;
+	icon: string;
+	palette: PaletteKey;
+	text: string;
+}
+
+const STREAK_MILESTONES = [3, 7, 14, 21, 30, 50, 75, 100, 150, 200, 365];
 
 export interface RequestRow {
 	uid: string;
@@ -97,16 +110,9 @@ function errorCode(err: unknown): string | undefined {
 	return (err as { code?: string })?.code;
 }
 
-// Czy seria znajomego wciąż trwa z perspektywy naszego „dziś”
-function liveStreak(stats: ProfileStats | null, today: DateKey): number {
-	if (!stats) return 0;
-	const yesterday = toDateKey(addDays(fromDateKey(today), -1));
-	return stats.streakEnd >= yesterday ? stats.streak : 0;
-}
-
 export const useFriendsStore = defineStore("friends", () => {
 	const authStore = useAuthStore();
-	const habbitsStore = useHabbitsStore();
+	const habitsStore = useHabitsStore();
 	const profileStore = useProfileStore();
 	const profileSync = useProfileSyncStore();
 	const toast = useToastStore();
@@ -247,7 +253,7 @@ export const useFriendsStore = defineStore("friends", () => {
 	const visible = computed(() => friendships.value.filter((f) => !hidden.value.has(f.id)));
 
 	const friends = computed<FriendRow[]>(() => {
-		const today = habbitsStore.todayKey;
+		const today = habitsStore.todayKey;
 		return visible.value
 			.filter((f) => f.status === "accepted")
 			.map((f) => {
@@ -273,6 +279,14 @@ export const useFriendsStore = defineStore("friends", () => {
 			.sort((a, b) => a.name.localeCompare(b.name));
 	});
 
+	// Odznaka „Better together”
+	const achievements = useAchievementsStore();
+	watch(
+		() => friends.value.length,
+		(n) => achievements.noteFriends(n),
+		{ immediate: true },
+	);
+
 	const incoming = computed<RequestRow[]>(() =>
 		visible.value
 			.filter((f) => f.status === "pending" && f.requestedBy !== uid.value)
@@ -289,7 +303,7 @@ export const useFriendsStore = defineStore("friends", () => {
 	// TABLICA TYGODNIA (% celów od poniedziałku; remis → dłuższa seria)
 	// ==========================================
 	const weekKeys = computed(() => {
-		const today = fromDateKey(habbitsStore.todayKey);
+		const today = fromDateKey(habitsStore.todayKey);
 		const keys: DateKey[] = [];
 		for (let d = startOfWeek(today); d <= today; d = addDays(d, 1)) keys.push(toDateKey(d));
 		return keys;
@@ -315,7 +329,7 @@ export const useFriendsStore = defineStore("friends", () => {
 		let myDone = 0;
 		let myTotal = 0;
 		for (const key of weekKeys.value) {
-			const day = habbitsStore.dayGoalsProgress(key);
+			const day = habitsStore.dayGoalsProgress(key);
 			myDone += day.done;
 			myTotal += day.total;
 		}
@@ -329,7 +343,7 @@ export const useFriendsStore = defineStore("friends", () => {
 				total: myTotal,
 				ratio: myTotal ? myDone / myTotal : 0,
 				pct: myTotal ? Math.round((myDone / myTotal) * 100) : 0,
-				streak: habbitsStore.streak,
+				streak: habitsStore.streak,
 			},
 		];
 		for (const f of friends.value) {
@@ -372,6 +386,54 @@ export const useFriendsStore = defineStore("friends", () => {
 		const need = Math.ceil(target.ratio * meEntry.total - meEntry.done - 1e-9);
 		if (need <= 0) return `Neck and neck with ${target.name} 🌱`;
 		return `You're #${meEntry.rank} this week. ${need} more ${need === 1 ? "goal" : "goals"} to catch ${target.name} 🌱`;
+	});
+
+	// ==========================================
+	// CHWILE DO ŚWIĘTOWANIA (znajomy zrobił wszystkie cele / ważna seria)
+	// ==========================================
+	const highlights = computed<FriendHighlight[]>(() => {
+		const today = habitsStore.todayKey;
+		const list: FriendHighlight[] = [];
+		for (const f of friends.value) {
+			const stats = f.profile?.sharing.progress ? f.profile.stats : null;
+			if (!stats || stats.todayKey !== today) continue;
+			const streak = f.streak ?? 0;
+			if (stats.streakEnd === today && STREAK_MILESTONES.includes(streak)) {
+				list.push({ friend: f, kind: `streak-${streak}`, icon: "local_fire_department", palette: "orange", text: `${f.name} hit a ${streak}-day streak 🔥` });
+			} else if (f.today && f.today.done >= f.today.total) {
+				list.push({ friend: f, kind: "perfect", icon: "star_shine", palette: "yellow", text: `${f.name} finished every goal today 🎉` });
+			}
+		}
+		return list;
+	});
+
+	// Każdą chwilę ogłaszamy toastem raz (na urządzeniu), gdy karta jest na żywo
+	watch(highlights, (list) => {
+		const me = uid.value;
+		if (!me || !live.value || list.length === 0) return;
+		const key = `dt-highlights:${me}`;
+		let seen: Record<string, string> = {};
+		try {
+			seen = JSON.parse(readStorage(key) ?? "{}");
+		} catch {
+			seen = {};
+		}
+		const stamp = (h: FriendHighlight) => `${habitsStore.todayKey}:${h.kind}`;
+		const fresh = list.filter((h) => seen[h.friend.uid] !== stamp(h));
+		if (fresh.length === 0) return;
+		for (const h of fresh) seen[h.friend.uid] = stamp(h);
+		writeStorage(key, JSON.stringify(seen));
+		const first = fresh[0];
+		if (fresh.length > 1) {
+			toast.show(`${fresh.length} friends are having a great day 🌻`, { tone: "celebrate", duration: 4500 });
+		} else if (!hasCheeredToday(first.friend.uid)) {
+			toast.show(first.text, {
+				tone: "celebrate",
+				actionLabel: "High-five",
+				action: () => cheer(first.friend),
+				duration: 6000,
+			});
+		}
 	});
 
 	// ==========================================
@@ -488,14 +550,14 @@ export const useFriendsStore = defineStore("friends", () => {
 		}
 	}
 	function hasCheeredToday(friendUid: string) {
-		return cheered.value[friendUid] === habbitsStore.todayKey;
+		return cheered.value[friendUid] === habitsStore.todayKey;
 	}
 
 	async function cheer(row: FriendRow) {
 		const me = uid.value;
 		if (!me || hasCheeredToday(row.uid)) return;
 		const previous = { ...cheered.value };
-		cheered.value = { ...cheered.value, [row.uid]: habbitsStore.todayKey };
+		cheered.value = { ...cheered.value, [row.uid]: habitsStore.todayKey };
 		try {
 			await sendCheer(me, row.uid, profileStore.publicName);
 			writeStorage(`dt-cheered:${me}`, JSON.stringify(cheered.value));
@@ -614,6 +676,7 @@ export const useFriendsStore = defineStore("friends", () => {
 		outgoing,
 		board,
 		boardMessage,
+		highlights,
 		// akcje
 		start,
 		stop,

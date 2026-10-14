@@ -5,7 +5,14 @@ import type { Subtask, TodoItem } from "@/libs/types";
 import { useAuthStore } from "@/stores/auth";
 import { plain } from "@/utils/plain";
 import { useToastStore } from "@/stores/toast";
-import { saveUserFields, type UserDoc } from "@/services/userData";
+import {
+	deleteTodos,
+	fetchTodos,
+	migrateLegacyTodos,
+	normalizeLegacyTodos,
+	saveTodos,
+	type UserDoc,
+} from "@/services/userData";
 
 export type { TodoColor, TodoItem, Subtask } from "@/libs/types";
 
@@ -15,7 +22,7 @@ export const useTodosStore = defineStore("todos", () => {
 	const authStore = useAuthStore();
 	const toast = useToastStore();
 
-	// Zadania trzymamy w jednej tablicy w dokumencie użytkownika (users/{uid}.todos)
+	// Każde zadanie to osobny dokument: users/{uid}/todos/{id}
 	const userTodosList = ref<TodoItem[]>([]);
 
 	function sortValue(todo: TodoItem) {
@@ -35,25 +42,40 @@ export const useTodosStore = defineStore("todos", () => {
 
 	const sortedTodos = computed(() => [...activeTodos.value, ...completedTodos.value]);
 
-	function hydrate(userDoc: UserDoc) {
-		const loaded = Array.isArray(userDoc.todos) ? userDoc.todos : [];
-		// Stary format (lista pogrupowana po datach) — spłaszczamy
-		userTodosList.value =
-			loaded.length > 0 && (loaded[0] as unknown as { date?: string }).date !== undefined
-				? loaded.flatMap((entry) => (entry as unknown as { todos: TodoItem[] }).todos ?? [])
-				: loaded;
+	async function load(uid: string, userDoc: UserDoc) {
+		const todos = await fetchTodos(uid);
+		const legacy = normalizeLegacyTodos(userDoc.todos);
+		if (legacy.length > 0 || Array.isArray(userDoc.todos)) {
+			// Stara tablica w dokumencie użytkownika → osobne dokumenty.
+			// W tle: offline zapis czeka na sieć, a lista działa od razu.
+			const ids = new Set(todos.map((t) => t.id));
+			const missing = legacy.filter((t) => !ids.has(t.id));
+			todos.push(...missing);
+			migrateLegacyTodos(uid, missing).catch((err) =>
+				console.warn("Legacy todos migration failed, will retry next load", err),
+			);
+		}
+		if (authStore.userUid === uid) userTodosList.value = todos;
 	}
 
-	// Każda zmiana zapisuje całą listę. Stan lokalny zmienia się od razu,
-	// zapis leci w tle; przy błędzie przywracamy poprzedni stan.
+	// Stan lokalny zmienia się od razu, a do Firestore lecą tylko zmienione
+	// zadania (lub usunięte id). Przy błędzie przywracamy poprzedni stan.
 	function commit(mutate: () => void) {
 		const uid = authStore.userUid;
 		if (!uid) return false;
 		const previous = plain(userTodosList.value);
+		const before = new Map(previous.map((t) => [t.id, JSON.stringify(t)]));
 		mutate();
-		saveUserFields(uid, {
-			todos: userTodosList.value.map((t) => plain(t)),
-		}).catch((err) => {
+		const current = new Map(userTodosList.value.map((t) => [t.id, t]));
+		const changed = [...current.values()]
+			.filter((t) => before.get(t.id) !== JSON.stringify(t))
+			.map((t) => plain(t));
+		const removed = [...before.keys()].filter((id) => !current.has(id));
+		if (changed.length === 0 && removed.length === 0) return true;
+		Promise.all([
+			changed.length ? saveTodos(uid, changed) : null,
+			removed.length ? deleteTodos(uid, removed) : null,
+		]).catch((err) => {
 			console.error("todos save failed", err);
 			if (authStore.userUid === uid) userTodosList.value = previous;
 			toast.error(SAVE_ERROR);
@@ -189,7 +211,7 @@ export const useTodosStore = defineStore("todos", () => {
 		activeTodos,
 		completedTodos,
 		sortedTodos,
-		hydrate,
+		load,
 		addTodo,
 		updateTodo,
 		toggleTodo,

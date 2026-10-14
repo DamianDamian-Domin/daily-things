@@ -62,6 +62,8 @@ export interface ProfileStats {
 	todayDone: number;
 	todayTotal: number;
 	last7: DayStat[];
+	// Zdobyte odznaki (id z utils/achievements.ts)
+	badges?: string[];
 }
 
 export interface PublicProfile {
@@ -170,6 +172,9 @@ function toStats(raw: unknown): ProfileStats | null {
 		todayDone: num(r.todayDone),
 		todayTotal: num(r.todayTotal),
 		last7,
+		badges: Array.isArray(r.badges)
+			? r.badges.filter((b): b is string => typeof b === "string").slice(0, 40)
+			: [],
 	};
 }
 

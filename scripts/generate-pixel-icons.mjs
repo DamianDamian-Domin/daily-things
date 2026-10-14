@@ -145,7 +145,7 @@ function rle(cells) {
 }
 
 const catalog = JSON.parse(
-	fs.readFileSync(path.join(ROOT, "src/assets/habbitList.json"), "utf8"),
+	fs.readFileSync(path.join(ROOT, "src/assets/habitList.json"), "utf8"),
 );
 const names = [...new Set([...catalog.map((h) => h.icon), ...EXTRA_ICONS])].sort();
 
