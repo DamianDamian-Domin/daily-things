@@ -6,10 +6,12 @@ import type {
 	DayEntry,
 	Goal,
 	GoalRef,
+	GoalSchedule,
 	GroupedGoal,
 	GroupedHabit,
 	Habit,
 	HabitLog,
+	WeeklyGoal,
 } from "@/libs/types";
 import { useAuthStore } from "@/stores/auth";
 import { plain } from "@/utils/plain";
@@ -35,6 +37,7 @@ import {
 } from "@/utils/date";
 import { CATALOG, findCatalogHabit, resolveHabit } from "@/utils/habitCatalog";
 import { streakDetails } from "@/utils/streak";
+import { isDueOn, isRestDay, isWeekly, normalizeSchedule, weekKeys } from "@/utils/goalSchedule";
 
 const RECENT_LIMIT = 12;
 const MAX_STREAK_LOOKBACK_MONTHS = 24;
@@ -137,20 +140,56 @@ export const useHabitsStore = defineStore("habits", () => {
 		return days.value[key]?.goalsSnapshot ?? [];
 	}
 
-	function groupGoals(goals: GoalRef[], counts: Record<string, number>): GroupedGoal[] {
+	// Cele dzienne, które obowiązują danego dnia (bez tygodniowych i bez
+	// celów zaplanowanych na inne dni tygodnia)
+	function groupGoals(goals: GoalRef[], counts: Record<string, number>, key: DateKey): GroupedGoal[] {
 		const map = new Map<string, GroupedGoal>();
 		for (const goal of goals) {
+			if (!isDueOn(goal, key)) continue;
 			const group = map.get(goal.name);
 			if (group) group.target++;
-			else map.set(goal.name, { name: goal.name, habit: resolve(goal), target: 1, done: 0 });
+			else
+				map.set(goal.name, {
+					name: goal.name,
+					habit: resolve(goal),
+					target: 1,
+					done: 0,
+					schedule: normalizeSchedule(goal.schedule),
+				});
 		}
 		for (const group of map.values()) group.done = Math.min(counts[group.name] ?? 0, group.target);
 		return [...map.values()];
 	}
 
 	const groupedGoals = computed(() =>
-		groupGoals(goalsFor(selectedKey.value), selectedCounts.value),
+		groupGoals(goalsFor(selectedKey.value), selectedCounts.value, selectedKey.value),
 	);
+
+	// Cele „N× w tygodniu” w tygodniu wybranego dnia
+	function weeklyGoalsFor(key: DateKey): WeeklyGoal[] {
+		const map = new Map<string, WeeklyGoal>();
+		for (const goal of goalsFor(key)) {
+			const schedule = normalizeSchedule(goal.schedule);
+			if (schedule?.kind !== "weekly" || map.has(goal.name)) continue;
+			map.set(goal.name, {
+				name: goal.name,
+				habit: resolve(goal),
+				target: schedule.times,
+				done: 0,
+				doneOnDay: countsOn(key)[goal.name] ?? 0,
+			});
+		}
+		if (map.size === 0) return [];
+		for (const day of weekKeys(key)) {
+			const counts = countsOn(day);
+			for (const goal of map.values()) goal.done += counts[goal.name] ?? 0;
+		}
+		return [...map.values()];
+	}
+	const weeklyGoals = computed(() => weeklyGoalsFor(selectedKey.value));
+
+	// Dzień bez obowiązujących celów (np. wtorek, gdy siłownia jest pon/śr/pt)
+	const isSelectedRestDay = computed(() => isRestDay(goalsFor(selectedKey.value), selectedKey.value));
 
 	const goalsProgress = computed(() => {
 		let done = 0;
@@ -163,7 +202,7 @@ export const useHabitsStore = defineStore("habits", () => {
 	});
 
 	function dayGoalsProgress(key: DateKey) {
-		const grouped = groupGoals(recordedGoalsFor(key), countsOn(key));
+		const grouped = groupGoals(recordedGoalsFor(key), countsOn(key), key);
 		let done = 0;
 		let total = 0;
 		for (const g of grouped) {
@@ -182,11 +221,15 @@ export const useHabitsStore = defineStore("habits", () => {
 
 	// Liczba dni z rzędu z co najmniej jednym wpisem (jeden opuszczony dzień
 	// na tydzień jest „zamrażany” i nie zrywa serii — utils/streak.ts)
-	const streakInfo = computed(() => streakDetails(hasLogsOn, todayKey.value));
+	// Dni odpoczynku (cele tylko w inne dni tygodnia) nie zrywają serii
+	const restDayOn = (key: DateKey) => isRestDay(goalsFor(key), key);
+	const streakInfo = computed(() => streakDetails(hasLogsOn, todayKey.value, 3660, restDayOn));
 	const streak = computed(() => streakInfo.value.count);
 
 	// Seria trwa, ale dziś jeszcze nic nie zapisano — delikatne przypomnienie
-	const streakAtRisk = computed(() => streak.value > 0 && !hasLogsOn(todayKey.value));
+	const streakAtRisk = computed(
+		() => streak.value > 0 && !hasLogsOn(todayKey.value) && !restDayOn(todayKey.value),
+	);
 
 	// Czy seria dochodzi do najstarszego wczytanego miesiąca (trzeba doładować)
 	function streakTouchesLoadedEdge(): boolean {
@@ -321,9 +364,15 @@ export const useHabitsStore = defineStore("habits", () => {
 		};
 	}
 
+	// Id, nazwa i rytm celu (rytm tylko, gdy nie jest „codziennie”)
+	function goalBase(goal: GoalRef, id = goal.id ?? nanoid()): Goal {
+		const schedule = normalizeSchedule(goal.schedule);
+		return { id, name: goal.name, ...(schedule ? { schedule } : {}) };
+	}
+
 	function snapshotToWrite(key: DateKey): GoalRef[] | null {
 		const slimGoals = () =>
-			dailyGoalsList.value.map((g) => slim(g, { id: g.id, name: g.name }));
+			dailyGoalsList.value.map((g) => slim(g, goalBase(g)));
 		if (key === todayKey.value) return slimGoals();
 		if (days.value[key]?.goalsSnapshot) return null; // zostawiamy historyczną migawkę
 		return slimGoals();
@@ -491,10 +540,17 @@ export const useHabitsStore = defineStore("habits", () => {
 	}
 
 	async function addDailyGoal(habit: Habit | GoalRef) {
+		const existing = dailyGoalsList.value.find((g) => g.name === habit.name);
+		// Cel tygodniowy: kolejne stuknięcie to „jeszcze raz w tygodniu”
+		const schedule = normalizeSchedule(existing?.schedule);
+		if (schedule?.kind === "weekly") {
+			await setGoalSchedule(habit.name, { kind: "weekly", times: schedule.times + 1 });
+			return;
+		}
 		const previous = [...dailyGoalsList.value];
 		dailyGoalsList.value = [
 			...dailyGoalsList.value,
-			slim(habit, { id: nanoid(), name: habit.name }) as Goal,
+			slim(habit, goalBase({ name: habit.name, schedule }, nanoid())),
 		];
 		await persistGoals(previous);
 	}
@@ -514,6 +570,11 @@ export const useHabitsStore = defineStore("habits", () => {
 	}
 
 	async function removeGoalInstance(name: string) {
+		const weekly = normalizeSchedule(dailyGoalsList.value.find((g) => g.name === name)?.schedule);
+		if (weekly?.kind === "weekly" && weekly.times > 1) {
+			await setGoalSchedule(name, { kind: "weekly", times: weekly.times - 1 });
+			return;
+		}
 		const idx = dailyGoalsList.value.map((g) => g.name).lastIndexOf(name);
 		if (idx === -1) return;
 		const previous = [...dailyGoalsList.value];
@@ -540,7 +601,7 @@ export const useHabitsStore = defineStore("habits", () => {
 		const previous = [...dailyGoalsList.value];
 		if (target > current.length) {
 			const extra = Array.from({ length: target - current.length }, () =>
-				slim(current[0], { id: nanoid(), name }) as Goal,
+				slim(current[0], goalBase(current[0], nanoid())),
 			);
 			const lastIdx = dailyGoalsList.value.map((g) => g.name).lastIndexOf(name);
 			const list = [...dailyGoalsList.value];
@@ -563,6 +624,27 @@ export const useHabitsStore = defineStore("habits", () => {
 	async function reorderGoals(names: string[]) {
 		const previous = [...dailyGoalsList.value];
 		dailyGoalsList.value = names.flatMap((n) => previous.filter((g) => g.name === n));
+		await persistGoals(previous);
+	}
+
+	// Zmiana rytmu celu. Cel tygodniowy ma jeden wpis (licznik jest w `times`),
+	// a przy przejściu z tygodniowego na dzienny zostaje 1× dziennie.
+	async function setGoalSchedule(name: string, schedule: GoalSchedule | null) {
+		const current = dailyGoalsList.value.filter((g) => g.name === name);
+		if (current.length === 0) return;
+		const next = normalizeSchedule(schedule);
+		const wasWeekly = isWeekly(current[0]);
+		const keep = next?.kind === "weekly" || wasWeekly ? current.slice(0, 1) : current;
+		const updated = keep.map((g) => {
+			const copy: Goal = { ...g };
+			delete copy.schedule;
+			return next ? { ...copy, schedule: next } : copy;
+		});
+		const previous = [...dailyGoalsList.value];
+		const firstIdx = previous.findIndex((g) => g.name === name);
+		const rest = previous.filter((g) => g.name !== name);
+		rest.splice(firstIdx, 0, ...updated);
+		dailyGoalsList.value = rest;
 		await persistGoals(previous);
 	}
 
@@ -672,6 +754,9 @@ export const useHabitsStore = defineStore("habits", () => {
 		selectedCounts,
 		groupedSelectedDayHabits,
 		groupedGoals,
+		weeklyGoals,
+		weeklyGoalsFor,
+		isSelectedRestDay,
 		goalsProgress,
 		goalsFor,
 		dayGoalsProgress,
@@ -700,6 +785,7 @@ export const useHabitsStore = defineStore("habits", () => {
 		restoreGoals,
 		setGoalTarget,
 		reorderGoals,
+		setGoalSchedule,
 		tapGoal,
 		// własne habity
 		createCustomHabit,

@@ -62,6 +62,7 @@ import { computed } from "vue";
 import type { Habit } from "@/libs/types";
 import { useHabitsStore } from "@/stores/habits";
 import { displayName } from "@/utils/habitCatalog";
+import { normalizeSchedule } from "@/utils/goalSchedule";
 import HabitTile from "@/components/home_view/HabitTile.vue";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import type { HabitSection } from "./types";
@@ -76,11 +77,24 @@ const managing = defineModel<boolean>("managing", { required: true });
 
 const habitsStore = useHabitsStore();
 
+// Cel tygodniowy ma jeden wpis — jego licznik to „ile razy w tygodniu”
 const goalCounts = computed(() => {
 	const counts: Record<string, number> = {};
-	for (const g of habitsStore.dailyGoalsList) counts[g.name] = (counts[g.name] ?? 0) + 1;
+	for (const g of habitsStore.dailyGoalsList) {
+		const schedule = normalizeSchedule(g.schedule);
+		counts[g.name] = schedule?.kind === "weekly" ? schedule.times : (counts[g.name] ?? 0) + 1;
+	}
 	return counts;
 });
+const weeklyNames = computed(
+	() =>
+		new Set(
+			habitsStore.dailyGoalsList
+				.filter((g) => normalizeSchedule(g.schedule)?.kind === "weekly")
+				.map((g) => g.name),
+		),
+);
+const isWeeklyGoal = (h: Habit) => props.mode === "goal" && weeklyNames.value.has(h.name);
 
 function countFor(h: Habit) {
 	return props.mode === "log"
@@ -91,6 +105,7 @@ function countFor(h: Habit) {
 function badgeFor(h: Habit) {
 	const n = countFor(h);
 	if (n === 0) return null;
+	if (isWeeklyGoal(h)) return `${n}/wk`;
 	return props.mode === "goal" || n > 1 ? `×${n}` : "✓";
 }
 
@@ -100,7 +115,7 @@ function tileLabel(h: Habit) {
 	if (n === 0) return props.mode === "log" ? `Log ${name}` : `Add goal: ${name}`;
 	return props.mode === "log"
 		? `${name}, logged ${n} ${n === 1 ? "time" : "times"}. Log again`
-		: `${name}, goal ${n} ${n === 1 ? "time" : "times"} a day. Add one more`;
+		: `${name}, goal ${n} ${n === 1 ? "time" : "times"} a ${isWeeklyGoal(h) ? "week" : "day"}. Add one more`;
 }
 </script>
 

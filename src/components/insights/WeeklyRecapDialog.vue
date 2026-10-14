@@ -131,6 +131,22 @@
 						<small>{{ recap.top[0].count }}× this week</small></span
 					>
 				</li>
+				<li
+					v-for="w in weeklyRoutine"
+					:key="`weekly-${w.name}`">
+					<PixelIcon
+						:icon="w.habit.icon"
+						:palette="paletteFor(w.habit)"
+						:size="26" />
+					<span
+						>Weekly goal: <strong>{{ displayName(w.habit) }}</strong>
+						<small
+							>{{ Math.min(w.done, w.target) }}/{{ w.target }} this week{{
+								w.done >= w.target ? " ✓" : ""
+							}}</small
+						></span
+					>
+				</li>
 				<li v-if="habitsStore.streak > 1 && offset >= -1">
 					<PixelIcon
 						icon="local_fire_department"
@@ -269,6 +285,13 @@ const recap = computed(() =>
 		label: rangeLabel.value,
 	}),
 );
+
+// Cele „N× w tygodniu” — stan na ostatni miniony dzień tego tygodnia
+const weeklyRoutine = computed(() => {
+	const endKey = toDateKey(range.value.end);
+	const key = endKey > habitsStore.todayKey ? habitsStore.todayKey : endKey;
+	return habitsStore.weeklyGoalsFor(key);
+});
 
 const bars = computed(() => {
 	const maxCheckIns = Math.max(1, ...days.value.map((d) => d.checkIns));

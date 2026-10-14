@@ -63,36 +63,49 @@
 							Daily goals
 						</h3>
 						<p
-							v-if="progress.total > 0"
+							v-if="progress.total > 0 || isRestDay"
 							class="panel-hint">
 							{{ goalsHint }}
 						</p>
 					</div>
-					<button
-						v-if="progress.total > 0"
-						type="button"
-						class="dt-icon-btn reminders-btn"
-						:class="{ 'is-on': remindersOn > 0 }"
-						:aria-label="remindersLabel"
-						v-tooltip.bottom="remindersLabel"
-						@click="remindersOpen = true">
-						<i
-							class="pi pi-bell"
-							aria-hidden="true"></i>
-						<span
-							v-if="remindersOn > 0"
-							class="reminders-dot"
-							aria-hidden="true"></span>
-					</button>
-					<button
-						type="button"
-						class="dt-btn dt-btn-ghost dt-btn-sm"
-						@click="openDialog('goal')">
-						<i
-							class="pi pi-pencil"
-							aria-hidden="true"></i>
-						{{ progress.total > 0 ? "Edit" : "Set goals" }}
-					</button>
+					<div class="panel-actions">
+						<button
+							v-if="hasGoals"
+							type="button"
+							class="dt-icon-btn"
+							aria-label="Weekly routine: choose days for each goal"
+							v-tooltip.bottom="'Weekly routine'"
+							@click="scheduleOpen = true">
+							<i
+								class="pi pi-calendar"
+								aria-hidden="true"></i>
+						</button>
+						<button
+							v-if="hasGoals"
+							type="button"
+							class="dt-icon-btn reminders-btn"
+							:class="{ 'is-on': remindersOn > 0 }"
+							:aria-label="remindersLabel"
+							v-tooltip.bottom="remindersLabel"
+							@click="remindersOpen = true">
+							<i
+								class="pi pi-bell"
+								aria-hidden="true"></i>
+							<span
+								v-if="remindersOn > 0"
+								class="reminders-dot"
+								aria-hidden="true"></span>
+						</button>
+						<button
+							type="button"
+							class="dt-btn dt-btn-ghost dt-btn-sm"
+							@click="openDialog('goal')">
+							<i
+								class="pi pi-pencil"
+								aria-hidden="true"></i>
+							<span :class="{ 'edit-label': hasGoals }">{{ hasGoals ? "Edit" : "Set goals" }}</span>
+						</button>
+					</div>
 				</div>
 
 				<Transition name="banner">
@@ -129,8 +142,41 @@
 					</template>
 				</draggable>
 
+				<p
+					v-else-if="isRestDay"
+					class="rest-day"
+					role="status">
+					<span aria-hidden="true">🌿</span>
+					No goals planned for {{ weekdayLabel }}. Enjoy the day off, your streak is safe.
+				</p>
+
 				<div
-					v-else
+					v-if="weeklyTiles.length > 0"
+					class="weekly"
+					:class="{ 'has-daily': goalTiles.length > 0 || isRestDay }">
+					<h4 class="weekly-title">
+						This week
+						<span class="weekly-sub">{{ weeklySummary }}</span>
+					</h4>
+					<div class="tile-row">
+						<HabitTile
+							v-for="goal in weeklyTiles"
+							:key="goal.name"
+							:habit="goal.habit"
+							show-label
+							:muted="goal.done === 0"
+							:done="goal.done >= goal.target"
+							:badge="goal.done >= goal.target ? '✓' : `${goal.done}/${goal.target}`"
+							:progress="goal.done / goal.target"
+							:selected="stepperFor === goal.name"
+							:aria-label="weeklyAria(goal)"
+							:pressed="goal.doneOnDay > 0"
+							@click="(e: MouseEvent) => onWeeklyTap(goal, e)" />
+					</div>
+				</div>
+
+				<div
+					v-if="!hasGoals"
 					class="goals-empty">
 					<PixelIcon
 						icon="flag"
@@ -275,6 +321,9 @@
 		<RemindersDialog
 			v-if="remindersNeeded"
 			v-model="remindersOpen" />
+		<GoalScheduleDialog
+			v-if="scheduleNeeded"
+			v-model="scheduleOpen" />
 	</section>
 </template>
 
@@ -282,7 +331,7 @@
 import { computed, defineAsyncComponent, ref, watch } from "vue";
 import Popover from "primevue/popover";
 import draggable from "vuedraggable";
-import type { GroupedGoal, GroupedHabit } from "@/libs/types";
+import type { GroupedGoal, GroupedHabit, WeeklyGoal } from "@/libs/types";
 import { useHabitsStore } from "@/stores/habits";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
@@ -300,6 +349,9 @@ const AddHabitDialog = defineAsyncComponent(
 );
 const RemindersDialog = defineAsyncComponent(
 	() => import("@/components/home_view/RemindersDialog.vue"),
+);
+const GoalScheduleDialog = defineAsyncComponent(
+	() => import("@/components/home_view/GoalScheduleDialog.vue"),
 );
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import StarterPacks from "@/components/home_view/StarterPacks.vue";
@@ -333,6 +385,8 @@ const ringPct = computed(() =>
 
 const subline = computed(() => {
 	if (!habitsStore.isSelectedToday) return "Looking back — you can still fill in this day.";
+	if (habitsStore.isSelectedRestDay && habitsStore.selectedLogs.length === 0)
+		return "A rest day from your routine. Recharge 🌿";
 	if (habitsStore.streakAtRisk)
 		return `Log anything today to keep your ${habitsStore.streak}-day streak 🔥`;
 	const { done, total, complete } = progress.value;
@@ -350,6 +404,7 @@ const streakTooltip = computed(() =>
 );
 
 const goalsHint = computed(() => {
+	if (isRestDay.value) return "Rest day";
 	const left = progress.value.total - progress.value.done;
 	if (progress.value.complete) return "Perfect day ✨";
 	return `${left} left · tap a goal to log it`;
@@ -362,6 +417,42 @@ const goalTiles = computed<GroupedGoal[]>({
 	get: () => habitsStore.groupedGoals,
 	set: (list) => habitsStore.reorderGoals(list.map((g) => g.name)),
 });
+
+const hasGoals = computed(() => habitsStore.dailyGoalsList.length > 0);
+const isRestDay = computed(() => habitsStore.isSelectedRestDay);
+const weekdayLabel = computed(() => formatDayTitle(habitsStore.selectedDate).weekday);
+
+// ==========================================================================
+// CELE TYGODNIOWE („3× w tygodniu”)
+// ==========================================================================
+const weeklyTiles = computed(() => habitsStore.weeklyGoals);
+const weeklySummary = computed(() => {
+	const hit = weeklyTiles.value.filter((g) => g.done >= g.target).length;
+	return hit === weeklyTiles.value.length
+		? "all done ✨"
+		: `${hit} of ${weeklyTiles.value.length} done`;
+});
+
+function weeklyAria(goal: WeeklyGoal) {
+	return `${displayName(goal.habit)}: ${goal.done} of ${goal.target} this week`;
+}
+
+// Jeszcze nie odhaczone tego dnia → +1. Już odhaczone → stepper −/+.
+function onWeeklyTap(goal: WeeklyGoal, event: MouseEvent) {
+	markTap();
+	if (goal.doneOnDay > 0) {
+		openStepper(goal.name, event);
+		return;
+	}
+	playHabitCheck();
+	if (!habitsStore.logHabit(goal.habit)) return;
+	const done = goal.done + 1;
+	toast.undoable(
+		`${displayName(goal.habit)} (${Math.min(done, goal.target)}/${goal.target} this week) — ${randomCheer()}`,
+		() => habitsStore.unlogHabit(goal.name),
+	);
+	if (done === goal.target) flyEmoji();
+}
 
 function goalBadge(goal: GroupedGoal) {
 	if (goal.done >= goal.target) return "✓";
@@ -429,7 +520,13 @@ function flyEmoji() {
 // ZALOGOWANE HABITY + STEPPER
 // ==========================================================================
 // Habity-cele mają już swoje kafelki wyżej — tu pokazujemy resztę dnia
-const goalNames = computed(() => new Set(habitsStore.groupedGoals.map((g) => g.name)));
+const goalNames = computed(
+	() =>
+		new Set([
+			...habitsStore.groupedGoals.map((g) => g.name),
+			...habitsStore.weeklyGoals.map((g) => g.name),
+		]),
+);
 const loggedTiles = computed<GroupedHabit[]>({
 	get: () => habitsStore.groupedSelectedDayHabits.filter((g) => !goalNames.value.has(g.name)),
 	set: (list) =>
@@ -546,6 +643,11 @@ const remindersNeeded = ref(false);
 watch(remindersOpen, (open) => {
 	if (open) remindersNeeded.value = true;
 });
+const scheduleOpen = ref(false);
+const scheduleNeeded = ref(false);
+watch(scheduleOpen, (open) => {
+	if (open) scheduleNeeded.value = true;
+});
 const remindersOn = computed(() => remindersStore.activeReminders.length);
 const remindersLabel = computed(() =>
 	remindersOn.value > 0
@@ -656,6 +758,23 @@ const remindersLabel = computed(() =>
 	flex: 1;
 	min-width: 0;
 }
+.panel-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.15rem;
+	flex-shrink: 0;
+}
+/* Na wąskim ekranie „Edit” zostaje samą ikoną — tytuł celów potrzebuje miejsca */
+@media (max-width: 480px) {
+	.edit-label {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
+	}
+}
 .panel-hint {
 	margin: 0.1rem 0 0;
 	font-size: var(--dt-text-xs);
@@ -681,6 +800,35 @@ const remindersLabel = computed(() =>
 	font-weight: 700;
 	text-align: center;
 	box-shadow: var(--dt-shadow-sm);
+}
+.rest-day {
+	margin: 0;
+	padding: 0.7rem 0.9rem;
+	border-radius: var(--dt-radius);
+	background: var(--dt-surface);
+	color: var(--dt-text-2);
+	font-size: var(--dt-text-sm);
+	line-height: 1.45;
+	text-align: center;
+}
+.weekly.has-daily {
+	margin-top: 0.85rem;
+	padding-top: 0.75rem;
+	border-top: 1px dashed var(--dt-border);
+}
+.weekly-title {
+	display: flex;
+	align-items: baseline;
+	gap: 0.5rem;
+	margin: 0 0 0.55rem;
+	font-size: var(--dt-text-sm);
+	font-weight: 700;
+	color: var(--dt-text-2);
+}
+.weekly-sub {
+	font-weight: 400;
+	font-size: var(--dt-text-xs);
+	color: var(--dt-text-3);
 }
 .goals-empty {
 	display: flex;

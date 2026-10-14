@@ -27,9 +27,15 @@ export interface HabitLog {
 	origin?: string;
 }
 
+// Rytm celu (brak = codziennie). Dni: 0 = poniedziałek … 6 = niedziela.
+export type GoalSchedule =
+	| { kind: "days"; days: number[] }
+	| { kind: "weekly"; times: number };
+
 export interface GoalRef {
 	id?: string;
 	name: string;
+	schedule?: GoalSchedule;
 	icon?: string;
 	display_name?: string;
 	severity?: string;
@@ -66,6 +72,16 @@ export interface GroupedGoal {
 	habit: Habit;
 	target: number;
 	done: number;
+	schedule?: GoalSchedule;
+}
+
+// Cel „N× w tygodniu”: postęp liczony od poniedziałku do niedzieli
+export interface WeeklyGoal {
+	name: string;
+	habit: Habit;
+	target: number; // ile razy w tygodniu
+	done: number; // ile razy w tym tygodniu (bez limitu)
+	doneOnDay: number; // ile razy w wybranym dniu
 }
 
 export type TodoColor =
