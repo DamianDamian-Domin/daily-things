@@ -92,19 +92,25 @@
 						<li
 							v-for="h in habits"
 							:key="h.icon + h.name"
-							class="fd-habit"
-							v-tooltip.top="h.name">
-							<PixelIcon
-								:icon="h.icon"
-								:palette="h.palette"
-								:size="28" />
+							class="fd-habit">
+							<span class="fd-habit-face">
+								<PixelIcon
+									:icon="h.icon"
+									:palette="h.palette"
+									:size="28" />
+								<span
+									v-if="h.count > 1"
+									class="fd-count"
+									aria-hidden="true"
+									>{{ h.count }}</span
+								>
+							</span>
+							<span class="fd-habit-name">{{ h.name }}</span>
 							<span
 								v-if="h.count > 1"
-								class="fd-count"
-								aria-hidden="true"
-								>{{ h.count }}</span
+								class="sr-only"
+								>× {{ h.count }}</span
 							>
-							<span class="sr-only">{{ h.name }}{{ h.count > 1 ? ` × ${h.count}` : "" }}</span>
 						</li>
 					</ul>
 					<p
@@ -312,12 +318,20 @@ function remove() {
 .fd-habits {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.4rem;
+	gap: 0.6rem 0.2rem;
 	margin: 0;
 	padding: 0;
 	list-style: none;
 }
+/* Kwadracik z ikoną i nazwą pod spodem — same ikony były nieczytelne */
 .fd-habit {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.25rem;
+	width: 4rem;
+}
+.fd-habit-face {
 	position: relative;
 	display: grid;
 	place-items: center;
@@ -325,6 +339,19 @@ function remove() {
 	height: 2.6rem;
 	border-radius: 0.8rem;
 	background: var(--dt-surface-sunken);
+}
+.fd-habit-name {
+	max-width: 100%;
+	font-size: 0.72rem;
+	font-weight: 600;
+	line-height: 1.2;
+	color: var(--dt-text-2);
+	text-align: center;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	word-break: break-word;
 }
 .fd-count {
 	position: absolute;

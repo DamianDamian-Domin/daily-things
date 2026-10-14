@@ -106,6 +106,7 @@
 					<template #item="{ element: goal }">
 						<HabitTile
 							:habit="goal.habit"
+							show-label
 							:muted="goal.done === 0"
 							:done="goal.done >= goal.target"
 							:badge="goalBadge(goal)"
@@ -166,6 +167,7 @@
 						<template #item="{ element: group }">
 							<HabitTile
 								:habit="group.habit"
+								show-label
 								:badge="group.count > 1 ? `×${group.count}` : null"
 								:selected="stepperFor === group.name"
 								:aria-label="`${group.habit.display_name}, logged ${group.count} ${group.count === 1 ? 'time' : 'times'}. Edit`"
@@ -656,7 +658,11 @@ const remindersLabel = computed(() =>
 .tile-row {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.85rem 0.75rem;
+	gap: 0.75rem 0.35rem;
+}
+/* Podpisy pod kafelkami — nieco węższe, żeby na telefonie zmieściły się 4 w rzędzie */
+.tile-row :deep(.tile.has-label) {
+	width: 4.25rem;
 }
 .contents {
 	display: contents;
