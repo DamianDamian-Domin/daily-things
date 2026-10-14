@@ -3,6 +3,7 @@ import { computed, ref, shallowRef, watch } from "vue";
 import type { Unsubscribe } from "firebase/firestore";
 import { useAchievementsStore } from "@/stores/achievements";
 import { useAuthStore } from "@/stores/auth";
+import { useChallengesStore } from "@/stores/challenges";
 import { useHabitsStore } from "@/stores/habits";
 import { useProfileStore } from "@/stores/profile";
 import { useProfileSyncStore } from "@/stores/profileSync";
@@ -117,6 +118,7 @@ export const useFriendsStore = defineStore("friends", () => {
 	const profileSync = useProfileSyncStore();
 	const toast = useToastStore();
 	const carouselStore = useCarouselStore();
+	const challenges = useChallengesStore();
 
 	const uid = computed(() => authStore.userUid);
 
@@ -152,6 +154,7 @@ export const useFriendsStore = defineStore("friends", () => {
 		live.value = true;
 		listenError.value = false;
 		loadCheered();
+		challenges.start(me);
 		unsubFriendships = watchFriendships(
 			me,
 			(list, fromCache) => {
@@ -184,6 +187,7 @@ export const useFriendsStore = defineStore("friends", () => {
 		stopTimer = null;
 		unsubFriendships?.();
 		unsubInbox?.();
+		challenges.stop();
 		unsubFriendships = null;
 		unsubInbox = null;
 		for (const unsub of profileUnsubs.values()) unsub();
@@ -651,6 +655,7 @@ export const useFriendsStore = defineStore("friends", () => {
 	// ==========================================
 	function clear() {
 		stop();
+		challenges.clear();
 		for (const timer of removeTimers.values()) clearTimeout(timer);
 		removeTimers.clear();
 		friendships.value = [];
