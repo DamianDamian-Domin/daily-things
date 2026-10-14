@@ -57,6 +57,22 @@
 						</p>
 					</div>
 					<button
+						v-if="progress.total > 0"
+						type="button"
+						class="dt-icon-btn reminders-btn"
+						:class="{ 'is-on': remindersOn > 0 }"
+						:aria-label="remindersLabel"
+						v-tooltip.bottom="remindersLabel"
+						@click="remindersOpen = true">
+						<i
+							class="pi pi-bell"
+							aria-hidden="true"></i>
+						<span
+							v-if="remindersOn > 0"
+							class="reminders-dot"
+							aria-hidden="true"></span>
+					</button>
+					<button
 						type="button"
 						class="dt-btn dt-btn-ghost dt-btn-sm"
 						@click="openDialog('goal')">
@@ -228,6 +244,9 @@
 			v-model="dialogOpen"
 			:mode="dialogMode"
 			@logged="markTap" />
+		<RemindersDialog
+			v-if="remindersNeeded"
+			v-model="remindersOpen" />
 	</section>
 </template>
 
@@ -240,6 +259,7 @@ import { useHabbitsStore } from "@/stores/habbits";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { usePreferencesStore } from "@/stores/userPreferences";
+import { useRemindersStore } from "@/stores/reminders";
 import { useSound } from "@/utils/useSound";
 import { useConfetti } from "@/utils/useConfetti";
 import { randomCheer } from "@/utils/useCompliment";
@@ -249,6 +269,9 @@ import HabitTile from "@/components/home_view/HabitTile.vue";
 const AddHabitDialog = defineAsyncComponent(
 	() => import("@/components/home_view/AddHabitDialog.vue"),
 );
+const RemindersDialog = defineAsyncComponent(
+	() => import("@/components/home_view/RemindersDialog.vue"),
+);
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 
 defineProps<{ isActive: boolean }>();
@@ -257,6 +280,7 @@ const habbitsStore = useHabbitsStore();
 const authStore = useAuthStore();
 const toast = useToastStore();
 const preferences = usePreferencesStore();
+const remindersStore = useRemindersStore();
 const { playHabitCheck, playUncheck, playVictory } = useSound();
 const { launch: launchConfetti } = useConfetti();
 
@@ -474,6 +498,21 @@ function openDialog(mode: "log" | "goal") {
 	dialogMode.value = mode;
 	dialogOpen.value = true;
 }
+
+// ==========================================================================
+// PRZYPOMNIENIA (okno ładowane dopiero po pierwszym otwarciu)
+// ==========================================================================
+const remindersOpen = ref(false);
+const remindersNeeded = ref(false);
+watch(remindersOpen, (open) => {
+	if (open) remindersNeeded.value = true;
+});
+const remindersOn = computed(() => remindersStore.activeReminders.length);
+const remindersLabel = computed(() =>
+	remindersOn.value > 0
+		? `Reminders: ${remindersOn.value} on`
+		: "Set reminders",
+);
 </script>
 
 <style scoped>
@@ -624,6 +663,24 @@ function openDialog(mode: "log" | "goal") {
 }
 .tile-ghost {
 	opacity: 0.35;
+}
+
+.reminders-btn {
+	position: relative;
+	flex-shrink: 0;
+}
+.reminders-btn.is-on {
+	color: var(--dt-accent-ink);
+}
+.reminders-dot {
+	position: absolute;
+	top: 0.45rem;
+	right: 0.5rem;
+	width: 0.45rem;
+	height: 0.45rem;
+	border-radius: 50%;
+	background: var(--dt-accent);
+	box-shadow: 0 0 0 2px var(--dt-surface-soft);
 }
 
 .logged .panel-head {

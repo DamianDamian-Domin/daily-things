@@ -10,13 +10,14 @@
     "build": "vite build",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "preview": "vite preview",
-    "android": "npm run build && npx cap sync",
+    "android": "npm run build && node scripts/copy-android-res.mjs && npx cap sync",
     "icons": "npm i --no-save @material-symbols/svg-400 @resvg/resvg-js && node scripts/generate-pixel-icons.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.3.3",
     "@capacitor/cli": "^8.3.3",
     "@capacitor/core": "^8.3.3",
+    "@capacitor/local-notifications": "^8.3.1",
     "@fontsource-variable/lora": "^5.3.0",
     "@fontsource/sacramento": "^5.3.0",
     "@primeuix/themes": "^1.0.3",

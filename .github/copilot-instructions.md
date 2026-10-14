@@ -26,7 +26,7 @@ You are a **senior software engineer** focused on modern, accessible, mobile-fir
 - Path alias `@` → `src`. All domain types in `src/libs/types.ts`.
 
 ## Data model (Firestore)
-- `users/{uid}` → `todos[]` (with `subtasks[]`), `dailyGoals[]`, `recentlyUsed[]`, `customHabbits[]`, `preferences{}`
+- `users/{uid}` → `todos[]` (with `subtasks[]`), `dailyGoals[]`, `recentlyUsed[]`, `customHabbits[]`, `reminders[]`, `preferences{}`
 - `users/{uid}/habbits/{YYYY-MM-DD}` → `{ date, habbits: HabbitLog[], goalsSnapshot: GoalRef[] }`
 - A goal "3× a day" = three goal entries with the same `name`.
 - New logs are slim (`{ id, name, at }`); display data is resolved from the catalog by `name` (`resolveHabbit`). **Never rename `name` in the catalog** — it is the stored key.
@@ -50,6 +50,13 @@ You are a **senior software engineer** focused on modern, accessible, mobile-fir
 - **Social code is lazy.** `stores/social.ts` loads `stores/friends.ts` (listeners, requests, inbox) and `stores/profileSync.ts` (publishing my profile) on demand; guests never download them. `stores/profile.ts` (my avatar/code) stays tiny because the navbar needs it.
 - **Realtime listeners only while the Friends card is visible** (`friendsStore.start()` / `stopSoon()` driven from `App.vue`), one per friend profile (rules check friendship per document, so no `in` queries). Clean up with `clear()` on logout/account switch.
 - **Be write-frugal.** The profile is published debounced (2.5 s), only when its JSON signature changed (signature kept in localStorage), and stats are skipped entirely for users without friends.
+
+## Reminders (local notifications)
+- `users/{uid}.reminders[]` = `{ name, time: "HH:MM" }`, one per goal name (local time). Stored as an array (setDoc merge would deep-merge a map and never drop keys).
+- Only current daily goals ring. Scheduling lives in `stores/reminders.ts`, runs on native only and lazy-imports `@capacitor/local-notifications` (web never downloads it; the dialog says reminders ring in the Android app).
+- We schedule one-off notifications for the next 7 days (not a repeating one), cancel + rebuild on any change, and skip today's once the goal is done. Every app open moves the window forward.
+- Ask for notification permission only when the user sets their first time.
+- `android/` is gitignored: custom Android resources (the `ic_stat_icon` status-bar icon) live in `native/android/res` and `npm run android` copies them in. `capacitor.config.ts` points LocalNotifications `smallIcon` at it.
 
 ## Auth
 - Guests are persistent anonymous accounts. Upgrading keeps the same uid (`linkWithCredential` / `linkWithPopup`); signing into an existing account migrates guest data (`mergeUserData`).
