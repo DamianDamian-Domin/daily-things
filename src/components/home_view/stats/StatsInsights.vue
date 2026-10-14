@@ -1,5 +1,5 @@
 <template>
-	<!-- Odznaki, podsumowanie tygodnia, rok -->
+	<!-- Odznaki, podsumowanie tygodnia, rok, „kiedy ostatnio” -->
 	<div
 		class="insight-row"
 		role="group"
@@ -33,6 +33,16 @@
 				palette="green"
 				:size="22" />
 			Year
+		</button>
+		<button
+			type="button"
+			class="insight-btn"
+			@click="insights.open('lastDone')">
+			<PixelIcon
+				icon="schedule"
+				palette="blue"
+				:size="22" />
+			Last done
 		</button>
 	</div>
 </template>
@@ -87,6 +97,13 @@ const insights = useInsightsStore();
 .insight-btn:focus-visible {
 	outline: none;
 	box-shadow: var(--dt-focus-ring);
+}
+/* Wąski ekran: 2 × 2 zamiast trzech przycisków i jednego na całą szerokość */
+@media (max-width: 520px) {
+	.insight-row {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+	}
 }
 .insight-count {
 	min-width: 1.3rem;

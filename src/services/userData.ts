@@ -162,7 +162,8 @@ export async function migrateLegacyTodos(uid: string, todos: TodoItem[]) {
 	await setDoc(userDocRef(uid), { todos: deleteField() }, { merge: true });
 }
 
-async function fetchAllDays(uid: string): Promise<DayEntry[]> {
+// Cała historia naraz (wyszukiwarka „kiedy ostatnio”, eksport konta)
+export async function fetchAllDays(uid: string): Promise<DayEntry[]> {
 	const snap = await getDocs(daysCollectionRef(uid));
 	return snap.docs.map((d) => toDayEntry(d.id, d.data() as StoredDay));
 }
