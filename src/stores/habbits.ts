@@ -17,6 +17,7 @@ import { useToastStore } from "@/stores/toast";
 import { dayDocRef, fetchDays, saveUserFields, type UserDoc } from "@/services/userData";
 import {
 	addDays,
+	fromDateKey,
 	monthBounds,
 	monthKeyOf,
 	monthsInRange,
@@ -26,6 +27,7 @@ import {
 	type DateKey,
 } from "@/utils/date";
 import { CATALOG, findCatalogHabbit, resolveHabbit } from "@/utils/habitCatalog";
+import { streakDetails } from "@/utils/streak";
 
 const RECENT_LIMIT = 12;
 const MAX_STREAK_LOOKBACK_MONTHS = 24;
@@ -168,17 +170,10 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		return logsOn(key).length > 0;
 	}
 
-	// Liczba dni z rzędu z co najmniej jednym wpisem. Dzisiejszy dzień „nie psuje”
-	// serii, dopóki trwa — liczymy od wczoraj i dodajemy dziś, jeśli coś jest.
-	const streak = computed(() => {
-		let count = hasLogsOn(todayKey.value) ? 1 : 0;
-		let day = addDays(startOfDay(), -1);
-		while (hasLogsOn(toDateKey(day))) {
-			count++;
-			day = addDays(day, -1);
-		}
-		return count;
-	});
+	// Liczba dni z rzędu z co najmniej jednym wpisem (jeden opuszczony dzień
+	// na tydzień jest „zamrażany” i nie zrywa serii — utils/streak.ts)
+	const streakInfo = computed(() => streakDetails(hasLogsOn, todayKey.value));
+	const streak = computed(() => streakInfo.value.count);
 
 	// Seria trwa, ale dziś jeszcze nic nie zapisano — delikatne przypomnienie
 	const streakAtRisk = computed(() => streak.value > 0 && !hasLogsOn(todayKey.value));
@@ -189,8 +184,9 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		if (!oldest) return false;
 		const [y, m] = oldest.split("-").map(Number);
 		const firstLoaded = new Date(y, m - 1, 1);
-		const streakStart = addDays(startOfDay(), -(streak.value - (hasLogsOn(todayKey.value) ? 1 : 0)));
-		return streak.value > 0 && streakStart <= addDays(firstLoaded, 0);
+		const startKey = streakInfo.value.startKey;
+		// +1 dzień: zamrożenie może „przeskoczyć” na niewczytany miesiąc
+		return startKey !== null && fromDateKey(startKey) <= addDays(firstLoaded, 1);
 	}
 
 	// ==========================================================================
@@ -471,6 +467,20 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		await persistGoals(previous);
 	}
 
+	// Kilka celów naraz (pakiety startowe) — jeden zapis zamiast kilku
+	async function addDailyGoals(habbits: Array<Habbit | GoalRef>) {
+		const have = new Set(dailyGoalsList.value.map((g) => g.name));
+		const fresh = habbits.filter((h) => !have.has(h.name));
+		if (fresh.length === 0) return 0;
+		const previous = [...dailyGoalsList.value];
+		dailyGoalsList.value = [
+			...dailyGoalsList.value,
+			...fresh.map((h) => slim(h, { id: nanoid(), name: h.name }) as Goal),
+		];
+		await persistGoals(previous);
+		return fresh.length;
+	}
+
 	async function removeGoalInstance(name: string) {
 		const idx = dailyGoalsList.value.map((g) => g.name).lastIndexOf(name);
 		if (idx === -1) return;
@@ -632,6 +642,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		goalsFor,
 		dayGoalsProgress,
 		streak,
+		streakInfo,
 		streakAtRisk,
 		// wczytywanie
 		hydrate,
@@ -647,6 +658,7 @@ export const useHabbitsStore = defineStore("habbits", () => {
 		reorderSelected,
 		// cele
 		addDailyGoal,
+		addDailyGoals,
 		removeGoalInstance,
 		removeGoal,
 		restoreGoals,

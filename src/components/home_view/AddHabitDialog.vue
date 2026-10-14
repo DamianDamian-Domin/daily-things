@@ -187,6 +187,17 @@
 				</Transition>
 
 				<p
+					v-if="mode === 'goal' && !query && !creating"
+					class="goal-tip">
+					<span aria-hidden="true">💡</span>
+					{{ tip }}
+				</p>
+
+				<StarterPacks
+					v-if="showPacks"
+					class="add-packs" />
+
+				<p
 					v-if="category === 'negative' && !query && !creating"
 					class="break-hint">
 					Noticing a slip is the first step to changing it. Log it kindly 🌱
@@ -324,8 +335,10 @@ import {
 	type SuperCategoryKey,
 } from "@/utils/habitCatalog";
 import { PALETTES, type PaletteKey } from "@/utils/pixelIcons";
+import { dayPartOf, pickTip, timelySuggestions, type DayPart } from "@/utils/starterPacks";
 import HabitTile from "@/components/home_view/HabitTile.vue";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
+import StarterPacks from "@/components/home_view/StarterPacks.vue";
 
 const props = defineProps<{ mode: "log" | "goal" }>();
 const emit = defineEmits<{ (e: "logged"): void }>();
@@ -334,6 +347,12 @@ const visible = defineModel<boolean>({ default: false });
 const habbitsStore = useHabbitsStore();
 const preferences = usePreferencesStore();
 const { playHabitCheck, playUncheck } = useSound();
+
+const DAY_PART_ICON: Record<DayPart, string> = {
+	morning: "sunny",
+	afternoon: "partly_cloudy_day",
+	evening: "nightlight",
+};
 
 const CUSTOM_ICONS = [
 	"star",
@@ -399,6 +418,17 @@ const managing = ref(false);
 // Kolejność „ostatnio używanych” zamrażamy na czas otwarcia okna —
 // inaczej kafelki przeskakiwałyby pod palcem po każdym stuknięciu
 const recentSnapshot = ref<string[]>([]);
+// Jedna wskazówka „zacznij od małego” na otwarcie okna celów
+const tip = ref(pickTip());
+// Pakiety startowe, dopóki ktoś ma mniej niż 3 cele
+const showPacks = computed(
+	() =>
+		props.mode === "goal" &&
+		!query.value &&
+		category.value === "all" &&
+		!creating.value &&
+		new Set(habbitsStore.dailyGoalsList.map((g) => g.name)).size < 3,
+);
 
 const logTitle = computed(() =>
 	habbitsStore.isSelectedToday ? "What did you do today?" : "What did you do that day?",
@@ -411,6 +441,7 @@ function onShow() {
 	creating.value = false;
 	managing.value = false;
 	recentSnapshot.value = [...habbitsStore.recentHabbits];
+	tip.value = pickTip();
 	nextTick(() => {
 		if (railRef.value) railRef.value.scrollLeft = 0;
 		updateRailEdges();
@@ -644,15 +675,18 @@ const sections = computed<Section[]>(() => {
 	const recent = recentSnapshot.value
 		.map((name) => pool.value.find((h) => h.name === name))
 		.filter((h): h is Habbit => Boolean(h));
+	// Bez historii: przy odhaczaniu podpowiadamy to, co pasuje do pory dnia
+	const timely = !recent.length && props.mode === "log" ? timelySuggestions() : null;
 	const suggested = recent.length
 		? recent
-		: STARTER_HABBITS.map((n) => findCatalogHabbit(n)).filter((h): h is Habbit => Boolean(h));
+		: (timely?.habits ??
+			STARTER_HABBITS.map((n) => findCatalogHabbit(n)).filter((h): h is Habbit => Boolean(h)));
 	const suggestedItems = take(suggested.slice(0, 12));
 	if (suggestedItems.length)
 		result.push({
 			key: "suggested",
-			title: recent.length ? "Recently used" : "Great to start with",
-			icon: "star_shine",
+			title: recent.length ? "Recently used" : (timely?.title ?? "Great to start with"),
+			icon: timely ? DAY_PART_ICON[dayPartOf()] : "star_shine",
 			palette: "yellow",
 			items: suggestedItems,
 		});
@@ -1020,6 +1054,21 @@ async function deleteCustom(h: Habbit) {
 	font-style: italic;
 	color: var(--dt-text-2);
 	line-height: 1.45;
+}
+.goal-tip {
+	display: flex;
+	gap: 0.45rem;
+	margin: 0 0 0.85rem;
+	padding: 0.55rem 0.75rem;
+	font-size: var(--dt-text-sm);
+	line-height: 1.4;
+	color: var(--dt-text-2);
+	border-radius: var(--dt-radius);
+	background: var(--dt-accent-softer);
+	border: 1px solid var(--dt-border);
+}
+.add-packs {
+	margin-bottom: 1rem;
 }
 .add-empty p {
 	margin: 0.15rem 0 0.35rem;
