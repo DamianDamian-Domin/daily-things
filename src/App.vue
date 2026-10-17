@@ -6,7 +6,7 @@
 		<a
 			href="#main"
 			class="skip-link"
-			>Skip to content</a
+			>{{ m.skipToContent }}</a
 		>
 
 		<header
@@ -76,6 +76,7 @@ const LogNoteDialog = defineAsyncComponent(() => import("@/components/home_view/
 const HelpTour = defineAsyncComponent(() => import("@/components/help/HelpTour.vue"));
 import ToastHost from "@/components/ui/ToastHost.vue";
 import OfflineBadge from "@/components/ui/OfflineBadge.vue";
+import { shellMessages as m } from "@/i18n/messages/shell";
 
 const route = useRoute();
 const router = useRouter();
@@ -162,7 +163,7 @@ async function loadSession(uid: string) {
 		if (!authStore.isGuest) loadFriends().then((friends) => friends.checkInbox());
 	} catch (err) {
 		console.error("Session load failed", err);
-		toast.error("We couldn't load your data. Check your connection.");
+		toast.error(m.sessionLoadFailed);
 	}
 }
 

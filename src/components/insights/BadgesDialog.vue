@@ -20,14 +20,14 @@
 					<h2
 						id="badges-title"
 						class="dt-title">
-						Your badges
+						{{ m.title }}
 					</h2>
-					<p class="dt-subtitle">{{ earnedCount }} of {{ items.length }} collected</p>
+					<p class="dt-subtitle">{{ m.collected(earnedCount, items.length) }}</p>
 				</div>
 				<button
 					type="button"
 					class="dt-icon-btn"
-					aria-label="Close"
+					:aria-label="common.close"
 					@click="visible = false">
 					<i
 						class="pi pi-times"
@@ -41,7 +41,7 @@
 				:aria-valuenow="earnedCount"
 				aria-valuemin="0"
 				:aria-valuemax="items.length"
-				aria-label="Badges collected">
+				:aria-label="m.meterAria">
 				<span :style="{ width: `${Math.round((earnedCount / items.length) * 100)}%` }"></span>
 			</div>
 
@@ -74,7 +74,7 @@
 					<span
 						v-else-if="item.progress.target > 1"
 						class="badge-progress"
-						:aria-label="`${item.progress.current} of ${item.progress.target}`">
+						:aria-label="m.progressAria(item.progress.current, item.progress.target)">
 						<span class="badge-track"
 							><span :style="{ width: `${item.progress.pct}%` }"></span
 						></span>
@@ -93,6 +93,8 @@ import PixelIcon from "@/components/ui/PixelIcon.vue";
 import { EARNED_EARLIER, useAchievementsStore } from "@/stores/achievements";
 import { progressOf } from "@/utils/achievements";
 import { formatShortDate } from "@/utils/date";
+import { achievementsMessages as m } from "@/i18n/messages/achievements";
+import { commonMessages as common } from "@/i18n/messages/common";
 
 const visible = defineModel<boolean>({ default: false });
 const achievements = useAchievementsStore();
@@ -106,9 +108,9 @@ const items = computed(() =>
 			unlockedAt: unlockedAt ?? 0,
 			when:
 				unlockedAt === EARNED_EARLIER
-					? "Earned"
+					? m.earned
 					: unlockedAt
-						? `Earned ${formatShortDate(new Date(unlockedAt))}`
+						? m.earnedOn(formatShortDate(new Date(unlockedAt)))
 						: "",
 			progress: progressOf(def, achievements.metrics),
 		}))

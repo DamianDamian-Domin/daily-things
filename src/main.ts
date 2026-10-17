@@ -18,6 +18,7 @@ import Aura from "@primeuix/themes/aura";
 import { definePreset } from "@primeuix/themes";
 import { useAuthStore } from "@/stores/auth";
 import { usePwaStore } from "@/stores/pwa";
+import { syncPrimeVueLocale } from "@/i18n/primevue";
 
 // Ciepły preset: pomarańczowy akcent + „kamienne” (stone) szarości zamiast
 // zimnych zinc/gray. Wartości zgodne z tokenami --dt-* ze style.css.
@@ -126,6 +127,7 @@ app.use(PrimeVue, {
 	},
 });
 app.directive("tooltip", Tooltip);
+syncPrimeVueLocale(app);
 
 // Sieć, instalacja i aktualizacje — od razu, bo przeglądarka może zaproponować
 // instalację, zanim aplikacja się zamontuje

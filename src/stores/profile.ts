@@ -5,6 +5,7 @@ import { useToastStore } from "@/stores/toast";
 import { saveUserFields, type UserDoc } from "@/services/userData";
 import { defaultAvatar, normalizeAvatar, sameAvatar, type AvatarConfig } from "@/utils/avatar";
 import { plain } from "@/utils/plain";
+import { profileMessages as m } from "@/i18n/messages/profile";
 
 // ==========================================================================
 // „Ja”: awatar, kod znajomego i imię widoczne dla znajomych.
@@ -76,7 +77,7 @@ export const useProfileStore = defineStore("profile", () => {
 		saveUserFields(currentUid, { avatar: plain(cfg) }).catch((err) => {
 			console.error("Avatar save failed", err);
 			if (uid.value === currentUid) savedAvatar.value = previous;
-			toast.error("Couldn't save your avatar — check your connection.");
+			toast.error(m.avatarSaveFailed);
 		});
 	}
 

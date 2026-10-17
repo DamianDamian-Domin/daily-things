@@ -5,14 +5,14 @@
 				icon="local_fire_department"
 				palette="orange"
 				:size="30" />
-			<dt>Current streak</dt>
+			<dt>{{ m.currentStreak }}</dt>
 			<dd>
-				{{ streak }} <small>{{ streak === 1 ? "day" : "days" }}</small>
+				{{ streak }} <small>{{ m.days(streak) }}</small>
 				<span
 					v-if="freezeUsed"
 					class="kpi-freeze"
-					v-tooltip.top="'One missed day a week won\'t break your streak'"
-					aria-label="A free pass saved your streak this week"
+					v-tooltip.top="m.freezeTooltip"
+					:aria-label="m.freezeLabel"
 					>❄️</span
 				>
 			</dd>
@@ -22,7 +22,7 @@
 				icon="trophy"
 				palette="yellow"
 				:size="30" />
-			<dt>Perfect days</dt>
+			<dt>{{ m.perfectDays }}</dt>
 			<dd>
 				{{ summary.perfectDays }} <small>/ {{ summary.elapsedDays }}</small>
 			</dd>
@@ -32,7 +32,7 @@
 				icon="check_circle"
 				palette="green"
 				:size="30" />
-			<dt>Habits logged</dt>
+			<dt>{{ m.habitsLogged }}</dt>
 			<dd>{{ summary.positive }}</dd>
 		</div>
 	</dl>
@@ -41,6 +41,7 @@
 <script setup lang="ts">
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import type { StatsSummary } from "./useStatsData";
+import { statsMessages as m } from "@/i18n/messages/stats";
 
 defineProps<{ streak: number; summary: StatsSummary; freezeUsed?: boolean }>();
 </script>

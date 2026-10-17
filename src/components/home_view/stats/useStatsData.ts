@@ -14,6 +14,8 @@ import {
 } from "@/utils/date";
 import { CUSTOM_CATEGORY, isNegative, superCategoryOf } from "@/utils/habitCatalog";
 import { PALETTES, type PaletteKey } from "@/utils/pixelIcons";
+import { statsMessages as m } from "@/i18n/messages/stats";
+import { commonMessages } from "@/i18n/messages/common";
 
 export type StatsPeriod = "week" | "month";
 
@@ -72,9 +74,10 @@ export function useStatsData(period: Ref<StatsPeriod>, offset: Ref<number>) {
 	const periodLabel = computed(() => {
 		const { start, end } = range.value;
 		if (period.value === "month") return formatMonth(start);
-		if (offset.value === 0) return `This week · ${formatShortDate(start)} – ${formatShortDate(end)}`;
-		if (offset.value === -1) return `Last week · ${formatShortDate(start)} – ${formatShortDate(end)}`;
-		return `Week ${isoWeek(start)} · ${formatShortDate(start)} – ${formatShortDate(end)}`;
+		const span = `${formatShortDate(start)} – ${formatShortDate(end)}`;
+		if (offset.value === 0) return m.thisWeek(span);
+		if (offset.value === -1) return m.lastWeek(span);
+		return m.weekN(isoWeek(start), span);
 	});
 
 	// Doczytujemy tylko brakujące miesiące (store cache'uje je na całą sesję)
@@ -98,7 +101,7 @@ export function useStatsData(period: Ref<StatsPeriod>, offset: Ref<number>) {
 				key,
 				dateObj: date,
 				date: formatShortDate(date),
-				name: key === todayKey.value ? "Today" : weekdayName(date, "short"),
+				name: key === todayKey.value ? commonMessages.today : weekdayName(date, "short"),
 				dayNum: date.getDate(),
 				future: key > todayKey.value,
 				isToday: key === todayKey.value,

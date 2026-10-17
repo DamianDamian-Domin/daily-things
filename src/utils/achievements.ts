@@ -1,6 +1,8 @@
 import { addDays, fromDateKey, toDateKey, type DateKey } from "@/utils/date";
 import { longestRun } from "@/utils/streak";
 import type { PaletteKey } from "@/utils/pixelIcons";
+import { defineLocalizedField } from "@/i18n";
+import { ACHIEVEMENTS_PL } from "@/i18n/messages/achievements";
 
 // ==========================================================================
 // Odznaki (ordery). Czysta logika: dostaje podsumowanie wczytanej historii
@@ -207,6 +209,13 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 		value: (m) => m.friends,
 	},
 ];
+
+// Nazwy i opisy idą za wybranym językiem (gettery), więc odznaki u znajomych
+// i w toastach tłumaczą się same
+for (const def of ACHIEVEMENTS) {
+	defineLocalizedField(def, "title", ACHIEVEMENTS_PL[def.id]?.title);
+	defineLocalizedField(def, "description", ACHIEVEMENTS_PL[def.id]?.description);
+}
 
 export const ACHIEVEMENTS_BY_ID = new Map(ACHIEVEMENTS.map((a) => [a.id, a]));
 

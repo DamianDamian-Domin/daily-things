@@ -6,7 +6,7 @@
 			<label
 				for="custom-name"
 				class="dt-label"
-				>Name your habit</label
+				>{{ m.nameYourHabit }}</label
 			>
 			<input
 				id="custom-name"
@@ -14,10 +14,10 @@
 				v-model="name"
 				class="dt-input"
 				maxlength="40"
-				placeholder="e.g. Practice guitar" />
+				:placeholder="m.namePlaceholder" />
 		</div>
 		<fieldset class="icon-picker">
-			<legend class="dt-label">Pick an icon</legend>
+			<legend class="dt-label">{{ m.pickIcon }}</legend>
 			<div class="icon-grid">
 				<button
 					v-for="choice in CUSTOM_ICONS"
@@ -41,20 +41,20 @@
 				v-model="negative"
 				type="checkbox"
 				class="dt-check" />
-			It's a habit I want to break
+			{{ m.wantToBreak }}
 		</label>
 		<div class="create-actions">
 			<button
 				type="button"
 				class="dt-btn dt-btn-ghost dt-btn-sm"
 				@click="emit('cancel')">
-				Cancel
+				{{ common.cancel }}
 			</button>
 			<button
 				type="submit"
 				class="dt-btn dt-btn-primary dt-btn-sm"
 				:disabled="!name.trim()">
-				{{ mode === "log" ? "Create & log" : "Create & add goal" }}
+				{{ mode === "log" ? m.createAndLog : m.createAndGoal }}
 			</button>
 		</div>
 	</form>
@@ -64,6 +64,8 @@
 // Tworzenie własnego habitu
 import { ref } from "vue";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
+import { addHabitMessages as m } from "@/i18n/messages/addHabit";
+import { commonMessages as common } from "@/i18n/messages/common";
 
 defineProps<{ mode: "log" | "goal" }>();
 const emit = defineEmits<{ (e: "submit"): void; (e: "cancel"): void }>();

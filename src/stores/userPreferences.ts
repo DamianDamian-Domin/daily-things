@@ -3,6 +3,7 @@ import { ref, watch } from "vue";
 import type { UserPreferences } from "@/libs/types";
 import { saveUserFields, type UserDoc } from "@/services/userData";
 import { useAuthStore } from "@/stores/auth";
+import { locale, localeChosen, setLocale } from "@/i18n";
 
 function readStorage(key: string): string | null {
 	try {
@@ -60,6 +61,8 @@ export const usePreferencesStore = defineStore("userPreferences", () => {
 			animationsEnabled: animationsEnabled.value,
 			shareProgress: shareProgress.value,
 			shareHabits: shareHabits.value,
+			// Zapisujemy tylko świadomy wybór — inaczej każde urządzenie zgaduje samo
+			...(localeChosen.value ? { language: locale.value } : {}),
 		};
 	}
 
@@ -87,6 +90,7 @@ export const usePreferencesStore = defineStore("userPreferences", () => {
 		if (typeof prefs.soundEnabled === "boolean") soundEnabled.value = prefs.soundEnabled;
 		if (typeof prefs.animationsEnabled === "boolean")
 			animationsEnabled.value = prefs.animationsEnabled;
+		if (prefs.language === "en" || prefs.language === "pl") setLocale(prefs.language);
 		// watchery odpalają się asynchronicznie — zdejmujemy flagę po nich
 		queueMicrotask(() => {
 			setTimeout(() => (hydrating = false), 0);
@@ -112,6 +116,9 @@ export const usePreferencesStore = defineStore("userPreferences", () => {
 	document.documentElement.classList.toggle("reduce-motion", !animationsEnabled.value);
 
 	watch([shareProgress, shareHabits], () => persistRemote());
+	watch(locale, () => {
+		if (localeChosen.value) persistRemote();
+	});
 
 	function toggleTheme() {
 		isDarkMode.value = !isDarkMode.value;

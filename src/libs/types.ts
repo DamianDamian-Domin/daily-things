@@ -140,6 +140,8 @@ export interface UserPreferences {
 	// Znajomi: udostępnianie postępów i nazw habitów (domyślnie włączone)
 	shareProgress: boolean;
 	shareHabits: boolean;
+	// Język interfejsu wybrany przez użytkownika (brak = wg przeglądarki)
+	language?: "en" | "pl";
 }
 
 export type CookieConsentChoice =

@@ -12,7 +12,7 @@
 			<button
 				type="button"
 				class="auth-error-close"
-				aria-label="Dismiss message"
+				:aria-label="m.dismissMessage"
 				@click="emit('dismiss')">
 				<i
 					class="pi pi-times"
@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from "vue";
+import { authMessages as m } from "@/i18n/messages/auth";
 
 const props = defineProps<{ error: string | null }>();
 const emit = defineEmits<{ (e: "dismiss"): void }>();

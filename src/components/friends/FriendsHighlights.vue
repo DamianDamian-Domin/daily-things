@@ -2,7 +2,7 @@
 	<!-- ============ CHWILE DO ŚWIĘTOWANIA ============ -->
 	<section
 		class="moments"
-		aria-label="Friends' wins today">
+		:aria-label="m.winsAria">
 		<ul>
 			<li
 				v-for="h in friendsStore.highlights"
@@ -17,9 +17,9 @@
 					type="button"
 					class="dt-btn dt-btn-soft dt-btn-sm"
 					:disabled="friendsStore.hasCheeredToday(h.friend.uid)"
-					:aria-label="`High-five ${h.friend.name}`"
+					:aria-label="m.highFiveAria(h.friend.name)"
 					@click="friendsStore.cheer(h.friend)">
-					{{ friendsStore.hasCheeredToday(h.friend.uid) ? "👏 Sent" : "👏" }}
+					{{ friendsStore.hasCheeredToday(h.friend.uid) ? m.sent : "👏" }}
 				</button>
 			</li>
 		</ul>
@@ -29,6 +29,7 @@
 <script setup lang="ts">
 import { useFriendsStore } from "@/stores/friends";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
+import { friendsMessages as m } from "@/i18n/messages/friends";
 
 const friendsStore = useFriendsStore();
 </script>

@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { setLocale } from "@/i18n";
 import {
 	agoLabel,
 	agoShort,
@@ -105,5 +106,24 @@ describe("averageGap / rhythm / freshness", () => {
 		expect(freshness(10, 30)).toBe("fresh");
 		expect(freshness(30, 30)).toBe("due");
 		expect(freshness(50, 30)).toBe("overdue");
+	});
+});
+
+describe("po polsku", () => {
+	afterEach(() => setLocale("en", { remember: false }));
+
+	it("odmienia etykiety przez liczby", () => {
+		setLocale("pl", { remember: false });
+		expect(agoLabel(0)).toBe("dziś");
+		expect(agoLabel(3)).toBe("3 dni temu");
+		expect(agoLabel(21)).toBe("3 tygodnie temu");
+		expect(agoLabel(35)).toBe("5 tygodni temu");
+		expect(agoLabel(100)).toBe("3 miesiące temu");
+		expect(agoLabel(400)).toBe("ponad rok temu");
+		expect(agoLabel(2000)).toBe("ponad 5 lat temu");
+		expect(rhythmLabel(7)).toBe("mniej więcej co 7 dni");
+		expect(rhythmLabel(10)).toBe("mniej więcej co tydzień");
+		expect(rhythmLabel(30)).toBe("mniej więcej co 4 tygodnie");
+		expect(rhythmLabel(1)).toBe("prawie codziennie");
 	});
 });

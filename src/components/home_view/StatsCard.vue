@@ -7,23 +7,23 @@
 			<h2
 				id="stats-title"
 				class="stats-title">
-				Your progress <span aria-hidden="true">📊</span>
+				{{ m.title }} <span aria-hidden="true">📊</span>
 			</h2>
 			<div
 				class="dt-segmented"
 				role="group"
-				aria-label="Period">
+				:aria-label="m.period">
 				<button
 					type="button"
 					:aria-pressed="period === 'week'"
 					@click="setPeriod('week')">
-					Week
+					{{ m.week }}
 				</button>
 				<button
 					type="button"
 					:aria-pressed="period === 'month'"
 					@click="setPeriod('month')">
-					Month
+					{{ m.month }}
 				</button>
 			</div>
 		</header>
@@ -32,7 +32,7 @@
 			<button
 				type="button"
 				class="dt-icon-btn"
-				:aria-label="`Previous ${period}`"
+				:aria-label="m.prev(period)"
 				@click="offset--">
 				<i
 					class="pi pi-chevron-left"
@@ -46,7 +46,7 @@
 			<button
 				type="button"
 				class="dt-icon-btn"
-				:aria-label="`Next ${period}`"
+				:aria-label="m.next(period)"
 				:disabled="offset >= 0"
 				@click="offset++">
 				<i
@@ -96,7 +96,7 @@
 					icon="potted_plant"
 					palette="green"
 					:size="40" />
-				<p>Nothing here yet. Every logged habit grows this garden of stats 🌱</p>
+				<p>{{ m.empty }}</p>
 			</div>
 		</div>
 	</section>
@@ -115,6 +115,7 @@ import StatsMonthHeatmap from "./stats/StatsMonthHeatmap.vue";
 import StatsTopHabits from "./stats/StatsTopHabits.vue";
 import StatsCategories from "./stats/StatsCategories.vue";
 import { useStatsData, type StatsPeriod } from "./stats/useStatsData";
+import { statsMessages as m } from "@/i18n/messages/stats";
 
 defineProps<{ isActive: boolean }>();
 

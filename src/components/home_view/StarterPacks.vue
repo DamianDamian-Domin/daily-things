@@ -6,9 +6,9 @@
 			<h3
 				id="packs-title"
 				class="dt-section-title">
-				{{ title }}
+				{{ title ?? m.starterPacks }}
 			</h3>
-			<p class="packs-sub">Tap a pack to add all of its goals. You can tweak them later.</p>
+			<p class="packs-sub">{{ m.packsSub }}</p>
 		</div>
 		<ul
 			class="packs-rail"
@@ -22,9 +22,7 @@
 					:class="{ added: p.added }"
 					:style="{ '--tint': PALETTES[p.pack.palette].h, '--tint-strong': PALETTES[p.pack.palette].f }"
 					:aria-label="
-						p.added
-							? `${p.pack.title}: already in your goals`
-							: `Add ${p.pack.title}: ${p.names.join(', ')}`
+						p.added ? m.packAlreadyAdded(p.pack.title) : m.addPack(p.pack.title, p.names.join(', '))
 					"
 					:disabled="p.added"
 					@click="addPack(p.pack)">
@@ -69,9 +67,11 @@ import { useToastStore } from "@/stores/toast";
 import { displayName, paletteFor } from "@/utils/habitCatalog";
 import { PALETTES } from "@/utils/pixelIcons";
 import { STARTER_PACKS, packHabits, type StarterPack } from "@/utils/starterPacks";
+import { habitsMessages as m } from "@/i18n/messages/habits";
 
 const props = withDefaults(defineProps<{ title?: string; compact?: boolean; limit?: number }>(), {
-	title: "Starter packs",
+	// Brak tytułu = domyślny w aktualnym języku
+	title: undefined,
 	compact: false,
 	limit: STARTER_PACKS.length,
 });
@@ -99,9 +99,9 @@ async function addPack(pack: StarterPack) {
 	const count = await habitsStore.addDailyGoals(packHabits(pack));
 	if (!count) return;
 	emit("added", count);
-	toast.show(`${pack.title}: ${count} ${count === 1 ? "goal" : "goals"} added 🌱`, {
+	toast.show(m.packAdded(pack.title, count), {
 		tone: "success",
-		actionLabel: "Undo",
+		actionLabel: m.undo,
 		action: () => habitsStore.restoreGoals(previous),
 	});
 }

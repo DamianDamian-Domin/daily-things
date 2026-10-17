@@ -41,6 +41,7 @@ import { CATALOG, findCatalogHabit, resolveHabit } from "@/utils/habitCatalog";
 import { streakDetails } from "@/utils/streak";
 import { cleanNote } from "@/utils/logNote";
 import { isDueOn, isRestDay, isWeekly, normalizeSchedule, weekKeys } from "@/utils/goalSchedule";
+import { habitsMessages as msgs } from "@/i18n/messages/habits";
 
 const RECENT_LIMIT = 12;
 
@@ -51,7 +52,8 @@ export interface WidgetAction {
 	log: HabitLog;
 }
 const MAX_STREAK_LOOKBACK_MONTHS = 24;
-const SAVE_ERROR = "Couldn't save that — check your connection and try again.";
+// Getter, bo tekst zależy od aktualnego języka
+const saveError = () => msgs.saveError;
 
 export const useHabitsStore = defineStore("habits", () => {
 	const authStore = useAuthStore();
@@ -312,7 +314,7 @@ export const useHabitsStore = defineStore("habits", () => {
 			})
 			.catch((err) => {
 				console.error("Failed to load full history", err);
-				toast.error("We couldn't load your full history. Check your connection.");
+				toast.error(msgs.historyError);
 			})
 			.finally(() => {
 				pendingAllHistory = null;
@@ -429,7 +431,7 @@ export const useHabitsStore = defineStore("habits", () => {
 				console.error("logHabit failed", err);
 				const idx = entry.habits.findIndex((l) => l.id === log.id);
 				if (idx !== -1) entry.habits.splice(idx, 1);
-				toast.error(SAVE_ERROR);
+				toast.error(saveError());
 			})
 			.finally(() => endWrite(key));
 	}
@@ -467,7 +469,7 @@ export const useHabitsStore = defineStore("habits", () => {
 			.catch((err) => {
 				console.error("removeLog failed", err);
 				entry.habits.splice(Math.min(idx, entry.habits.length), 0, removed);
-				toast.error(SAVE_ERROR);
+				toast.error(saveError());
 			})
 			.finally(() => endWrite(key));
 		return removed;
@@ -515,7 +517,7 @@ export const useHabitsStore = defineStore("habits", () => {
 				console.error("restoreLogs failed", err);
 				const ids = new Set(copies.map((l) => l.id));
 				entry.habits = entry.habits.filter((l) => !ids.has(l.id));
-				toast.error(SAVE_ERROR);
+				toast.error(saveError());
 			})
 			.finally(() => endWrite(key));
 	}
@@ -545,7 +547,7 @@ export const useHabitsStore = defineStore("habits", () => {
 					if (previous) current.note = previous;
 					else delete current.note;
 				}
-				toast.error(SAVE_ERROR);
+				toast.error(saveError());
 			})
 			.finally(() => endWrite(key));
 		return true;
@@ -575,7 +577,7 @@ export const useHabitsStore = defineStore("habits", () => {
 			.catch((err) => {
 				console.error("setMood failed", err);
 				entry.mood = previous;
-				toast.error(SAVE_ERROR);
+				toast.error(saveError());
 			})
 			.finally(() => endWrite(key));
 	}
@@ -598,7 +600,7 @@ export const useHabitsStore = defineStore("habits", () => {
 			});
 		} catch (err) {
 			console.error("reorder failed", err);
-			toast.error(SAVE_ERROR);
+			toast.error(saveError());
 		} finally {
 			endWrite(key);
 		}
@@ -641,7 +643,7 @@ export const useHabitsStore = defineStore("habits", () => {
 		} catch (err) {
 			console.error("persistGoals failed", err);
 			dailyGoalsList.value = previous;
-			toast.error(SAVE_ERROR);
+			toast.error(saveError());
 		}
 	}
 
@@ -775,7 +777,7 @@ export const useHabitsStore = defineStore("habits", () => {
 		} catch (err) {
 			console.error("saveCustomHabits failed", err);
 			customHabits.value = previous;
-			toast.error(SAVE_ERROR);
+			toast.error(saveError());
 		}
 	}
 

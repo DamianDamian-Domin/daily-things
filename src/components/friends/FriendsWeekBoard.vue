@@ -7,9 +7,9 @@
 			<h3
 				id="week-title"
 				class="dt-section-title">
-				This week
+				{{ m.thisWeek }}
 			</h3>
-			<span class="week-hint">goals done since Monday</span>
+			<span class="week-hint">{{ m.weekHint }}</span>
 		</div>
 		<p
 			v-if="message"
@@ -45,15 +45,14 @@
 					>{{ e.total ? `${e.pct}%` : "—" }}</span
 				>
 				<span class="sr-only"
-					>Rank {{ e.rank }}: {{ e.total ? `${e.pct}% of goals done` : "no goals yet" }}</span
+					>{{ m.rankAria(e.rank, e.total ? e.pct : null) }}</span
 				>
 			</li>
 		</ol>
 		<p
 			v-if="privateCount"
 			class="week-private">
-			{{ privateCount === 1 ? "1 friend keeps" : `${privateCount} friends keep` }} their week
-			private 🌙
+			{{ m.privateWeeks(privateCount) }}
 		</p>
 	</section>
 </template>
@@ -62,6 +61,7 @@
 // Tylko typy — store znajomych ładuje rodzic (kod społecznościowy jest leniwy)
 import type { BoardEntry } from "@/stores/friends";
 import PixelAvatar from "@/components/ui/PixelAvatar.vue";
+import { friendsMessages as m } from "@/i18n/messages/friends";
 
 // Tablica tygodnia: ranking celów od poniedziałku
 defineProps<{

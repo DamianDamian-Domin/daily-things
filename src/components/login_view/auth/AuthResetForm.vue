@@ -10,17 +10,16 @@
 		<h2
 			:id="titleId"
 			class="auth-title">
-			Check your inbox
+			{{ m.checkInbox }}
 		</h2>
 		<p class="auth-lead">
-			If an account exists for <strong>{{ email }}</strong>, you'll get a link to set
-			a new password in a minute. Don't forget the spam folder.
+			{{ m.resetSentPrefix }} <strong>{{ email }}</strong>{{ m.resetSentSuffix }}
 		</p>
 		<button
 			type="button"
 			class="dt-btn dt-btn-primary dt-btn-block"
 			@click="emit('switch-mode', 'login')">
-			Back to sign in
+			{{ m.backToSignIn }}
 		</button>
 	</section>
 	<form
@@ -31,16 +30,16 @@
 		<h2
 			:id="titleId"
 			class="auth-title">
-			Reset your password
+			{{ m.resetTitle }}
 		</h2>
 		<p class="auth-lead">
-			Enter the email you signed up with and we'll send you a reset link.
+			{{ m.resetLead }}
 		</p>
 		<div class="dt-field">
 			<label
 				for="reset-email"
 				class="dt-label"
-				>Email</label
+				>{{ m.email }}</label
 			>
 			<input
 				id="reset-email"
@@ -50,7 +49,7 @@
 				autocomplete="email"
 				inputmode="email"
 				required
-				placeholder="you@example.com" />
+				:placeholder="m.emailPlaceholder" />
 		</div>
 		<AuthErrorBanner
 			:error="authStore.error"
@@ -62,7 +61,7 @@
 			<i
 				:class="authStore.busy ? 'pi pi-spin pi-spinner' : 'pi pi-send'"
 				aria-hidden="true"></i>
-			Send reset link
+			{{ m.sendResetLink }}
 		</button>
 	</form>
 </template>
@@ -70,6 +69,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useAuthStore, type AuthDialogMode } from "@/stores/auth";
+import { authMessages as m } from "@/i18n/messages/auth";
 import AuthErrorBanner from "@/components/login_view/AuthErrorBanner.vue";
 import { isValidEmail } from "./validation";
 

@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { shellMessages as m } from "@/i18n/messages/shell";
 
 export type ToastTone = "info" | "success" | "error" | "celebrate";
 
@@ -78,12 +79,12 @@ export const useToastStore = defineStore("toast", () => {
 		toast?.extra?.run();
 	}
 
-	function error(message = "Something went wrong. Please try again.") {
+	function error(message: string = m.genericError) {
 		return show(message, { tone: "error", duration: 4500 });
 	}
 
 	function undoable(message: string, undo: () => void, extra?: ToastExtra) {
-		return show(message, { actionLabel: "Undo", action: undo, extra, duration: extra ? 6000 : undefined });
+		return show(message, { actionLabel: m.undo, action: undo, extra, duration: extra ? 6000 : undefined });
 	}
 
 	return { toasts, show, dismiss, runAction, runExtra, error, undoable };

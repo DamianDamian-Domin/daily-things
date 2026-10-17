@@ -18,8 +18,8 @@
 				<button
 					type="button"
 					class="dt-icon-btn"
-					aria-label="When did I last…? Search your history"
-					v-tooltip.bottom="'When did I last…?'"
+					:aria-label="m.lastDoneAria"
+					v-tooltip.bottom="m.lastDoneTooltip"
 					@click="insights.open('lastDone')">
 					<i
 						class="pi pi-history"
@@ -30,7 +30,7 @@
 					class="streak-chip"
 					:class="{ 'at-risk': habitsStore.streakAtRisk }"
 					role="img"
-					:aria-label="`${habitsStore.streak}-day streak`"
+					:aria-label="m.streakAria(habitsStore.streak)"
 					v-tooltip.bottom="streakTooltip">
 					<PixelIcon
 						icon="local_fire_department"
@@ -60,7 +60,7 @@
 						<h3
 							id="goals-title"
 							class="dt-section-title">
-							Daily goals
+							{{ m.dailyGoals }}
 						</h3>
 						<p
 							v-if="progress.total > 0 || isRestDay"
@@ -73,8 +73,8 @@
 							v-if="hasGoals"
 							type="button"
 							class="dt-icon-btn"
-							aria-label="Weekly routine: choose days for each goal"
-							v-tooltip.bottom="'Weekly routine'"
+							:aria-label="m.weeklyRoutineAria"
+							v-tooltip.bottom="m.weeklyRoutine"
 							@click="scheduleOpen = true">
 							<i
 								class="pi pi-calendar"
@@ -103,7 +103,7 @@
 							<i
 								class="pi pi-pencil"
 								aria-hidden="true"></i>
-							<span :class="{ 'edit-label': hasGoals }">{{ hasGoals ? "Edit" : "Set goals" }}</span>
+							<span :class="{ 'edit-label': hasGoals }">{{ hasGoals ? m.edit : m.setGoals }}</span>
 						</button>
 					</div>
 				</div>
@@ -113,8 +113,7 @@
 						v-if="progress.complete"
 						class="goals-banner"
 						role="status">
-						🌟 All goals done{{ habitsStore.isSelectedToday ? " for today" : "" }}! Well
-						deserved.
+						{{ m.goalsBanner(habitsStore.isSelectedToday) }}
 					</p>
 				</Transition>
 
@@ -183,18 +182,18 @@
 						palette="yellow"
 						:size="34" />
 					<p>
-						Pick 2–3 small things you'd like to do every day. Tapping a goal logs it — that's it.
+						{{ m.goalsEmpty }}
 					</p>
 					<StarterPacks
 						v-if="habitsStore.isSelectedToday"
-						title="Not sure where to start?"
+						:title="m.notSureWhereToStart"
 						compact
 						:limit="4" />
 					<button
 						type="button"
 						class="dt-btn dt-btn-soft dt-btn-sm"
 						@click="openDialog('goal')">
-						{{ habitsStore.isSelectedToday ? "Or choose your own" : "Choose goals" }}
+						{{ habitsStore.isSelectedToday ? m.orChooseYourOwn : m.chooseGoals }}
 					</button>
 				</div>
 			</section>
@@ -233,7 +232,7 @@
 								show-label
 								:badge="group.count > 1 ? `×${group.count}` : null"
 								:selected="stepperFor === group.name"
-								:aria-label="`${group.habit.display_name}, logged ${group.count} ${group.count === 1 ? 'time' : 'times'}. Edit`"
+								:aria-label="m.loggedAria(group.habit.display_name, group.count)"
 								aria-haspopup="dialog"
 								@click="(e: MouseEvent) => openStepper(group.name, e)" />
 						</template>
@@ -242,8 +241,8 @@
 					<button
 						type="button"
 						class="add-tile"
-						aria-label="Log a habit"
-						v-tooltip.bottom="'Log a habit'"
+						:aria-label="m.logAHabit"
+						v-tooltip.bottom="m.logAHabit"
 						@click="openDialog('log')">
 						<i
 							class="pi pi-plus"
@@ -271,13 +270,13 @@
 				v-if="stepperGroup"
 				class="stepper"
 				role="dialog"
-				:aria-label="`Edit ${stepperGroup.habit.display_name}`">
+				:aria-label="m.editHabit(stepperGroup.habit.display_name)">
 				<p class="stepper-name">{{ stepperGroup.habit.display_name }}</p>
 				<div class="stepper-row">
 					<button
 						type="button"
 						class="stepper-btn"
-						aria-label="Remove one"
+						:aria-label="m.removeOne"
 						@click="stepDown">
 						<i
 							class="pi pi-minus"
@@ -291,7 +290,7 @@
 					<button
 						type="button"
 						class="stepper-btn is-plus"
-						aria-label="Log one more"
+						:aria-label="m.logOneMore"
 						@click="stepUp">
 						<i
 							class="pi pi-plus"
@@ -325,7 +324,7 @@
 					type="button"
 					class="dt-btn dt-btn-ghost dt-btn-sm stepper-clear"
 					@click="removeAll">
-					Remove all
+					{{ m.removeAll }}
 				</button>
 				<button
 					type="button"
@@ -334,7 +333,7 @@
 					<i
 						class="pi pi-history"
 						aria-hidden="true"></i>
-					History
+					{{ m.history }}
 				</button>
 			</div>
 		</Popover>
@@ -382,6 +381,7 @@ const GoalScheduleDialog = defineAsyncComponent(
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import StarterPacks from "@/components/home_view/StarterPacks.vue";
 import MoodPicker from "@/components/home_view/MoodPicker.vue";
+import { habitsMessages as m } from "@/i18n/messages/habits";
 
 defineProps<{ isActive: boolean }>();
 
@@ -412,30 +412,29 @@ const ringPct = computed(() =>
 );
 
 const subline = computed(() => {
-	if (!habitsStore.isSelectedToday) return "Looking back — you can still fill in this day.";
-	if (habitsStore.isSelectedRestDay && habitsStore.selectedLogs.length === 0)
-		return "A rest day from your routine. Recharge 🌿";
+	if (!habitsStore.isSelectedToday) return m.subLookingBack;
+	if (habitsStore.isSelectedRestDay && habitsStore.selectedLogs.length === 0) return m.subRestDay;
 	if (habitsStore.streakAtRisk)
-		return `Log anything today to keep your ${habitsStore.streak}-day streak 🔥`;
+		return m.subKeepStreak(habitsStore.streak);
 	const { done, total, complete } = progress.value;
-	if (complete) return "Everything's done. Enjoy the rest of your day ☕";
-	if (total > 0 && done === 0) return "A fresh day. Start with the easiest goal.";
-	if (total > 0) return `${total - done} to go — you've got this.`;
-	if (habitsStore.selectedLogs.length > 0) return "Nice rhythm today. Keep it gentle.";
-	return "Small steps count. What's one thing you'll do today?";
+	if (complete) return m.subAllDone;
+	if (total > 0 && done === 0) return m.subFreshDay;
+	if (total > 0) return m.subToGo(total - done);
+	if (habitsStore.selectedLogs.length > 0) return m.subNiceRhythm;
+	return m.subSmallSteps;
 });
 
 const streakTooltip = computed(() =>
 	habitsStore.streakAtRisk
-		? `${habitsStore.streak}-day streak — log something today to keep it`
-		: `${habitsStore.streak}-day streak — keep it going!`,
+		? m.streakAtRiskTooltip(habitsStore.streak)
+		: m.streakTooltip(habitsStore.streak),
 );
 
 const goalsHint = computed(() => {
-	if (isRestDay.value) return "Rest day";
+	if (isRestDay.value) return m.restDay;
 	const left = progress.value.total - progress.value.done;
-	if (progress.value.complete) return "Perfect day ✨";
-	return `${left} left · tap a goal to log it`;
+	if (progress.value.complete) return m.perfectDay;
+	return m.goalsLeft(left);
 });
 
 // ==========================================================================
@@ -490,8 +489,8 @@ function goalBadge(goal: GroupedGoal) {
 
 function goalAria(goal: GroupedGoal) {
 	const name = displayName(goal.habit);
-	if (goal.target > 1) return `${name}: ${goal.done} of ${goal.target} done`;
-	return `${name}: ${goal.done ? "done" : "not done yet"}`;
+	if (goal.target > 1) return m.goalAriaCount(name, goal.done, goal.target);
+	return goal.done ? m.goalAriaDone(name) : m.goalAriaNotDone(name);
 }
 
 // Stuknięcie w cel: dopóki nie jest zrobiony → +1. Zrobiony → stepper −/+,
@@ -530,7 +529,7 @@ watch(
 		if (complete && was === false && byUser && habitsStore.isSelectedToday) {
 			playVictory();
 			launchConfetti();
-			toast.show("All goals done — what a day! 🌟", { tone: "celebrate", duration: 3500 });
+			toast.show(m.allGoalsToast, { tone: "celebrate", duration: 3500 });
 		}
 	},
 );
@@ -572,14 +571,14 @@ const loggedTiles = computed<GroupedHabit[]>({
 const otherLogsCount = computed(() => loggedTiles.value.reduce((sum, g) => sum + g.count, 0));
 
 const loggedHeading = computed(() => {
-	if (goalNames.value.size > 0) return "Also logged";
-	return habitsStore.isSelectedToday ? "Logged today" : "Logged that day";
+	if (goalNames.value.size > 0) return m.alsoLogged;
+	return habitsStore.isSelectedToday ? m.loggedToday : m.loggedThatDay;
 });
 const loggedEmptyText = computed(() => {
-	if (goalNames.value.size > 0) return "Did something else nice? Tap + to add it.";
+	if (goalNames.value.size > 0) return m.emptyWithGoals;
 	return habitsStore.isSelectedToday
-		? "Nothing logged yet. Tap + and add the first little win of your day 🌱"
-		: "Nothing was logged that day. You can still add it now.";
+		? m.emptyToday
+		: m.emptyThatDay;
 });
 
 const countBump = ref(false);
@@ -624,7 +623,7 @@ async function stepDown() {
 	const removed = habitsStore.unlogHabit(name);
 	if (!removed) return;
 	if (!stepperGroup.value) stepperRef.value?.hide();
-	toast.undoable(`Removed ${displayName(group.habit)}`, () =>
+	toast.undoable(m.removed(displayName(group.habit)), () =>
 		habitsStore.restoreLogs([removed]),
 	);
 }
@@ -636,7 +635,7 @@ async function removeAll() {
 	playUncheck();
 	const removed = habitsStore.removeAllLogs(group.name);
 	if (removed.length)
-		toast.undoable(`Removed ${displayName(group.habit)} ×${removed.length}`, () =>
+		toast.undoable(m.removedTimes(displayName(group.habit), removed.length), () =>
 			habitsStore.restoreLogs(removed),
 		);
 }
@@ -698,9 +697,7 @@ watch(scheduleOpen, (open) => {
 });
 const remindersOn = computed(() => remindersStore.activeReminders.length);
 const remindersLabel = computed(() =>
-	remindersOn.value > 0
-		? `Reminders: ${remindersOn.value} on`
-		: "Set reminders",
+	remindersOn.value > 0 ? m.remindersOn(remindersOn.value) : m.setReminders,
 );
 </script>
 

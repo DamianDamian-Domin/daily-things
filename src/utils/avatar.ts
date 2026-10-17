@@ -9,6 +9,9 @@
 // data URL, cache'owany per konfiguracja.
 // ==========================================================================
 
+import { localized } from "@/i18n";
+import { AVATAR_OPTION_LABELS_PL } from "@/i18n/messages/profile";
+
 export const AVATAR_GRID = 32;
 const N = AVATAR_GRID;
 const OUTLINE = "#4b3528";
@@ -167,7 +170,8 @@ export function optionLabel(part: AvatarPart, key: string): string {
 	};
 	const entry = table[part][key];
 	if (!entry) return key;
-	return typeof entry === "string" ? entry : entry.label;
+	const en = typeof entry === "string" ? entry : entry.label;
+	return localized(en, AVATAR_OPTION_LABELS_PL[part]?.[key] ?? en);
 }
 
 // Kolor próbki w edytorze (dla opcji kolorystycznych)

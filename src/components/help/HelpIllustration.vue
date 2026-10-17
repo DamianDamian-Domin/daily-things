@@ -51,7 +51,7 @@
 				</div>
 				<div class="mock-progress">
 					<span class="mock-track"><span style="width: 50%"></span></span>
-					<span class="mock-caption">3 of 6 today</span>
+					<span class="mock-caption">{{ m.tilesCaption }}</span>
 				</div>
 			</div>
 		</template>
@@ -62,15 +62,15 @@
 				<div class="mock-picker">
 					<span class="mock-arrow"><i class="pi pi-chevron-left"></i></span>
 					<span class="mock-day">
-						<strong>Saturday</strong>
-						<small>11 October</small>
+						<strong>{{ m.dayName }}</strong>
+						<small>{{ m.dayDate }}</small>
 					</span>
 					<span class="mock-arrow"><i class="pi pi-chevron-right"></i></span>
 				</div>
 				<div class="mock-week">
 					<span
-						v-for="day in week"
-						:key="day.label"
+						v-for="(day, i) in week"
+						:key="i"
 						class="week-day"
 						:class="{ active: day.active }">
 						<small>{{ day.label }}</small>
@@ -107,7 +107,7 @@
 						palette="orange"
 						:size="44" />
 					<strong>12</strong>
-					<small>day streak</small>
+					<small>{{ m.dayStreak }}</small>
 				</span>
 				<span class="heat">
 					<span
@@ -135,7 +135,7 @@
 					<PixelAvatar
 						:avatar="friend.avatar"
 						:size="52" />
-					<small>{{ friend.name }}</small>
+					<small>{{ friend.you ? m.you : friend.name }}</small>
 					<span class="friend-bars">
 						<span
 							v-for="(h, i) in friend.week"
@@ -155,6 +155,8 @@ import PixelAvatar from "@/components/ui/PixelAvatar.vue";
 import { PALETTES, type PaletteKey } from "@/utils/pixelIcons";
 import { defaultAvatar } from "@/utils/avatar";
 import type { HelpSlideId } from "@/utils/onboarding";
+import { helpMessages as m } from "@/i18n/messages/help";
+import { computed } from "vue";
 
 defineProps<{ slide: HelpSlideId }>();
 
@@ -178,21 +180,19 @@ const tiles: Array<{ icon: string; palette: PaletteKey; done?: boolean; tap?: bo
 	{ icon: "bedtime", palette: "indigo" },
 ];
 
-const week = [
-	{ label: "M", fill: 1 },
-	{ label: "T", fill: 0.6 },
-	{ label: "W", fill: 1 },
-	{ label: "T", fill: 0.3 },
-	{ label: "F", fill: 0.8 },
-	{ label: "S", fill: 1, active: true },
-	{ label: "S", fill: 0 },
+// Etykiety czytamy w computed, żeby szły za zmianą języka
+const WEEK_FILL = [
+	{ fill: 1 },
+	{ fill: 0.6 },
+	{ fill: 1 },
+	{ fill: 0.3 },
+	{ fill: 0.8 },
+	{ fill: 1, active: true },
+	{ fill: 0 },
 ];
+const week = computed(() => WEEK_FILL.map((d, i) => ({ ...d, label: m.weekLetters[i] })));
 
-const todos = [
-	{ text: "Clean the fridge", done: true },
-	{ text: "Book the dentist", done: false },
-	{ text: "Buy a birthday card", done: false },
-];
+const todos = computed(() => m.todos.map((text, i) => ({ text, done: i === 0 })));
 
 const heat = [
 	3, 2, 3, 1, 0, 2, 3, 2, 3, 3, 1, 2, 3, 3, 0, 1, 2, 3, 3, 2, 3, 3, 2, 1, 3, 3, 3, 2,
@@ -200,7 +200,7 @@ const heat = [
 
 const friends = [
 	{ name: "Ola", avatar: defaultAvatar("ola-help"), week: [0.4, 0.8, 1, 0.6, 1, 0.7, 0.9] },
-	{ name: "You", avatar: defaultAvatar("you-help"), week: [1, 0.6, 0.9, 1, 0.5, 1, 0.8] },
+	{ name: "You", you: true, avatar: defaultAvatar("you-help"), week: [1, 0.6, 0.9, 1, 0.5, 1, 0.8] },
 	{ name: "Kuba", avatar: defaultAvatar("kuba-help"), week: [0.7, 1, 0.5, 0.9, 0.6, 0.4, 1] },
 ];
 </script>

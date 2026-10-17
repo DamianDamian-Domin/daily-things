@@ -4,7 +4,7 @@
 			<button
 				type="button"
 				class="profile-avatar"
-				aria-label="Edit your avatar"
+				:aria-label="m.editAvatar"
 				@click="profileStore.openEditor()">
 				<PixelAvatar
 					:avatar="profileStore.avatar"
@@ -36,10 +36,9 @@
 					palette="green"
 					:size="40" />
 				<div>
-					<h3 class="guest-title">You're here as a guest</h3>
+					<h3 class="guest-title">{{ m.guestTitle }}</h3>
 					<p class="guest-text">
-						Your progress lives only on this device. A free account keeps it safe and syncs
-						it everywhere — nothing you've logged gets lost.
+						{{ m.guestText }}
 					</p>
 				</div>
 			</div>
@@ -53,21 +52,21 @@
 					<i
 						class="pi pi-google"
 						aria-hidden="true"></i>
-					Save with Google
+					{{ m.saveWithGoogle }}
 				</button>
 				<button
 					type="button"
 					class="dt-btn dt-btn-primary dt-btn-block"
 					@click="openAuth('register')">
-					Create free account
+					{{ m.createAccount }}
 				</button>
 				<p class="guest-signin">
-					Already have one?
+					{{ m.haveAccount }}
 					<button
 						type="button"
 						class="dt-link"
 						@click="openAuth('login')">
-						Sign in
+						{{ m.signIn }}
 					</button>
 				</p>
 			</div>
@@ -83,8 +82,8 @@
 					class="pi pi-envelope"
 					aria-hidden="true"></i>
 				<div class="verify-text">
-					<strong>Please verify your email</strong>
-					<span>It helps you recover your account if you forget the password.</span>
+					<strong>{{ m.verifyTitle }}</strong>
+					<span>{{ m.verifyText }}</span>
 				</div>
 				<div class="verify-actions">
 					<button
@@ -92,13 +91,13 @@
 						class="dt-btn dt-btn-soft dt-btn-sm"
 						:disabled="verifyCooldown > 0"
 						@click="resendVerification">
-						{{ verifyCooldown > 0 ? `Sent ✓ (${verifyCooldown}s)` : "Resend link" }}
+						{{ verifyCooldown > 0 ? m.verifySent(verifyCooldown) : m.resendLink }}
 					</button>
 					<button
 						type="button"
 						class="dt-btn dt-btn-ghost dt-btn-sm"
 						@click="authStore.reloadUser()">
-						I've verified
+						{{ m.iVerified }}
 					</button>
 				</div>
 			</div>
@@ -110,7 +109,7 @@
 					<label
 						for="profile-name"
 						class="dt-label"
-						>Display name</label
+						>{{ m.displayName }}</label
 					>
 					<div class="inline-row">
 						<input
@@ -119,12 +118,12 @@
 							class="dt-input"
 							maxlength="40"
 							autocomplete="nickname"
-							placeholder="What should we call you?" />
+							:placeholder="m.namePlaceholder" />
 						<button
 							type="submit"
 							class="dt-btn dt-btn-soft"
 							:disabled="!nameChanged || savingName">
-							{{ savingName ? "Saving…" : "Save" }}
+							{{ savingName ? m.saving : c.save }}
 						</button>
 					</div>
 				</form>
@@ -137,7 +136,7 @@
 					<i
 						class="pi pi-lock"
 						aria-hidden="true"></i>
-					Change password
+					{{ m.changePassword }}
 				</summary>
 				<form
 					class="password-form"
@@ -146,7 +145,7 @@
 						<label
 							for="pw-current"
 							class="dt-label"
-							>Current password</label
+							>{{ m.currentPassword }}</label
 						>
 						<PasswordInput
 							id="pw-current"
@@ -157,7 +156,7 @@
 						<label
 							for="pw-new"
 							class="dt-label"
-							>New password</label
+							>{{ m.newPassword }}</label
 						>
 						<PasswordInput
 							id="pw-new"
@@ -167,7 +166,7 @@
 						<p
 							id="pw-hint"
 							class="dt-hint">
-							At least 8 characters, with a letter and a number.
+							{{ m.passwordHint }}
 						</p>
 					</div>
 					<p
@@ -180,18 +179,18 @@
 						type="submit"
 						class="dt-btn dt-btn-soft"
 						:disabled="!canChangePassword || savingPassword">
-						{{ savingPassword ? "Updating…" : "Update password" }}
+						{{ savingPassword ? m.updating : m.updatePassword }}
 					</button>
 				</form>
 			</details>
 
 			<dl class="profile-facts">
 				<div>
-					<dt>Signed in with</dt>
+					<dt>{{ m.signedInWith }}</dt>
 					<dd>{{ providerLabel }}</dd>
 				</div>
 				<div>
-					<dt>Member since</dt>
+					<dt>{{ m.memberSince }}</dt>
 					<dd>{{ memberSince }}</dd>
 				</div>
 			</dl>
@@ -203,7 +202,7 @@
 				<i
 					class="pi pi-sign-out"
 					aria-hidden="true"></i>
-				Sign out
+				{{ m.signOut }}
 			</button>
 		</template>
 
@@ -213,19 +212,18 @@
 				<i
 					class="pi pi-trash"
 					aria-hidden="true"></i>
-				Delete {{ authStore.isGuest ? "guest data" : "account" }}
+				{{ m.deleteTitle(authStore.isGuest) }}
 			</summary>
 			<div class="danger-body">
 				<p>
-					This permanently removes all your habits, goals and to-dos
-					{{ authStore.isGuest ? "from this device" : "and your account" }}. It can't be undone.
+					{{ m.deleteText(authStore.isGuest) }}
 				</p>
 				<button
 					v-if="!confirmDelete"
 					type="button"
 					class="dt-btn dt-btn-danger dt-btn-sm"
 					@click="confirmDelete = true">
-					Delete everything
+					{{ m.deleteEverything }}
 				</button>
 				<div
 					v-else
@@ -235,13 +233,13 @@
 						class="dt-btn dt-btn-danger dt-btn-sm"
 						:disabled="deleting"
 						@click="deleteAccount">
-						{{ deleting ? "Deleting…" : "Yes, delete permanently" }}
+						{{ deleting ? m.deleting : m.deleteConfirm }}
 					</button>
 					<button
 						type="button"
 						class="dt-btn dt-btn-ghost dt-btn-sm"
 						@click="confirmDelete = false">
-						Keep it
+						{{ m.keepIt }}
 					</button>
 				</div>
 			</div>
@@ -258,6 +256,9 @@ import PasswordInput from "@/components/login_view/PasswordInput.vue";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import PixelAvatar from "@/components/ui/PixelAvatar.vue";
 import { useProfileStore } from "@/stores/profile";
+import { dateLocale } from "@/i18n";
+import { profileMessages as m } from "@/i18n/messages/profile";
+import { commonMessages as c } from "@/i18n/messages/common";
 
 const emit = defineEmits<{ (e: "close"): void }>();
 
@@ -268,15 +269,15 @@ const profileStore = useProfileStore();
 const greeting = computed(() => partOfDay().greeting);
 
 const providerLabel = computed(() => {
-	if (authStore.hasGoogleProvider && authStore.hasPasswordProvider) return "Google + email";
-	if (authStore.hasGoogleProvider) return "Google";
-	return "Email & password";
+	if (authStore.hasGoogleProvider && authStore.hasPasswordProvider) return m.providerBoth;
+	if (authStore.hasGoogleProvider) return m.providerGoogle;
+	return m.providerPassword;
 });
 
 const memberSince = computed(() => {
 	const raw = authStore.accountCreatedAt;
 	return raw
-		? new Date(raw).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+		? new Date(raw).toLocaleDateString(dateLocale(), { day: "numeric", month: "long", year: "numeric" })
 		: "—";
 });
 
@@ -288,7 +289,7 @@ function openAuth(mode: AuthDialogMode) {
 async function onGoogle() {
 	try {
 		await authStore.loginWithGoogle();
-		toast.show("Saved! Your progress is now synced ✨", { tone: "success" });
+		toast.show(m.googleSaved, { tone: "success" });
 	} catch {
 		if (authStore.error) toast.error(authStore.error);
 	}
@@ -310,9 +311,9 @@ async function saveName() {
 	savingName.value = true;
 	try {
 		await authStore.updateDisplayName(nameInput.value);
-		toast.show("Name updated ✨", { tone: "success" });
+		toast.show(m.nameUpdated, { tone: "success" });
 	} catch {
-		toast.error("Couldn't update your name.");
+		toast.error(m.nameFailed);
 	} finally {
 		savingName.value = false;
 	}
@@ -353,7 +354,7 @@ async function changePassword() {
 		await authStore.changePassword(currentPassword.value, newPassword.value);
 		currentPassword.value = "";
 		newPassword.value = "";
-		toast.show("Password updated 🔒", { tone: "success" });
+		toast.show(m.passwordUpdated, { tone: "success" });
 	} catch (err) {
 		passwordError.value = mapFirebaseError((err as { code?: string })?.code);
 	} finally {
@@ -374,7 +375,7 @@ async function deleteAccount() {
 	try {
 		await authStore.deleteAccount();
 		emit("close");
-		toast.show("Your data has been deleted. Take care 🌿");
+		toast.show(m.dataDeleted);
 	} catch (err) {
 		toast.error(mapFirebaseError((err as { code?: string })?.code));
 	} finally {

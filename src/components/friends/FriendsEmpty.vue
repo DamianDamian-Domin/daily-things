@@ -14,21 +14,20 @@
 				:avatar="buddy"
 				:size="64" />
 		</div>
-		<h3 class="empty-title">Friends make habits stick</h3>
+		<h3 class="empty-title">{{ m.guestTitle }}</h3>
 		<p class="empty-text">
-			Create a free account to add friends, compare your weeks and send high-fives. Everything
-			you've logged comes with you.
+			{{ m.guestText }}
 		</p>
 		<p
 			v-if="pendingInvite"
 			class="invite-note">
-			💌 You've got an invite waiting — it'll be ready right after you sign up.
+			{{ m.guestInvite }}
 		</p>
 		<button
 			type="button"
 			class="dt-btn dt-btn-primary"
 			@click="emit('register')">
-			Create free account
+			{{ m.createAccount }}
 		</button>
 	</div>
 
@@ -45,10 +44,9 @@
 			<span class="duo-heart">💛</span>
 			<span class="duo-ghost">?</span>
 		</div>
-		<h3 class="empty-title">Habits are cozier together</h3>
+		<h3 class="empty-title">{{ m.emptyTitle }}</h3>
 		<p class="empty-text">
-			Invite a friend to cheer each other on, peek at each other's streaks and send
-			high-fives.
+			{{ m.emptyText }}
 		</p>
 		<button
 			type="button"
@@ -58,13 +56,13 @@
 			<i
 				class="pi pi-send"
 				aria-hidden="true"></i>
-			Invite a friend
+			{{ m.inviteFriend }}
 		</button>
 		<button
 			type="button"
 			class="dt-link"
 			@click="emit('add')">
-			Have a code? Add a friend
+			{{ m.haveCode }}
 		</button>
 	</div>
 </template>
@@ -73,6 +71,7 @@
 import { useProfileStore } from "@/stores/profile";
 import { defaultAvatar } from "@/utils/avatar";
 import PixelAvatar from "@/components/ui/PixelAvatar.vue";
+import { friendsMessages as m } from "@/i18n/messages/friends";
 
 // Puste stany karty: gość (zachęta do konta) albo konto bez znajomych (zaproś)
 defineProps<{

@@ -1,8 +1,19 @@
 import habitListData from "@/assets/habitList.json";
 import type { GoalRef, Habit, HabitLog } from "@/libs/types";
 import type { PaletteKey } from "@/utils/pixelIcons";
+import { defineLocalizedField, locale } from "@/i18n";
+import { HABIT_NAMES_PL } from "@/i18n/catalog.pl";
 
 const ALL_HABITS = habitListData as Habit[];
+
+// Angielskie nazwy zapamiętane przed podmianą na gettery — wyszukiwarka
+// znajduje habit po angielskiej nazwie także wtedy, gdy UI jest po polsku.
+const EN_DISPLAY_NAMES = new Map(ALL_HABITS.map((h) => [h.name, h.display_name]));
+
+// `display_name` habitów z katalogu podąża za językiem (getter), więc reszta
+// kodu nic nie musi wiedzieć o tłumaczeniach. `name` (klucz w Firestore) bez zmian.
+// Własne habity użytkownika nie są w katalogu — zostają z wpisaną nazwą.
+for (const habit of ALL_HABITS) defineLocalizedField(habit, "display_name", HABIT_NAMES_PL[habit.name]);
 
 // Wycofanych habitów nie da się już dodać, ale zostają w BY_NAME,
 // żeby stare wpisy (zapisane samą nazwą) dalej miały ikonę i nazwę.
@@ -170,6 +181,27 @@ export const CUSTOM_CATEGORY: SuperCategory = {
 	sources: [],
 };
 
+// Polskie etykiety kategorii (gettery, żeby zmiana języka działała od razu)
+const SUPER_CATEGORY_PL: Record<SuperCategoryKey, { label: string; short: string }> = {
+	yours: { label: "Twoje habity", short: "Twoje" },
+	fitness: { label: "Fitness", short: "Fitness" },
+	health: { label: "Zdrowie i ciało", short: "Zdrowie" },
+	food: { label: "Jedzenie", short: "Jedzenie" },
+	mind: { label: "Umysł", short: "Umysł" },
+	work: { label: "Praca i skupienie", short: "Praca" },
+	learning: { label: "Nauka", short: "Nauka" },
+	home: { label: "Dom", short: "Dom" },
+	social: { label: "Ludzie", short: "Ludzie" },
+	life: { label: "Życie i zabawa", short: "Zabawa" },
+	pets: { label: "Zwierzaki", short: "Zwierzaki" },
+	tech: { label: "Cyfrowe życie", short: "Cyfrowe" },
+	finance: { label: "Pieniądze", short: "Pieniądze" },
+};
+for (const def of [...SUPER_CATEGORIES, CUSTOM_CATEGORY]) {
+	defineLocalizedField(def, "label", SUPER_CATEGORY_PL[def.key].label);
+	defineLocalizedField(def, "short", SUPER_CATEGORY_PL[def.key].short);
+}
+
 const SOURCE_TO_SUPER = new Map<string, SuperCategory>();
 for (const def of SUPER_CATEGORIES)
 	for (const src of def.sources) SOURCE_TO_SUPER.set(src, def);
@@ -301,17 +333,30 @@ export function paletteFor(habit: Pick<Habit, "icon" | "severity" | "category" |
 }
 
 // Wyszukiwanie bez polskich/obcych znaków diakrytycznych
+// („ł” nie rozkłada się w NFD, więc zamieniamy je ręcznie: „lyzwy” → „Łyżwy”)
 export function normalizeText(input: string): string {
 	return input
 		.toLowerCase()
 		.normalize("NFD")
-		.replace(/[̀-ͯ]/g, "");
+		.replace(/[\u0300-\u036f]/g, "")
+		.replace(/ł/g, "l");
 }
 
 export function matchesQuery(habit: Habit, normalizedQuery: string): boolean {
 	if (!normalizedQuery) return true;
 	if (normalizeText(habit.name).includes(normalizedQuery)) return true;
-	if (habit.display_name && normalizeText(habit.display_name).includes(normalizedQuery))
-		return true;
+	// display_name jest w aktualnym języku; angielska nazwa katalogowa działa zawsze
+	if (habit.display_name) {
+		const shown = normalizeText(habit.display_name);
+		if (shown.includes(normalizedQuery)) return true;
+		// Polska odmiana: „lodowka” ma znaleźć „Mycie lodówki”, więc próbujemy
+		// też bez końcowej samogłoski (tylko dla dłuższych zapytań)
+		if (locale.value === "pl" && normalizedQuery.length >= 5) {
+			const stem = normalizedQuery.replace(/[aeiouy]$/, "");
+			if (stem !== normalizedQuery && shown.includes(stem)) return true;
+		}
+	}
+	const enDisplay = habit.origin === "user" ? undefined : EN_DISPLAY_NAMES.get(habit.name);
+	if (enDisplay && normalizeText(enDisplay).includes(normalizedQuery)) return true;
 	return habit.tags?.some((t) => normalizeText(t).includes(normalizedQuery)) ?? false;
 }

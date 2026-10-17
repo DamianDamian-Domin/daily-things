@@ -15,6 +15,7 @@ import {
 } from "@/utils/achievements";
 import { isNegative, superCategoryOf } from "@/utils/habitCatalog";
 import { useConfetti } from "@/utils/useConfetti";
+import { achievementsMessages as m } from "@/i18n/messages/achievements";
 
 // Znacznik „zdobyte przed wprowadzeniem odznak” (data nieznana)
 export const EARNED_EARLIER = 1;
@@ -134,10 +135,8 @@ export const useAchievementsStore = defineStore("achievements", () => {
 		if (retroactive || ids.length > MAX_SEPARATE_TOASTS) {
 			const n = ids.length;
 			toast.show(
-				retroactive
-					? `You've already earned ${n} ${n === 1 ? "badge" : "badges"} 🏅`
-					: `${n} new badges unlocked 🏅`,
-				{ tone: "celebrate", actionLabel: "See", action: view, duration: 6000 },
+				retroactive ? m.alreadyEarned(n) : m.manyUnlocked(n),
+				{ tone: "celebrate", actionLabel: m.see, action: view, duration: 6000 },
 			);
 			if (!retroactive) launchConfetti(80);
 			return;
@@ -145,9 +144,9 @@ export const useAchievementsStore = defineStore("achievements", () => {
 		for (const id of ids) {
 			const def = ACHIEVEMENTS_BY_ID.get(id);
 			if (!def) continue;
-			toast.show(`Badge unlocked: ${def.title} 🏅`, {
+			toast.show(m.unlocked(def.title), {
 				tone: "celebrate",
-				actionLabel: "See",
+				actionLabel: m.see,
 				action: view,
 				duration: 6000,
 			});

@@ -11,6 +11,8 @@ import { isNativePlatform } from "@/utils/platform";
 import { addDays, startOfDay, toDateKey } from "@/utils/date";
 import { isDueOn, normalizeSchedule, weekKeys } from "@/utils/goalSchedule";
 import { dueLabel, shouldNudge } from "@/utils/cycles";
+import { locale } from "@/i18n";
+import { remindersMessages as m } from "@/i18n/messages/reminders";
 
 // Planujemy pojedyncze powiadomienia na kilka dni do przodu zamiast jednego
 // powtarzalnego — dzięki temu dzisiejsze przypomnienie znika, gdy cel jest
@@ -21,7 +23,6 @@ const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 // Obowiązki cykliczne: przypomnienie rano w dniu terminu (i co kilka dni po nim)
 const CYCLE_HOUR = 9;
 const CYCLE_ID_BASE = 5000;
-const SAVE_ERROR = "Couldn't save that reminder — check your connection and try again.";
 
 export type ReminderPermission = "granted" | "denied" | "prompt" | "unsupported";
 
@@ -77,7 +78,7 @@ export const useRemindersStore = defineStore("reminders", () => {
 		} catch (err) {
 			console.error("setReminder failed", err);
 			if (authStore.userUid === currentUid) reminders.value = previous;
-			toast.error(SAVE_ERROR);
+			toast.error(m.saveError);
 		}
 	}
 
@@ -106,7 +107,7 @@ export const useRemindersStore = defineStore("reminders", () => {
 			console.warn("Notification permission request failed", err);
 		}
 		if (permission.value !== "granted") {
-			toast.error("Notifications are off for Daily Things. Turn them on in your phone's settings.");
+			toast.error(m.permissionDenied);
 			return false;
 		}
 		scheduleSoon();
@@ -122,7 +123,7 @@ export const useRemindersStore = defineStore("reminders", () => {
 	// ==========================================================================
 	// PLANOWANIE POWIADOMIEŃ (tylko Android)
 	// ==========================================================================
-	let channelReady = false;
+	let channelLocale: string | null = null;
 	let running: Promise<void> | null = null;
 	let again = false;
 
@@ -161,10 +162,10 @@ export const useRemindersStore = defineStore("reminders", () => {
 					id: id++,
 					title: `${name} ⏰`,
 					body: weekly
-						? `Time for it! Your goal is ${weekly.target}× this week 🗓️`
+						? m.notificationBodyWeekly(weekly.target)
 						: target > 1
-							? `Time for it! Your goal is ${target}× today. Small steps count 🌱`
-							: "Time for it! Small steps count 🌱",
+							? m.notificationBodyTarget(target)
+							: m.notificationBody,
 					channelId: CHANNEL_ID,
 					schedule: { at, allowWhileIdle: true },
 					extra: { habit: reminder.name },
@@ -200,14 +201,15 @@ export const useRemindersStore = defineStore("reminders", () => {
 
 	async function reschedule() {
 		const plugin = await loadPlugin();
-		if (!channelReady) {
+		// Kanał tworzymy ponownie po zmianie języka — Android aktualizuje wtedy jego nazwę
+		if (channelLocale !== locale.value) {
 			await plugin.createChannel({
 				id: CHANNEL_ID,
-				name: "Habit reminders",
-				description: "Nudges at the times you set for your daily goals and when a repeating chore is due",
+				name: m.channelName,
+				description: m.channelDescription,
 				importance: 4,
 			});
-			channelReady = true;
+			channelLocale = locale.value;
 		}
 		const pending = await plugin.getPending();
 		if (pending.notifications.length) {
@@ -256,6 +258,8 @@ export const useRemindersStore = defineStore("reminders", () => {
 					activeReminders.value.map((r) => counts[r.name] ?? 0),
 					permission.value,
 					cyclesStore.ready ? cyclesStore.items.map((i) => [i.cycle.name, i.status.due]) : null,
+					// Zaplanowane powiadomienia mają tekst w języku z chwili planowania
+					locale.value,
 				]);
 			},
 			scheduleSoon,

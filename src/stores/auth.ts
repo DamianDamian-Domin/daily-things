@@ -34,51 +34,53 @@ import {
 	type ExportedUserData,
 } from "@/services/userData";
 import { useToastStore } from "@/stores/toast";
+import { authMessages as m } from "@/i18n/messages/auth";
 
 export type AuthDialogMode = "welcome" | "login" | "register" | "reset";
 
-// Przyjazne komunikaty zamiast surowych kodów Firebase
+// Przyjazne komunikaty zamiast surowych kodów Firebase (w aktualnym języku)
 export function mapFirebaseError(code: string | undefined): string {
+	const e = m.errors;
 	switch (code) {
 		case "auth/invalid-credential":
 		case "auth/wrong-password":
 		case "auth/user-not-found":
 		case "auth/invalid-login-credentials":
-			return "Wrong email or password.";
+			return e.wrongCredentials;
 		case "auth/invalid-email":
-			return "That email address doesn't look right.";
+			return e.invalidEmail;
 		case "auth/missing-email":
-			return "Please enter your email address.";
+			return e.missingEmail;
 		case "auth/missing-password":
-			return "Please enter your password.";
+			return e.missingPassword;
 		case "auth/email-already-in-use":
-			return "This email already has an account — sign in instead.";
+			return e.emailInUse;
 		case "auth/credential-already-in-use":
-			return "This account is already connected to another profile.";
+			return e.credentialInUse;
 		case "auth/weak-password":
-			return "Password is too weak — use at least 8 characters.";
+			return e.weakPassword;
 		case "auth/too-many-requests":
-			return "Too many attempts. Take a short break and try again.";
+			return e.tooManyRequests;
 		case "auth/network-request-failed":
-			return "No connection. Check your internet and try again.";
+			return e.network;
 		case "auth/user-disabled":
-			return "This account has been disabled.";
+			return e.userDisabled;
 		case "auth/popup-blocked":
-			return "Your browser blocked the sign-in window. Allow pop-ups and try again.";
+			return e.popupBlocked;
 		case "auth/popup-closed-by-user":
 		case "auth/cancelled-popup-request":
 		case "auth/user-cancelled":
 			return "";
 		case "auth/unauthorized-domain":
-			return "Google sign-in isn't enabled for this website yet.";
+			return e.unauthorizedDomain;
 		case "auth/operation-not-allowed":
-			return "This sign-in method is turned off for now.";
+			return e.operationNotAllowed;
 		case "auth/requires-recent-login":
-			return "For your security, please sign in again and retry.";
+			return e.requiresRecentLogin;
 		case "auth/provider-already-linked":
-			return "This sign-in method is already connected.";
+			return e.providerAlreadyLinked;
 		default:
-			return "Something went wrong. Please try again.";
+			return e.generic;
 	}
 }
 
@@ -139,14 +141,14 @@ export const useAuthStore = defineStore("auth", () => {
 	const accountCreatedAt = computed(() => current.value?.metadata?.creationTime ?? null);
 	const displayName = computed(() => {
 		if (!current.value) return "";
-		if (isGuest.value) return "Guest";
-		return current.value.displayName || email.value.split("@")[0] || "Friend";
+		if (isGuest.value) return m.guest;
+		return current.value.displayName || email.value.split("@")[0] || m.friend;
 	});
 	const firstName = computed(() =>
 		isGuest.value ? "" : (current.value?.displayName || "").trim().split(/\s+/)[0] || "",
 	);
 	const initials = computed(() => {
-		if (isGuest.value) return "G";
+		if (isGuest.value) return m.guestInitial;
 		const name = current.value?.displayName?.trim();
 		if (name) {
 			const parts = name.split(/\s+/);
@@ -239,10 +241,10 @@ export const useAuthStore = defineStore("auth", () => {
 			try {
 				await mergeUserData(signedIn.uid, exported);
 				dataRevision.value++;
-				toast.show("Your guest progress moved to your account ✨", { tone: "success" });
+				toast.show(m.guestMoved, { tone: "success" });
 			} catch (err) {
 				console.error("Guest data merge failed", err);
-				toast.error("We couldn't move your guest progress.");
+				toast.error(m.guestMoveFailed);
 			}
 		}
 		return signedIn;

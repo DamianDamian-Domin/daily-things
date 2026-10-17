@@ -17,12 +17,12 @@
 				<h2
 					id="todo-details-title"
 					class="dt-title">
-					Task details
+					{{ m.detailsTitle }}
 				</h2>
 				<button
 					type="button"
 					class="dt-icon-btn"
-					aria-label="Close"
+					:aria-label="commonMessages.close"
 					@click="closeDetails">
 					<i
 						class="pi pi-times"
@@ -34,7 +34,7 @@
 				<label
 					for="todo-title"
 					class="dt-label"
-					>Task</label
+					>{{ m.task }}</label
 				>
 				<input
 					id="todo-title"
@@ -46,7 +46,7 @@
 
 			<fieldset class="dt-field subtask-editor">
 				<legend class="dt-label">
-					Steps
+					{{ m.steps }}
 					<span
 						v-if="editingSubs.length"
 						class="dt-muted"
@@ -79,12 +79,12 @@
 								class="subtask-edit-input"
 								:class="{ done: sub.done }"
 								:value="sub.text"
-								:aria-label="`Edit step “${sub.text}”`"
+								:aria-label="m.editStep(sub.text)"
 								@change="(e) => renameSub(sub.id, (e.target as HTMLInputElement).value)" />
 							<button
 								type="button"
 								class="dt-icon-btn dt-icon-btn-danger subtask-remove"
-								:aria-label="`Delete step “${sub.text}”`"
+								:aria-label="m.deleteStep(sub.text)"
 								@click="removeSub(sub.id)">
 								<i
 									class="pi pi-times"
@@ -97,15 +97,15 @@
 					<input
 						v-model="newSub"
 						class="dt-input"
-						placeholder="Add a step and press Enter"
-						aria-label="New step"
+						:placeholder="m.newStepPlaceholder"
+						:aria-label="m.newStep"
 						@keydown.enter.prevent="addSubFromDialog" />
 					<button
 						type="button"
 						class="dt-btn dt-btn-soft dt-btn-sm"
 						:disabled="!newSub.trim()"
 						@click="addSubFromDialog">
-						Add
+						{{ m.add }}
 					</button>
 				</div>
 			</fieldset>
@@ -114,18 +114,18 @@
 				<label
 					for="todo-notes"
 					class="dt-label"
-					>Notes</label
+					>{{ m.notes }}</label
 				>
 				<textarea
 					id="todo-notes"
 					v-model="draft.description"
 					class="dt-input notes"
 					rows="3"
-					placeholder="Anything worth remembering…"></textarea>
+					:placeholder="m.notesPlaceholder"></textarea>
 			</div>
 
 			<fieldset class="dt-field">
-				<legend class="dt-label">Color</legend>
+				<legend class="dt-label">{{ m.color }}</legend>
 				<div class="swatches">
 					<button
 						v-for="c in COLORS"
@@ -134,7 +134,7 @@
 						class="swatch"
 						:class="`s-${c.value || 'none'}`"
 						:aria-pressed="draft.color === c.value"
-						:aria-label="c.label"
+						:aria-label="m.colors[c.key]"
 						@click="draft.color = c.value">
 						<i
 							v-if="draft.color === c.value"
@@ -152,12 +152,12 @@
 					<i
 						class="pi pi-trash"
 						aria-hidden="true"></i>
-					Delete
+					{{ commonMessages.delete }}
 				</button>
 				<button
 					type="submit"
 					class="dt-btn dt-btn-primary">
-					Done
+					{{ m.done }}
 				</button>
 			</div>
 		</form>
@@ -173,6 +173,8 @@ import { useTodosStore } from "@/stores/todos";
 import { useToastStore } from "@/stores/toast";
 import { useSound } from "@/utils/useSound";
 import { subDone } from "./todoUtils";
+import { todosMessages as m } from "@/i18n/messages/todos";
+import { commonMessages } from "@/i18n/messages/common";
 
 // Odhaczanie kroków obsługuje karta (dźwięk + propozycja zamknięcia zadania)
 const emit = defineEmits<{
@@ -183,14 +185,16 @@ const todosStore = useTodosStore();
 const toast = useToastStore();
 const { playAdd } = useSound();
 
-const COLORS: Array<{ value: TodoColor; label: string }> = [
-	{ value: "", label: "No color" },
-	{ value: "red", label: "Red" },
-	{ value: "orange", label: "Orange" },
-	{ value: "yellow", label: "Yellow" },
-	{ value: "green", label: "Green" },
-	{ value: "blue", label: "Blue" },
-	{ value: "purple", label: "Purple" },
+// Etykieta koloru czytana w szablonie (m.colors[key]), żeby szła za językiem
+type ColorKey = keyof typeof m.colors;
+const COLORS: Array<{ value: TodoColor; key: ColorKey }> = [
+	{ value: "", key: "none" },
+	{ value: "red", key: "red" },
+	{ value: "orange", key: "orange" },
+	{ value: "yellow", key: "yellow" },
+	{ value: "green", key: "green" },
+	{ value: "blue", key: "blue" },
+	{ value: "purple", key: "purple" },
 ];
 
 // ==========================================
@@ -264,7 +268,7 @@ async function deleteEditing() {
 	editingId.value = null;
 	detailsOpen.value = false;
 	const removed = await todosStore.deleteTodo(todo.id);
-	if (removed) toast.undoable(`Deleted “${removed.text}”`, () => todosStore.restoreTodo(removed));
+	if (removed) toast.undoable(m.deleted(removed.text), () => todosStore.restoreTodo(removed));
 }
 
 defineExpose({ open });

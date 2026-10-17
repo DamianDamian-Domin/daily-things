@@ -10,17 +10,16 @@
 		<h2
 			:id="titleId"
 			class="auth-title">
-			You're all set!
+			{{ m.allSet }}
 		</h2>
 		<p class="auth-lead">
-			We sent a verification link to <strong>{{ email }}</strong>. You can keep
-			going right away — verify whenever it suits you.
+			{{ m.verificationSentPrefix }} <strong>{{ email }}</strong>{{ m.verificationSentSuffix }}
 		</p>
 		<button
 			type="button"
 			class="dt-btn dt-btn-primary dt-btn-block"
 			@click="authStore.closeAuthDialog()">
-			Let's go
+			{{ m.letsGo }}
 		</button>
 	</section>
 
@@ -32,14 +31,14 @@
 		<h2
 			:id="titleId"
 			class="auth-title">
-			{{ authStore.isGuest ? "Save your progress 🌿" : "Join us 🌿" }}
+			{{ authStore.isGuest ? m.saveProgressTitle : m.joinUsTitle }}
 		</h2>
 
 		<div class="dt-field">
 			<label
 				for="reg-email"
 				class="dt-label"
-				>Email</label
+				>{{ m.email }}</label
 			>
 			<input
 				id="reg-email"
@@ -51,13 +50,13 @@
 				required
 				:aria-invalid="emailTouched && !emailValid"
 				aria-describedby="reg-email-error"
-				placeholder="you@example.com"
+				:placeholder="m.emailPlaceholder"
 				@blur="emailTouched = true" />
 			<p
 				v-if="emailTouched && !emailValid"
 				id="reg-email-error"
 				class="dt-error-text">
-				Enter a valid email address.
+				{{ m.invalidEmail }}
 			</p>
 		</div>
 
@@ -65,7 +64,7 @@
 			<label
 				for="reg-password"
 				class="dt-label"
-				>Password</label
+				>{{ m.password }}</label
 			>
 			<PasswordInput
 				id="reg-password"
@@ -77,13 +76,13 @@
 				class="auth-rules">
 				<li
 					v-for="rule in passwordRules"
-					:key="rule.label"
+					:key="rule.id"
 					:class="{ ok: rule.valid }">
 					<i
 						:class="rule.valid ? 'pi pi-check-circle' : 'pi pi-circle'"
 						aria-hidden="true"></i>
 					{{ rule.label }}
-					<span class="sr-only">{{ rule.valid ? "(done)" : "(missing)" }}</span>
+					<span class="sr-only">{{ rule.valid ? m.ruleDone : m.ruleMissing }}</span>
 				</li>
 			</ul>
 		</div>
@@ -100,16 +99,16 @@
 				v-if="authStore.busy"
 				class="pi pi-spin pi-spinner"
 				aria-hidden="true"></i>
-			Create free account
+			{{ m.createFreeAccount }}
 		</button>
 
 		<p class="auth-switch">
-			Already have an account?
+			{{ m.alreadyHaveAccount }}
 			<button
 				type="button"
 				class="dt-link"
 				@click="emit('switch-mode', 'login')">
-				Sign in
+				{{ m.signIn }}
 			</button>
 		</p>
 	</form>
@@ -118,6 +117,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useAuthStore, type AuthDialogMode } from "@/stores/auth";
+import { authMessages as m } from "@/i18n/messages/auth";
 import AuthErrorBanner from "@/components/login_view/AuthErrorBanner.vue";
 import PasswordInput from "@/components/login_view/PasswordInput.vue";
 import { isValidEmail } from "./validation";
@@ -136,8 +136,8 @@ const authStore = useAuthStore();
 const emailValid = computed(() => isValidEmail(email.value));
 
 const passwordRules = computed(() => [
-	{ label: "At least 8 characters", valid: password.value.length >= 8 },
-	{ label: "A letter and a number", valid: /[a-zA-Z]/.test(password.value) && /\d/.test(password.value) },
+	{ id: "length", label: m.ruleLength, valid: password.value.length >= 8 },
+	{ id: "mix", label: m.ruleLetterNumber, valid: /[a-zA-Z]/.test(password.value) && /\d/.test(password.value) },
 ]);
 const registerValid = computed(
 	() => emailValid.value && passwordRules.value.every((r) => r.valid),
