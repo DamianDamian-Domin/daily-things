@@ -2,6 +2,7 @@
 	"name": "Daily Things — cozy habit tracker",
 	"short_name": "Daily Things",
 	"description": "A cozy habit tracker and to-do list with pixel-art icons, daily goals and streaks.",
+	"id": "/",
 	"lang": "en",
 	"start_url": "/",
 	"scope": "/",

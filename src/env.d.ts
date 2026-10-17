@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-pwa/client" />
 
 interface ImportMetaEnv {
 	readonly VITE_FIREBASE_API_KEY: string;
@@ -13,6 +14,8 @@ interface ImportMetaEnv {
 	readonly VITE_PUBLIC_URL?: string;
 	readonly VITE_EMULATOR_AUTH_PORT?: string;
 	readonly VITE_EMULATOR_FIRESTORE_PORT?: string;
+	// "true" = emulatory z trwałym cache Firestore (test trybu offline)
+	readonly VITE_EMULATOR_PERSISTENT_CACHE?: string;
 }
 
 interface ImportMeta {

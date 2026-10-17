@@ -129,6 +129,34 @@
 		</section>
 
 		<section
+			v-if="pwa.canInstall"
+			class="settings-group"
+			aria-labelledby="settings-app">
+			<h3
+				id="settings-app"
+				class="settings-heading">
+				App
+			</h3>
+			<button
+				type="button"
+				class="settings-link"
+				@click="pwa.install()">
+				<span
+					class="settings-icon"
+					aria-hidden="true"
+					><i class="pi pi-download"></i
+				></span>
+				<span class="settings-text">
+					<span class="settings-label">Install Daily Things</span>
+					<span class="settings-desc">Open it from your home screen, even offline</span>
+				</span>
+				<i
+					class="pi pi-chevron-right settings-chevron"
+					aria-hidden="true"></i>
+			</button>
+		</section>
+
+		<section
 			class="settings-group"
 			aria-labelledby="settings-help">
 			<h3
@@ -227,6 +255,7 @@ import { usePreferencesStore } from "@/stores/userPreferences";
 import { useCookieConsentStore } from "@/stores/cookieConsent";
 import { useAuthStore } from "@/stores/auth";
 import { useHelpStore } from "@/stores/help";
+import { usePwaStore } from "@/stores/pwa";
 
 const emit = defineEmits<{ (e: "close"): void }>();
 
@@ -234,6 +263,7 @@ const preferences = usePreferencesStore();
 const cookieConsent = useCookieConsentStore();
 const authStore = useAuthStore();
 const help = useHelpStore();
+const pwa = usePwaStore();
 const legalRef = ref<InstanceType<typeof LegalDocumentsDialog> | null>(null);
 
 function manageCookies() {
