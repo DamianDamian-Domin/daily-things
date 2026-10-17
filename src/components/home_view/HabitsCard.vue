@@ -211,6 +211,9 @@
 					{{ loggedEmptyText }}
 				</p>
 			</section>
+
+			<!-- ============ NASTRÓJ ============ -->
+			<MoodPicker class="dt-panel" />
 		</div>
 
 		<!-- Stepper −/+ dla zalogowanego habitu -->
@@ -326,6 +329,7 @@ const RemindersDialog = defineAsyncComponent(
 );
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import StarterPacks from "@/components/home_view/StarterPacks.vue";
+import MoodPicker from "@/components/home_view/MoodPicker.vue";
 
 defineProps<{ isActive: boolean }>();
 

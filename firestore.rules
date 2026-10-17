@@ -55,7 +55,11 @@ service cloud.firestore {
           && dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
           && request.resource.data.date == dateKey
           && request.resource.data.habbits is list
-          && request.resource.data.habbits.size() <= 500;
+          && request.resource.data.habbits.size() <= 500
+          // Nastrój dnia: liczba 1–5 (opcjonalny)
+          && (!('mood' in request.resource.data)
+            || (request.resource.data.mood is int
+              && request.resource.data.mood >= 1 && request.resource.data.mood <= 5));
       }
 
       // Jeden dokument na zadanie: users/{uid}/todos/{todoId}

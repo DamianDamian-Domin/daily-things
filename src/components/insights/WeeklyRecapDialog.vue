@@ -110,6 +110,10 @@
 				</div>
 			</section>
 
+			<RecapMood
+				:start="range.start"
+				:end="range.end" />
+
 			<ul class="recap-highlights">
 				<li v-if="recap.bestDay">
 					<PixelIcon
@@ -192,6 +196,7 @@
 import { computed, watch } from "vue";
 import Dialog from "primevue/dialog";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
+import RecapMood from "@/components/insights/RecapMood.vue";
 import { useAchievementsStore } from "@/stores/achievements";
 import { useHabitsStore } from "@/stores/habits";
 import { useInsightsStore } from "@/stores/insights";

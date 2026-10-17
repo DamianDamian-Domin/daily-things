@@ -10,6 +10,7 @@ import type {
 	GroupedHabit,
 	Habit,
 	HabitLog,
+	Mood,
 } from "@/libs/types";
 import { useAuthStore } from "@/stores/auth";
 import { plain } from "@/utils/plain";
@@ -19,6 +20,7 @@ import {
 	dayDocRef,
 	fetchAllDays,
 	fetchDays,
+	saveDayMood,
 	saveUserFields,
 	type UserDoc,
 } from "@/services/userData";
@@ -209,6 +211,7 @@ export const useHabitsStore = defineStore("habits", () => {
 			const known = new Set(local.habits.map((l) => l.id));
 			local.habits.push(...remote.habits.filter((l) => !known.has(l.id)));
 			local.goalsSnapshot ??= remote.goalsSnapshot;
+			if (!("mood" in local)) local.mood = remote.mood;
 			return;
 		}
 		days.value[remote.date] = remote;
@@ -466,6 +469,30 @@ export const useHabitsStore = defineStore("habits", () => {
 	// Wpis po id w danym dniu (okno notatki)
 	function findLog(logId: string, key: DateKey): HabitLog | undefined {
 		return days.value[key]?.habits.find((l) => l.id === logId);
+	}
+
+	// Nastrój dnia — jedno tapnięcie; ponowne tapnięcie tej samej buźki czyści
+	function moodOn(key: DateKey): Mood | undefined {
+		return days.value[key]?.mood;
+	}
+
+	function setMood(mood: Mood | null, key: DateKey = selectedKey.value) {
+		const currentUid = uid.value;
+		if (!currentUid) {
+			authStore.openAuthDialog("welcome");
+			return;
+		}
+		const entry = localDay(key);
+		const previous = entry.mood;
+		entry.mood = mood ?? undefined;
+		beginWrite(key);
+		saveDayMood(currentUid, key, mood)
+			.catch((err) => {
+				console.error("setMood failed", err);
+				entry.mood = previous;
+				toast.error(SAVE_ERROR);
+			})
+			.finally(() => endWrite(key));
 	}
 
 	async function reorderSelected(names: string[]) {
@@ -738,6 +765,9 @@ export const useHabitsStore = defineStore("habits", () => {
 		setLogNote,
 		findLog,
 		lastLog,
+		// nastrój
+		moodOn,
+		setMood,
 		// cele
 		addDailyGoal,
 		addDailyGoals,

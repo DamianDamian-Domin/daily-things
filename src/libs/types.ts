@@ -42,7 +42,11 @@ export interface DayEntry {
 	date: string;
 	habits: HabitLog[];
 	goalsSnapshot?: GoalRef[];
+	// Nastrój dnia 1–5 (utils/mood.ts); brak = nie zapisano
+	mood?: Mood;
 }
+
+export type Mood = 1 | 2 | 3 | 4 | 5;
 
 // Cel dzienny. Cel „3× dziennie” to 3 wpisy o tej samej nazwie (zgodność wstecz).
 export interface Goal extends GoalRef {
