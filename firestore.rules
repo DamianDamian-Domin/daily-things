@@ -46,7 +46,9 @@ service cloud.firestore {
       allow read, delete: if isOwner(uid);
       allow create, update: if isOwner(uid)
         && (!('todos' in request.resource.data) || request.resource.data.todos.size() <= 2000)
-        && (!('dailyGoals' in request.resource.data) || request.resource.data.dailyGoals.size() <= 200);
+        && (!('dailyGoals' in request.resource.data) || request.resource.data.dailyGoals.size() <= 200)
+        && (!('cycles' in request.resource.data)
+          || (request.resource.data.cycles is list && request.resource.data.cycles.size() <= 200));
 
       // Jeden dokument na dzień: users/{uid}/habbits/YYYY-MM-DD
       match /habbits/{dateKey} {

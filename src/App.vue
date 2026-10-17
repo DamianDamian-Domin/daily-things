@@ -48,6 +48,7 @@ import { usePreferencesStore } from "@/stores/userPreferences";
 import { useToastStore } from "@/stores/toast";
 import { useProfileStore } from "@/stores/profile";
 import { useRemindersStore } from "@/stores/reminders";
+import { useCyclesStore } from "@/stores/cycles";
 import { useAchievementsStore } from "@/stores/achievements";
 import { useInsightsStore } from "@/stores/insights";
 import { useHelpStore } from "@/stores/help";
@@ -83,6 +84,7 @@ const preferencesStore = usePreferencesStore();
 const toast = useToastStore();
 const profileStore = useProfileStore();
 const remindersStore = useRemindersStore();
+const cyclesStore = useCyclesStore();
 const achievementsStore = useAchievementsStore();
 const insights = useInsightsStore();
 const carouselStore = useCarouselStore();
@@ -138,9 +140,12 @@ async function loadSession(uid: string) {
 		habitsStore.hydrate(userDoc);
 		profileStore.hydrate(userDoc);
 		remindersStore.hydrate(userDoc);
+		cyclesStore.hydrate(userDoc);
 		achievementsStore.hydrate(userDoc);
 		await Promise.all([habitsStore.loadInitialHistory(), todosStore.load(uid, userDoc)]);
 		if (authStore.userUid !== uid) return;
+		// Obowiązki cykliczne: doczytanie historii od ostatniego razu (zwykle już jest)
+		cyclesStore.load();
 		// Od teraz profil dla znajomych może się publikować (seria jest już policzona)
 		profileStore.markReady();
 		// Nowy użytkownik: raz pokazujemy, do czego służy aplikacja
@@ -166,6 +171,7 @@ watch(
 		todosStore.clearData();
 		profileStore.clear();
 		remindersStore.clear();
+		cyclesStore.clear();
 		achievementsStore.clear();
 		insights.close();
 		peekFriends()?.clear();
