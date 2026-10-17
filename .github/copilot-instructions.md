@@ -58,7 +58,12 @@ You are a **senior software engineer** focused on modern, accessible, mobile-fir
 - Only current daily goals ring. Scheduling lives in `stores/reminders.ts`, runs on native only and lazy-imports `@capacitor/local-notifications` (web never downloads it; the dialog says reminders ring in the Android app).
 - We schedule one-off notifications for the next 7 days (not a repeating one), cancel + rebuild on any change, and skip today's once the goal is done. Every app open moves the window forward.
 - Ask for notification permission only when the user sets their first time.
-- `android/` is gitignored: custom Android resources (the `ic_stat_icon` status-bar icon) live in `native/android/res` and `npm run android` copies them in. `capacitor.config.ts` points LocalNotifications `smallIcon` at it.
+- `android/` is gitignored: custom Android resources (the `ic_stat_icon` status-bar icon) live in `native/android/res`, our Java code in `native/android/java`, and `npm run android` (`scripts/sync-android-native.mjs`) copies them in and adds the widget receiver to the manifest. `capacitor.config.ts` points LocalNotifications `smallIcon` at it.
+
+## Home-screen widget (Android)
+- "Today" widget: today's goals with pixel icons; a tap ticks a goal off (or undoes the last tick once it's done), same rule as `tapGoal`. Code: `native/android/java/app/dailythings/widget`, app side `src/utils/habitsWidget.ts`.
+- The app pushes state (goals, today's logs, sprites, goals snapshot) plus `{ apiKey, projectId, uid, refreshToken }`. The widget writes straight to Firestore over REST (`documents:commit` with `appendMissingElements` / `removeAllFromArray` on `habbits`, i.e. arrayUnion / arrayRemove), so the same security rules apply.
+- Taps that couldn't be sent (offline) stay queued; the app takes them on open/resume (`HabitsWidget.takeActions`) and writes them itself. Writes are by log id, so repeating one is harmless. With emulators the widget only queues.
 
 ## Auth
 - Guests are persistent anonymous accounts. Upgrading keeps the same uid (`linkWithCredential` / `linkWithPopup`); signing into an existing account migrates guest data (`mergeUserData`).

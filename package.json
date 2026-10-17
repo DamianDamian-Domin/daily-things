@@ -10,7 +10,7 @@
     "build": "vite build",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "preview": "vite preview",
-    "android": "npm run build && node scripts/copy-android-res.mjs && npx cap sync",
+    "android": "npm run build && node scripts/sync-android-native.mjs && npx cap sync",
     "icons": "npm i --no-save @material-symbols/svg-400 @resvg/resvg-js && node scripts/generate-pixel-icons.mjs",
     "lint": "eslint .",
     "test": "vitest run"
