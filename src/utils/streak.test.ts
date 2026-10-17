@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countStreak, liveStreak } from "@/utils/streak";
+import { countStreak, liveStreak, streakDetails } from "@/utils/streak";
 
 const logged = (...keys: string[]) => {
 	const set = new Set(keys);
@@ -60,5 +60,22 @@ describe("liveStreak", () => {
 
 	it("handles the year boundary", () => {
 		expect(liveStreak({ streak: 3, streakEnd: "2025-12-31" }, "2026-01-01")).toBe(3);
+	});
+});
+
+describe("streakDetails with rest days", () => {
+	// 2026-10-12 to poniedziałek; cele tylko w pon/śr/pt
+	const rest = (key: string) => ["2026-10-10", "2026-10-11", "2026-10-13"].includes(key);
+
+	it("skips rest days without breaking or using a freeze", () => {
+		const has = logged("2026-10-07", "2026-10-09", "2026-10-12");
+		const details = streakDetails(has, "2026-10-14", 3660, (k) => rest(k) || k === "2026-10-08");
+		expect(details.count).toBe(3);
+		expect(details.frozen).toEqual([]);
+	});
+
+	it("still breaks on a missed scheduled day after the freeze is used", () => {
+		const has = logged("2026-10-05", "2026-10-12");
+		expect(streakDetails(has, "2026-10-14", 3660, rest).count).toBe(1);
 	});
 });

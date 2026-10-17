@@ -2,6 +2,8 @@ import { addDays, fromDateKey, toDateKey, type DateKey } from "@/utils/date";
 
 // Jeden opuszczony dzień na 7 nie zrywa serii („zamrożenie” ❄️).
 // Opuszczony dzień nie wlicza się do serii, tylko jej nie przerywa.
+// Dzień odpoczynku (wszystkie cele zaplanowane na inne dni tygodnia) też
+// jej nie przerywa i nie zużywa zamrożenia.
 export const FREEZE_EVERY_DAYS = 7;
 
 export interface StreakDetails {
@@ -14,6 +16,7 @@ export function streakDetails(
 	hasLogsOn: (key: DateKey) => boolean,
 	today: DateKey,
 	maxDays = 3660,
+	isRestDay: (key: DateKey) => boolean = () => false,
 ): StreakDetails {
 	let count = hasLogsOn(today) ? 1 : 0;
 	let startKey: DateKey | null = count ? today : null;
@@ -29,6 +32,8 @@ export function streakDetails(
 			pendingFreeze = null;
 			count++;
 			startKey = key;
+		} else if (isRestDay(key)) {
+			// nic: ani nie liczymy, ani nie zrywamy
 		} else if (!pendingFreeze && sinceFreeze >= FREEZE_EVERY_DAYS) {
 			// Zamrożenie liczy się dopiero, gdy wcześniej był dzień z wpisem
 			pendingFreeze = key;

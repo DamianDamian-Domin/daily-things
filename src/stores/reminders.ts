@@ -7,7 +7,8 @@ import { useHabitsStore } from "@/stores/habits";
 import { useToastStore } from "@/stores/toast";
 import { displayName } from "@/utils/habitCatalog";
 import { isNativePlatform } from "@/utils/platform";
-import { addDays, startOfDay } from "@/utils/date";
+import { addDays, startOfDay, toDateKey } from "@/utils/date";
+import { isDueOn, normalizeSchedule, weekKeys } from "@/utils/goalSchedule";
 
 // Planujemy pojedyncze powiadomienia na kilka dni do przodu zamiast jednego
 // powtarzalnego — dzięki temu dzisiejsze przypomnienie znika, gdy cel jest
@@ -128,22 +129,34 @@ export const useRemindersStore = defineStore("reminders", () => {
 		for (const reminder of activeReminders.value) {
 			const goals = habitsStore.dailyGoalsList.filter((g) => g.name === reminder.name);
 			const habit = habitsStore.resolve(goals[0]);
-			const target = goals.length;
+			const schedule = normalizeSchedule(goals[0].schedule);
+			// Cel tygodniowy: przypominamy, dopóki tygodniowy licznik nie jest pełny
+			const weekly =
+				schedule?.kind === "weekly"
+					? habitsStore.weeklyGoalsFor(habitsStore.todayKey).find((w) => w.name === reminder.name)
+					: undefined;
+			const weekEnd = weekKeys(habitsStore.todayKey)[6];
+			const target = weekly ? 1 : goals.length;
 			const doneToday = (counts[reminder.name] ?? 0) >= target;
 			const [hour, minute] = reminder.time.split(":").map(Number);
 			const name = displayName(habit);
 			for (let d = 0; d < DAYS_AHEAD; d++) {
 				const at = addDays(today, d);
 				at.setHours(hour, minute, 0, 0);
-				if (at.getTime() <= now || (d === 0 && doneToday)) {
+				const key = toDateKey(at);
+				const skip =
+					(schedule?.kind === "days" && !isDueOn(goals[0], key)) ||
+					(weekly !== undefined && weekly.done >= weekly.target && key <= weekEnd);
+				if (at.getTime() <= now || (d === 0 && doneToday) || skip) {
 					id++;
 					continue;
 				}
 				notifications.push({
 					id: id++,
 					title: `${name} ⏰`,
-					body:
-						target > 1
+					body: weekly
+						? `Time for it! Your goal is ${weekly.target}× this week 🗓️`
+						: target > 1
 							? `Time for it! Your goal is ${target}× today. Small steps count 🌱`
 							: "Time for it! Small steps count 🌱",
 					channelId: CHANNEL_ID,
@@ -209,7 +222,7 @@ export const useRemindersStore = defineStore("reminders", () => {
 				return JSON.stringify([
 					habitsStore.todayKey,
 					activeReminders.value,
-					habitsStore.dailyGoalsList.map((g) => g.name),
+					habitsStore.dailyGoalsList.map((g) => [g.name, g.schedule ?? null]),
 					activeReminders.value.map((r) => counts[r.name] ?? 0),
 					permission.value,
 				]);
