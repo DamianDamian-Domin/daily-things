@@ -2,10 +2,11 @@
 	<div
 		class="app-shell"
 		:class="{ 'is-mobile': isMobileLayout }">
+		<OfflineBadge />
 		<a
 			href="#main"
 			class="skip-link"
-			>Skip to content</a
+			>{{ m.skipToContent }}</a
 		>
 
 		<header
@@ -29,6 +30,7 @@
 		<AuthDialog v-if="authDialogNeeded" />
 		<AvatarEditor v-if="avatarEditorNeeded" />
 		<InsightsDialogs v-if="insightsNeeded" />
+		<LogNoteDialog v-if="logNote.target" />
 		<HelpTour
 			v-if="helpNeeded"
 			:model-value="help.isOpen && !authStore.isAuthDialogOpen"
@@ -47,9 +49,11 @@ import { usePreferencesStore } from "@/stores/userPreferences";
 import { useToastStore } from "@/stores/toast";
 import { useProfileStore } from "@/stores/profile";
 import { useRemindersStore } from "@/stores/reminders";
+import { useCyclesStore } from "@/stores/cycles";
 import { useAchievementsStore } from "@/stores/achievements";
 import { useInsightsStore } from "@/stores/insights";
 import { useHelpStore } from "@/stores/help";
+import { useLogNoteStore } from "@/stores/logNote";
 import { hasStoredInvite, loadFriends, loadProfileSync, peekFriends } from "@/stores/social";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 import { fetchUserDoc } from "@/services/userData";
@@ -66,9 +70,13 @@ const AuthDialog = defineAsyncComponent(() => import("@/components/login_view/Au
 const AvatarEditor = defineAsyncComponent(() => import("@/components/friends/AvatarEditor.vue"));
 // Odznaki, podsumowanie tygodnia i rok — wspólne okna otwierane z kilku miejsc
 const InsightsDialogs = defineAsyncComponent(() => import("@/components/insights/InsightsDialogs.vue"));
+// Notatka przy odhaczeniu habitu (z toastu, okienka habitu i historii)
+const LogNoteDialog = defineAsyncComponent(() => import("@/components/home_view/LogNoteDialog.vue"));
 // Obrazkowy przewodnik „Jak to działa” (raz dla nowych, potem z ustawień)
 const HelpTour = defineAsyncComponent(() => import("@/components/help/HelpTour.vue"));
 import ToastHost from "@/components/ui/ToastHost.vue";
+import OfflineBadge from "@/components/ui/OfflineBadge.vue";
+import { shellMessages as m } from "@/i18n/messages/shell";
 
 const route = useRoute();
 const router = useRouter();
@@ -79,10 +87,12 @@ const preferencesStore = usePreferencesStore();
 const toast = useToastStore();
 const profileStore = useProfileStore();
 const remindersStore = useRemindersStore();
+const cyclesStore = useCyclesStore();
 const achievementsStore = useAchievementsStore();
 const insights = useInsightsStore();
 const carouselStore = useCarouselStore();
 const help = useHelpStore();
+const logNote = useLogNoteStore();
 
 // ==========================================
 // UKŁAD (mobile / desktop)
@@ -133,9 +143,12 @@ async function loadSession(uid: string) {
 		habitsStore.hydrate(userDoc);
 		profileStore.hydrate(userDoc);
 		remindersStore.hydrate(userDoc);
+		cyclesStore.hydrate(userDoc);
 		achievementsStore.hydrate(userDoc);
 		await Promise.all([habitsStore.loadInitialHistory(), todosStore.load(uid, userDoc)]);
 		if (authStore.userUid !== uid) return;
+		// Obowiązki cykliczne: doczytanie historii od ostatniego razu (zwykle już jest)
+		cyclesStore.load();
 		// Od teraz profil dla znajomych może się publikować (seria jest już policzona)
 		profileStore.markReady();
 		// Nowy użytkownik: raz pokazujemy, do czego służy aplikacja
@@ -150,7 +163,7 @@ async function loadSession(uid: string) {
 		if (!authStore.isGuest) loadFriends().then((friends) => friends.checkInbox());
 	} catch (err) {
 		console.error("Session load failed", err);
-		toast.error("We couldn't load your data. Check your connection.");
+		toast.error(m.sessionLoadFailed);
 	}
 }
 
@@ -161,6 +174,7 @@ watch(
 		todosStore.clearData();
 		profileStore.clear();
 		remindersStore.clear();
+		cyclesStore.clear();
 		achievementsStore.clear();
 		insights.close();
 		peekFriends()?.clear();
@@ -181,6 +195,9 @@ watch(
 	},
 	{ immediate: true },
 );
+
+// Widżet „Dzisiejsze cele” na ekranie głównym Androida
+if (isNativePlatform) import("@/utils/habitsWidget").then((m) => m.startHabitsWidget());
 
 // ==========================================
 // ZNAJOMI — zaproszenie z linku i słuchacze tylko przy widocznej karcie

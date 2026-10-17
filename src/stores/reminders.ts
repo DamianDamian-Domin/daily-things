@@ -4,10 +4,15 @@ import type { HabitReminder } from "@/libs/types";
 import { saveUserFields, type UserDoc } from "@/services/userData";
 import { useAuthStore } from "@/stores/auth";
 import { useHabitsStore } from "@/stores/habits";
+import { useCyclesStore } from "@/stores/cycles";
 import { useToastStore } from "@/stores/toast";
 import { displayName } from "@/utils/habitCatalog";
 import { isNativePlatform } from "@/utils/platform";
-import { addDays, startOfDay } from "@/utils/date";
+import { addDays, startOfDay, toDateKey } from "@/utils/date";
+import { isDueOn, normalizeSchedule, weekKeys } from "@/utils/goalSchedule";
+import { dueLabel, shouldNudge } from "@/utils/cycles";
+import { locale } from "@/i18n";
+import { remindersMessages as m } from "@/i18n/messages/reminders";
 
 // Planujemy pojedyncze powiadomienia na kilka dni do przodu zamiast jednego
 // powtarzalnego — dzięki temu dzisiejsze przypomnienie znika, gdy cel jest
@@ -15,7 +20,9 @@ import { addDays, startOfDay } from "@/utils/date";
 const DAYS_AHEAD = 7;
 const CHANNEL_ID = "habit-reminders";
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
-const SAVE_ERROR = "Couldn't save that reminder — check your connection and try again.";
+// Obowiązki cykliczne: przypomnienie rano w dniu terminu (i co kilka dni po nim)
+const CYCLE_HOUR = 9;
+const CYCLE_ID_BASE = 5000;
 
 export type ReminderPermission = "granted" | "denied" | "prompt" | "unsupported";
 
@@ -31,6 +38,7 @@ const loadPlugin = () =>
 export const useRemindersStore = defineStore("reminders", () => {
 	const authStore = useAuthStore();
 	const habitsStore = useHabitsStore();
+	const cyclesStore = useCyclesStore();
 	const toast = useToastStore();
 
 	const reminders = ref<HabitReminder[]>([]);
@@ -70,7 +78,7 @@ export const useRemindersStore = defineStore("reminders", () => {
 		} catch (err) {
 			console.error("setReminder failed", err);
 			if (authStore.userUid === currentUid) reminders.value = previous;
-			toast.error(SAVE_ERROR);
+			toast.error(m.saveError);
 		}
 	}
 
@@ -99,7 +107,7 @@ export const useRemindersStore = defineStore("reminders", () => {
 			console.warn("Notification permission request failed", err);
 		}
 		if (permission.value !== "granted") {
-			toast.error("Notifications are off for Daily Things. Turn them on in your phone's settings.");
+			toast.error(m.permissionDenied);
 			return false;
 		}
 		scheduleSoon();
@@ -115,7 +123,7 @@ export const useRemindersStore = defineStore("reminders", () => {
 	// ==========================================================================
 	// PLANOWANIE POWIADOMIEŃ (tylko Android)
 	// ==========================================================================
-	let channelReady = false;
+	let channelLocale: string | null = null;
 	let running: Promise<void> | null = null;
 	let again = false;
 
@@ -128,28 +136,64 @@ export const useRemindersStore = defineStore("reminders", () => {
 		for (const reminder of activeReminders.value) {
 			const goals = habitsStore.dailyGoalsList.filter((g) => g.name === reminder.name);
 			const habit = habitsStore.resolve(goals[0]);
-			const target = goals.length;
+			const schedule = normalizeSchedule(goals[0].schedule);
+			// Cel tygodniowy: przypominamy, dopóki tygodniowy licznik nie jest pełny
+			const weekly =
+				schedule?.kind === "weekly"
+					? habitsStore.weeklyGoalsFor(habitsStore.todayKey).find((w) => w.name === reminder.name)
+					: undefined;
+			const weekEnd = weekKeys(habitsStore.todayKey)[6];
+			const target = weekly ? 1 : goals.length;
 			const doneToday = (counts[reminder.name] ?? 0) >= target;
 			const [hour, minute] = reminder.time.split(":").map(Number);
 			const name = displayName(habit);
 			for (let d = 0; d < DAYS_AHEAD; d++) {
 				const at = addDays(today, d);
 				at.setHours(hour, minute, 0, 0);
-				if (at.getTime() <= now || (d === 0 && doneToday)) {
+				const key = toDateKey(at);
+				const skip =
+					(schedule?.kind === "days" && !isDueOn(goals[0], key)) ||
+					(weekly !== undefined && weekly.done >= weekly.target && key <= weekEnd);
+				if (at.getTime() <= now || (d === 0 && doneToday) || skip) {
 					id++;
 					continue;
 				}
 				notifications.push({
 					id: id++,
 					title: `${name} ⏰`,
-					body:
-						target > 1
-							? `Time for it! Your goal is ${target}× today. Small steps count 🌱`
-							: "Time for it! Small steps count 🌱",
+					body: weekly
+						? m.notificationBodyWeekly(weekly.target)
+						: target > 1
+							? m.notificationBodyTarget(target)
+							: m.notificationBody,
 					channelId: CHANNEL_ID,
 					schedule: { at, allowWhileIdle: true },
 					extra: { habit: reminder.name },
 				});
+			}
+		}
+		// Terminy obowiązków przesuwają się same, gdy obowiązek zostanie odhaczony
+		if (cyclesStore.ready) {
+			let cycleId = CYCLE_ID_BASE;
+			for (const item of cyclesStore.items) {
+				const name = displayName(item.habit);
+				for (let d = 0; d < DAYS_AHEAD; d++) {
+					const daysLeft = item.status.daysLeft - d;
+					const at = addDays(today, d);
+					at.setHours(CYCLE_HOUR, 0, 0, 0);
+					if (!shouldNudge(daysLeft) || at.getTime() <= now) continue;
+					notifications.push({
+						id: cycleId++,
+						title: `${name} 🧽`,
+						body:
+							daysLeft === 0
+								? "It's due today. Ten minutes and it's done for a while ✨"
+								: `It's ${dueLabel({ daysLeft })}. Tick it off when you get to it 🌱`,
+						channelId: CHANNEL_ID,
+						schedule: { at, allowWhileIdle: true },
+						extra: { habit: item.cycle.name },
+					});
+				}
 			}
 		}
 		return notifications;
@@ -157,14 +201,15 @@ export const useRemindersStore = defineStore("reminders", () => {
 
 	async function reschedule() {
 		const plugin = await loadPlugin();
-		if (!channelReady) {
+		// Kanał tworzymy ponownie po zmianie języka — Android aktualizuje wtedy jego nazwę
+		if (channelLocale !== locale.value) {
 			await plugin.createChannel({
 				id: CHANNEL_ID,
-				name: "Habit reminders",
-				description: "Nudges at the times you set for your daily goals",
+				name: m.channelName,
+				description: m.channelDescription,
 				importance: 4,
 			});
-			channelReady = true;
+			channelLocale = locale.value;
 		}
 		const pending = await plugin.getPending();
 		if (pending.notifications.length) {
@@ -209,9 +254,12 @@ export const useRemindersStore = defineStore("reminders", () => {
 				return JSON.stringify([
 					habitsStore.todayKey,
 					activeReminders.value,
-					habitsStore.dailyGoalsList.map((g) => g.name),
+					habitsStore.dailyGoalsList.map((g) => [g.name, g.schedule ?? null]),
 					activeReminders.value.map((r) => counts[r.name] ?? 0),
 					permission.value,
+					cyclesStore.ready ? cyclesStore.items.map((i) => [i.cycle.name, i.status.due]) : null,
+					// Zaplanowane powiadomienia mają tekst w języku z chwili planowania
+					locale.value,
 				]);
 			},
 			scheduleSoon,

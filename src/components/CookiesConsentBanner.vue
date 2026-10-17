@@ -11,11 +11,10 @@
 					<h2
 						id="consent-title"
 						class="consent-title">
-						A quick note on privacy 🍪
+						{{ m.consent.title }}
 					</h2>
 					<p class="consent-desc">
-						We only store what's needed to keep you signed in and save your progress. With your
-						OK, we may also measure anonymous usage to make Daily Things better.
+						{{ m.consent.desc }}
 					</p>
 				</div>
 
@@ -24,19 +23,19 @@
 					class="consent-settings">
 					<div class="consent-row">
 						<div>
-							<p class="consent-row-title">Essential</p>
-							<p class="consent-row-desc">Sign-in and saving your data. Always on.</p>
+							<p class="consent-row-title">{{ m.consent.essential }}</p>
+							<p class="consent-row-desc">{{ m.consent.essentialDesc }}</p>
 						</div>
-						<span class="consent-always">Always on</span>
+						<span class="consent-always">{{ m.consent.alwaysOn }}</span>
 					</div>
 					<div class="consent-row">
 						<div>
 							<label
 								for="cookie-analytics"
 								class="consent-row-title"
-								>Anonymous analytics</label
+								>{{ m.consent.analytics }}</label
 							>
-							<p class="consent-row-desc">Helps us see what to improve.</p>
+							<p class="consent-row-desc">{{ m.consent.analyticsDesc }}</p>
 						</div>
 						<ToggleSwitch
 							v-model="analyticsEnabled"
@@ -50,7 +49,7 @@
 						class="dt-btn dt-btn-ghost dt-btn-sm"
 						:aria-expanded="showSettings"
 						@click="showSettings = !showSettings">
-						{{ showSettings ? "Hide options" : "Options" }}
+						{{ showSettings ? m.consent.hideOptions : m.consent.options }}
 					</button>
 					<span class="consent-spacer"></span>
 					<button
@@ -58,20 +57,20 @@
 						type="button"
 						class="dt-btn dt-btn-outline dt-btn-sm"
 						@click="cookieConsentStore.saveCustom(analyticsEnabled)">
-						Save choice
+						{{ m.consent.saveChoice }}
 					</button>
 					<template v-else>
 						<button
 							type="button"
 							class="dt-btn dt-btn-outline dt-btn-sm"
 							@click="cookieConsentStore.acceptNecessaryOnly()">
-							Essential only
+							{{ m.consent.essentialOnly }}
 						</button>
 						<button
 							type="button"
 							class="dt-btn dt-btn-primary dt-btn-sm"
 							@click="cookieConsentStore.acceptAll()">
-							Accept all
+							{{ m.consent.acceptAll }}
 						</button>
 					</template>
 				</div>
@@ -84,6 +83,7 @@
 import { computed, ref } from "vue";
 import ToggleSwitch from "primevue/toggleswitch";
 import { useCookieConsentStore } from "@/stores/cookieConsent";
+import { legalMessages as m } from "@/i18n/messages/legal";
 
 withDefaults(defineProps<{ bottomOffset?: number }>(), { bottomOffset: 0 });
 

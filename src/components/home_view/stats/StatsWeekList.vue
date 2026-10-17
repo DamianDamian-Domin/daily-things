@@ -1,7 +1,7 @@
 <template>
 	<section
 		class="stats-section"
-		aria-label="Days">
+		:aria-label="m.daysLabel">
 		<ul class="day-list">
 			<li
 				v-for="day in days"
@@ -11,7 +11,7 @@
 					class="day-row"
 					:class="{ perfect: day.perfect, future: day.future }"
 					:disabled="day.future"
-					:aria-label="`${day.name} ${day.date}: ${day.total} logged${day.perfect ? ', all goals done' : ''}. Open day`"
+					:aria-label="m.dayAria(day.name, day.date, day.total, day.perfect)"
 					@click="emit('open', day.key)">
 					<span class="day-when">
 						<span class="day-name">{{ day.name }}</span>
@@ -61,6 +61,7 @@
 import { paletteFor } from "@/utils/habitCatalog";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import type { StatsDay } from "./useStatsData";
+import { statsMessages as m } from "@/i18n/messages/stats";
 
 defineProps<{ days: StatsDay[] }>();
 const emit = defineEmits<{ open: [key: string] }>();

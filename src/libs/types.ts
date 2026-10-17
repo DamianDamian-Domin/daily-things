@@ -19,6 +19,7 @@ export interface HabitLog {
 	id: string;
 	name: string;
 	at?: number; // znacznik czasu odhaczenia (ms)
+	note?: string; // krótka notatka, np. „wymieniony filtr, model X” (tylko dla właściciela)
 	icon?: string;
 	display_name?: string;
 	severity?: string;
@@ -27,9 +28,15 @@ export interface HabitLog {
 	origin?: string;
 }
 
+// Rytm celu (brak = codziennie). Dni: 0 = poniedziałek … 6 = niedziela.
+export type GoalSchedule =
+	| { kind: "days"; days: number[] }
+	| { kind: "weekly"; times: number };
+
 export interface GoalRef {
 	id?: string;
 	name: string;
+	schedule?: GoalSchedule;
 	icon?: string;
 	display_name?: string;
 	severity?: string;
@@ -41,7 +48,11 @@ export interface DayEntry {
 	date: string;
 	habits: HabitLog[];
 	goalsSnapshot?: GoalRef[];
+	// Nastrój dnia 1–5 (utils/mood.ts); brak = nie zapisano
+	mood?: Mood;
 }
+
+export type Mood = 1 | 2 | 3 | 4 | 5;
 
 // Cel dzienny. Cel „3× dziennie” to 3 wpisy o tej samej nazwie (zgodność wstecz).
 export interface Goal extends GoalRef {
@@ -55,6 +66,16 @@ export interface HabitReminder {
 	time: string;
 }
 
+// Obowiązek cykliczny (np. lodówka co 4 tygodnie), klucz to `name` habitu.
+// `anchor` to dzień, od którego liczymy, gdy w historii nie ma nowszego wpisu:
+// ostatni raz sprzed ustawienia cyklu albo dzień ustawienia.
+export interface HabitCycle {
+	name: string;
+	every: number;
+	unit: "day" | "week" | "month";
+	anchor: string;
+}
+
 export interface GroupedHabit {
 	name: string;
 	habit: Habit;
@@ -66,6 +87,16 @@ export interface GroupedGoal {
 	habit: Habit;
 	target: number;
 	done: number;
+	schedule?: GoalSchedule;
+}
+
+// Cel „N× w tygodniu”: postęp liczony od poniedziałku do niedzieli
+export interface WeeklyGoal {
+	name: string;
+	habit: Habit;
+	target: number; // ile razy w tygodniu
+	done: number; // ile razy w tym tygodniu (bez limitu)
+	doneOnDay: number; // ile razy w wybranym dniu
 }
 
 export type TodoColor =
@@ -109,6 +140,8 @@ export interface UserPreferences {
 	// Znajomi: udostępnianie postępów i nazw habitów (domyślnie włączone)
 	shareProgress: boolean;
 	shareHabits: boolean;
+	// Język interfejsu wybrany przez użytkownika (brak = wg przeglądarki)
+	language?: "en" | "pl";
 }
 
 export type CookieConsentChoice =

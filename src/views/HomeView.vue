@@ -5,7 +5,7 @@
 		@touchmove.passive="onTouchMove"
 		@touchend.passive="onTouchEnd"
 		@touchcancel="resetSwipeState">
-		<h1 class="sr-only">Daily Things — habits and to-dos</h1>
+		<h1 class="sr-only">{{ m.srTitle }}</h1>
 		<div class="home-top">
 			<img
 				src="@/assets/logo.png"
@@ -23,6 +23,7 @@
 		</div>
 
 		<RecapBanner />
+		<ChoresBanner />
 
 		<CarouselView class="home-carousel" />
 	</div>
@@ -34,7 +35,9 @@ import { useLayout } from "@/utils/useLayout";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 import DatePicker from "@/components/home_view/DatePicker.vue";
 import RecapBanner from "@/components/insights/RecapBanner.vue";
+import ChoresBanner from "@/components/insights/ChoresBanner.vue";
 import CarouselView from "./CarouselView.vue";
+import { homeMessages as m } from "@/i18n/messages/home";
 
 const carouselStore = useCarouselStore();
 

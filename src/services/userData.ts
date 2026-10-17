@@ -19,7 +19,9 @@ import type {
 	GoalRef,
 	Habit,
 	HabitLog,
+	HabitCycle,
 	HabitReminder,
+	Mood,
 	TodoItem,
 	UserPreferences,
 } from "@/libs/types";
@@ -29,8 +31,9 @@ import { plain } from "@/utils/plain";
 // ==========================================================================
 // Model danych:
 //   users/{uid}                     → profil, dailyGoals[], recentlyUsed[],
-//                                      customHabbits[], reminders[], preferences{}
-//   users/{uid}/habbits/{YYYY-MM-DD} → { date, habbits[], goalsSnapshot[] }
+//                                      customHabbits[], reminders[], cycles[],
+//                                      preferences{}
+//   users/{uid}/habbits/{YYYY-MM-DD} → { date, habbits[], goalsSnapshot[], mood? }
 //   users/{uid}/todos/{todoId}       → TodoItem (z podzadaniami w środku)
 // Funkcje „Znajomi” (profiles, friendCodes, friendships) → services/friends.ts
 // ==========================================================================
@@ -49,6 +52,8 @@ export interface UserDoc {
 	preferences?: Partial<UserPreferences>;
 	// Godziny przypomnień o celach (powiadomienia planuje urządzenie)
 	reminders?: HabitReminder[];
+	// Obowiązki cykliczne (np. lodówka co 4 tygodnie)
+	cycles?: HabitCycle[];
 	// Własny awatar (brak = domyślny wyliczony z UID) i kod znajomego
 	avatar?: AvatarConfig;
 	friendCode?: string;
@@ -67,6 +72,7 @@ interface StoredDay {
 	date?: string;
 	habbits?: HabitLog[];
 	goalsSnapshot?: GoalRef[];
+	mood?: number;
 }
 
 function toDayEntry(id: string, data: StoredDay): DayEntry {
@@ -74,7 +80,22 @@ function toDayEntry(id: string, data: StoredDay): DayEntry {
 		date: data.date ?? id,
 		habits: Array.isArray(data.habbits) ? data.habbits : [],
 		goalsSnapshot: Array.isArray(data.goalsSnapshot) ? data.goalsSnapshot : undefined,
+		...(isMood(data.mood) ? { mood: data.mood } : {}),
 	};
+}
+
+export function isMood(value: unknown): value is Mood {
+	return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 5;
+}
+
+// Nastrój dnia. arrayUnion() bez argumentów tworzy pustą listę wpisów, gdy
+// dokumentu dnia jeszcze nie ma (reguły wymagają listy), a istniejących nie rusza.
+export async function saveDayMood(uid: string, dateKey: string, mood: Mood | null) {
+	await setDoc(
+		dayDocRef(uid, dateKey),
+		{ date: dateKey, [DAY_LOGS_FIELD]: arrayUnion(), mood: mood ?? deleteField() },
+		{ merge: true },
+	);
 }
 
 export const daysCollectionRef = (uid: string) => collection(db, "users", uid, DAYS_COLLECTION);
@@ -192,7 +213,7 @@ export async function exportUserData(uid: string): Promise<ExportedUserData> {
 
 export function hasMeaningfulData(data: ExportedUserData): boolean {
 	return (
-		data.days.some((d) => (d.habits?.length ?? 0) > 0) ||
+		data.days.some((d) => (d.habits?.length ?? 0) > 0 || !!d.mood) ||
 		data.todos.length > 0 ||
 		(data.user.dailyGoals?.length ?? 0) > 0
 	);
@@ -224,19 +245,22 @@ export async function mergeUserData(targetUid: string, source: ExportedUserData)
 		...(!target.reminders?.length && source.user.reminders?.length
 			? { reminders: source.user.reminders }
 			: {}),
+		...(!target.cycles?.length && source.user.cycles?.length ? { cycles: source.user.cycles } : {}),
 		...(!target.avatar && source.user.avatar ? { avatar: source.user.avatar } : {}),
 	});
 
 	for (const day of source.days) {
-		if (!day.habits?.length) continue;
+		if (!day.habits?.length && !day.mood) continue;
 		const ref = dayDocRef(targetUid, day.date);
 		const existing = await getDoc(ref);
+		const hasMood = existing.exists() && isMood(existing.get("mood"));
 		await setDoc(
 			ref,
 			{
 				date: day.date,
-				[DAY_LOGS_FIELD]: arrayUnion(...day.habits),
+				[DAY_LOGS_FIELD]: arrayUnion(...(day.habits ?? [])),
 				...(existing.exists() || !day.goalsSnapshot ? {} : { goalsSnapshot: day.goalsSnapshot }),
+				...(day.mood && !hasMood ? { mood: day.mood } : {}),
 			},
 			{ merge: true },
 		);

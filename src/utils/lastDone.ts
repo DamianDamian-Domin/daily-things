@@ -2,6 +2,7 @@
 // Czysta logika bez Firebase, żeby dało się ją testować.
 import type { DayEntry } from "@/libs/types";
 import { fromDateKey, type DateKey } from "@/utils/date";
+import { insightsMessages as m } from "@/i18n/messages/insights";
 
 export interface HabitHistory {
 	name: string;
@@ -9,6 +10,8 @@ export interface HabitHistory {
 	dates: DateKey[];
 	// Wszystkie odhaczenia (habit 3× dziennie liczy się 3 razy)
 	count: number;
+	// Notatki z odhaczeń, po dniach (tylko dni, w których jakaś była)
+	notes: Record<DateKey, string[]>;
 }
 
 export function buildHabitHistory(days: Iterable<DayEntry>): Map<string, HabitHistory> {
@@ -18,10 +21,12 @@ export function buildHabitHistory(days: Iterable<DayEntry>): Map<string, HabitHi
 		for (const log of day.habits) {
 			let entry = map.get(log.name);
 			if (!entry) {
-				entry = { name: log.name, dates: [], count: 0 };
+				entry = { name: log.name, dates: [], count: 0, notes: {} };
 				map.set(log.name, entry);
 			}
 			entry.count++;
+			const note = log.note?.trim();
+			if (note) (entry.notes[day.date] ??= []).push(note);
 			if (!seen.has(log.name)) {
 				seen.add(log.name);
 				entry.dates.push(day.date);
@@ -32,28 +37,41 @@ export function buildHabitHistory(days: Iterable<DayEntry>): Map<string, HabitHi
 	return map;
 }
 
+// Notatka pasująca do wyszukiwania, od najnowszego dnia („filtr” → lodówka)
+export function findNote(
+	history: HabitHistory,
+	normalizedQuery: string,
+	normalize: (text: string) => string,
+): string | null {
+	if (!normalizedQuery) return null;
+	for (const date of history.dates) {
+		const hit = history.notes[date]?.find((n) => normalize(n).includes(normalizedQuery));
+		if (hit) return hit;
+	}
+	return null;
+}
+
 // Liczba pełnych dni między datami (Math.round chroni przed zmianą czasu)
 export function daysBetween(from: DateKey, to: DateKey): number {
 	return Math.round((fromDateKey(to).getTime() - fromDateKey(from).getTime()) / 86_400_000);
 }
 
 export function agoLabel(days: number): string {
-	if (days <= 0) return "today";
-	if (days === 1) return "yesterday";
-	if (days < 14) return `${days} days ago`;
-	if (days < 60) return `${Math.round(days / 7)} weeks ago`;
-	if (days < 365) return `${Math.round(days / 30.44)} months ago`;
-	const years = Math.floor(days / 365);
-	return years === 1 ? "over a year ago" : `over ${years} years ago`;
+	if (days <= 0) return m.agoToday;
+	if (days === 1) return m.agoYesterday;
+	if (days < 14) return m.agoDays(days);
+	if (days < 60) return m.agoWeeks(Math.round(days / 7));
+	if (days < 365) return m.agoMonths(Math.round(days / 30.44));
+	return m.agoYears(Math.floor(days / 365));
 }
 
 // Krótka wersja na plakietkę: „dziś”, „3d”, „5w”, „4mo”, „1y”
 export function agoShort(days: number): string {
-	if (days <= 0) return "today";
-	if (days < 14) return `${days}d`;
-	if (days < 60) return `${Math.round(days / 7)}w`;
-	if (days < 365) return `${Math.round(days / 30.44)}mo`;
-	return `${Math.floor(days / 365)}y`;
+	if (days <= 0) return m.agoToday;
+	if (days < 14) return m.shortDays(days);
+	if (days < 60) return m.shortWeeks(Math.round(days / 7));
+	if (days < 365) return m.shortMonths(Math.round(days / 30.44));
+	return m.shortYears(Math.floor(days / 365));
 }
 
 // Średni odstęp między kolejnymi dniami (potrzeba co najmniej 2 dni)
@@ -76,9 +94,8 @@ export function freshness(daysAgo: number, gap: number | null): Freshness {
 
 export function rhythmLabel(gap: number | null): string | null {
 	if (gap === null) return null;
-	if (gap < 1.5) return "almost every day";
-	if (gap < 10) return `about every ${Math.round(gap)} days`;
-	if (gap < 45) return `about every ${Math.round(gap / 7)} ${Math.round(gap / 7) === 1 ? "week" : "weeks"}`;
-	const months = Math.round(gap / 30.44);
-	return `about every ${months} ${months === 1 ? "month" : "months"}`;
+	if (gap < 1.5) return m.rhythmDaily;
+	if (gap < 10) return m.rhythmDays(Math.round(gap));
+	if (gap < 45) return m.rhythmWeeks(Math.round(gap / 7));
+	return m.rhythmMonths(Math.round(gap / 30.44));
 }

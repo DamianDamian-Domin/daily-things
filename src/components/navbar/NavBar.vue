@@ -1,11 +1,11 @@
 <template>
 	<nav
 		class="topbar"
-		aria-label="Main">
+		:aria-label="m.mainNav">
 		<RouterLink
 			to="/"
 			class="brand"
-			aria-label="Daily Things — home">
+			:aria-label="m.home">
 			<img
 				src="@/assets/logo.png"
 				alt=""
@@ -24,13 +24,13 @@
 				<i
 					class="pi pi-cloud-upload"
 					aria-hidden="true"></i>
-				Save your progress
+				{{ m.saveProgress }}
 			</button>
 
 			<button
 				type="button"
 				class="dt-icon-btn"
-				:aria-label="preferences.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'"
+				:aria-label="preferences.isDarkMode ? m.toLightMode : m.toDarkMode"
 				@click="preferences.toggleTheme()">
 				<i
 					:class="preferences.isDarkMode ? 'pi pi-sun' : 'pi pi-moon'"
@@ -40,7 +40,7 @@
 			<button
 				type="button"
 				class="dt-icon-btn"
-				aria-label="Settings"
+				:aria-label="m.settings"
 				@click="openAccount('settings')">
 				<i
 					class="pi pi-cog"
@@ -50,7 +50,7 @@
 			<button
 				type="button"
 				class="avatar-btn"
-				:aria-label="`Account: ${authStore.displayName || 'guest'}`"
+				:aria-label="m.account(authStore.displayName || m.guestLower)"
 				@click="openAccount('profile')">
 				<PixelAvatar
 					:avatar="profileStore.avatar"
@@ -71,6 +71,7 @@ import { useAuthStore } from "@/stores/auth";
 import { usePreferencesStore } from "@/stores/userPreferences";
 import { useProfileStore } from "@/stores/profile";
 import PixelAvatar from "@/components/ui/PixelAvatar.vue";
+import { shellMessages as m } from "@/i18n/messages/shell";
 const AccountSheet = defineAsyncComponent(() => import("@/components/settings/AccountSheet.vue"));
 
 const authStore = useAuthStore();

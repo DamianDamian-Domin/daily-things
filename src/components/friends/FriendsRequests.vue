@@ -6,7 +6,7 @@
 		<h3
 			id="requests-title"
 			class="dt-section-title">
-			Requests
+			{{ m.requests }}
 		</h3>
 		<ul class="req-list">
 			<li
@@ -18,19 +18,19 @@
 					:size="40" />
 				<span class="req-text">
 					<strong>{{ r.name }}</strong>
-					<span>wants to be friends</span>
+					<span>{{ m.wantsToBeFriends }}</span>
 				</span>
 				<button
 					type="button"
 					class="dt-btn dt-btn-primary dt-btn-sm"
-					:aria-label="`Accept ${r.name}`"
+					:aria-label="m.acceptAria(r.name)"
 					@click="emit('accept', r)">
-					Accept
+					{{ m.accept }}
 				</button>
 				<button
 					type="button"
 					class="dt-icon-btn"
-					:aria-label="`Decline request from ${r.name}`"
+					:aria-label="m.declineAria(r.name)"
 					@click="emit('decline', r)">
 					<i
 						class="pi pi-times"
@@ -46,14 +46,14 @@
 					:size="40" />
 				<span class="req-text">
 					<strong>{{ r.name }}</strong>
-					<span>Request sent · waiting 🌱</span>
+					<span>{{ m.requestPending }}</span>
 				</span>
 				<button
 					type="button"
 					class="dt-btn dt-btn-ghost dt-btn-sm"
-					:aria-label="`Cancel request to ${r.name}`"
+					:aria-label="m.cancelAria(r.name)"
 					@click="emit('cancel', r)">
-					Cancel
+					{{ c.cancel }}
 				</button>
 			</li>
 		</ul>
@@ -64,6 +64,8 @@
 // Tylko typy — store znajomych ładuje rodzic (kod społecznościowy jest leniwy)
 import type { RequestRow } from "@/stores/friends";
 import PixelAvatar from "@/components/ui/PixelAvatar.vue";
+import { friendsMessages as m } from "@/i18n/messages/friends";
+import { commonMessages as c } from "@/i18n/messages/common";
 
 // Zaproszenia: przychodzące (przyjmij/odrzuć) i wysłane (anuluj)
 defineProps<{ incoming: RequestRow[]; outgoing: RequestRow[] }>();

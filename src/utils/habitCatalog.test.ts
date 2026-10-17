@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { setLocale } from "@/i18n";
+import { HABIT_NAMES_PL } from "@/i18n/catalog.pl";
+import habitListData from "@/assets/habitList.json";
 import type { Habit } from "@/libs/types";
 import { STARTER_PACKS, timelySuggestions } from "@/utils/starterPacks";
 import pixelIcons from "@/assets/pixelIcons.json";
@@ -126,7 +129,8 @@ describe("small helpers", () => {
 
 describe("search", () => {
 	it("normalizes case and diacritics", () => {
-		expect(normalizeText("Żółć Ąę")).toBe("zołc ae");
+		expect(normalizeText("Żółć Ąę")).toBe("zolc ae");
+		expect(normalizeText("Łyżwy")).toBe("lyzwy");
 		expect(normalizeText("Café")).toBe("cafe");
 	});
 
@@ -142,5 +146,72 @@ describe("search", () => {
 		expect(matchesQuery(habit, normalizeText("książ"))).toBe(true);
 		expect(matchesQuery(habit, "learn")).toBe(true);
 		expect(matchesQuery(habit, "gym")).toBe(false);
+	});
+});
+
+describe("polskie nazwy z katalogu", () => {
+	afterEach(() => setLocale("en", { remember: false }));
+
+	it("każdy habit z katalogu (także wycofany) ma polską nazwę", () => {
+		const all = habitListData as Habit[];
+		expect(all.filter((h) => !HABIT_NAMES_PL[h.name]?.trim()).map((h) => h.name)).toEqual([]);
+		const names = new Set(all.map((h) => h.name));
+		expect(Object.keys(HABIT_NAMES_PL).filter((k) => !names.has(k))).toEqual([]);
+	});
+
+	it("display_name przełącza się z językiem, a name zostaje", () => {
+		const walking = findCatalogHabit("Walking")!;
+		expect(walking.display_name).toBe("Walk outside");
+		setLocale("pl", { remember: false });
+		expect(walking.display_name).toBe("Spacer na dworze");
+		expect(displayName(walking)).toBe("Spacer na dworze");
+		expect(walking.name).toBe("Walking");
+		expect(findCatalogHabit("Check the weather")?.display_name).toBe("Sprawdź pogodę");
+		setLocale("en", { remember: false });
+		expect(walking.display_name).toBe("Walk outside");
+	});
+
+	it("kopia habitu z katalogu ma nazwę w aktualnym języku", () => {
+		setLocale("pl", { remember: false });
+		expect({ ...findCatalogHabit("Gym")! }.display_name).toBe("Siłownia");
+	});
+
+	it("tłumaczy etykiety kategorii", () => {
+		const health = SUPER_CATEGORIES.find((c) => c.key === "health")!;
+		expect(health.label).toBe("Health & Body");
+		setLocale("pl", { remember: false });
+		expect(health.label).toBe("Zdrowie i ciało");
+		expect(health.short).toBe("Zdrowie");
+		expect(CUSTOM_CATEGORY.label).toBe("Twoje habity");
+	});
+
+	it("nie tłumaczy własnych habitów użytkownika", () => {
+		setLocale("pl", { remember: false });
+		const custom = { name: "Gym", display_name: "Gym", origin: "user", icon: "x", severity: "success" } as Habit;
+		expect(displayName(custom)).toBe("Gym");
+		expect(resolveHabit({ name: "Feed cat Mruczek" } as Habit).display_name).toBe("Feed cat Mruczek");
+	});
+
+	const search = (q: string) => CATALOG.filter((h) => matchesQuery(h, normalizeText(q))).map((h) => h.name);
+
+	it("po polsku znajduje habit po polskiej nazwie, także bez ogonków", () => {
+		setLocale("pl", { remember: false });
+		expect(search("lodowka")).toContain("Clean the fridge");
+		expect(search("Lodówka")).toContain("Clean the fridge");
+		expect(search("lyzwy")).toContain("Ice skating");
+		expect(search("silownia")).toContain("Gym");
+	});
+
+	it("angielska nazwa i tagi działają w obu językach", () => {
+		for (const l of ["en", "pl"] as const) {
+			setLocale(l, { remember: false });
+			expect(search("walk outside")).toContain("Walking");
+			expect(search("fridge")).toContain("Clean the fridge");
+			expect(search("cardio")).toContain("Running");
+		}
+	});
+
+	it("po angielsku nie dopasowuje polskich nazw", () => {
+		expect(search("silownia")).toEqual([]);
 	});
 });

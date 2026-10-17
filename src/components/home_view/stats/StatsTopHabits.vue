@@ -5,7 +5,7 @@
 		<h3
 			id="top-title"
 			class="dt-section-title">
-			Most logged
+			{{ m.mostLogged }}
 		</h3>
 		<ul class="bars">
 			<li
@@ -35,6 +35,7 @@
 import { paletteFor } from "@/utils/habitCatalog";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import type { StatsTopHabit } from "./useStatsData";
+import { statsMessages as m } from "@/i18n/messages/stats";
 
 defineProps<{ habits: StatsTopHabit[] }>();
 </script>

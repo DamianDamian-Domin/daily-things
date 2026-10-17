@@ -38,7 +38,7 @@
 				v-if="canDismiss"
 				type="button"
 				class="dt-icon-btn auth-close"
-				:aria-label="authStore.isAuthenticated ? 'Close' : 'Close and try as guest'"
+				:aria-label="authStore.isAuthenticated ? m.close : m.closeAsGuest"
 				@click="dismiss">
 				<i
 					class="pi pi-times"
@@ -50,7 +50,7 @@
 					v-if="mode !== 'welcome' && !(isNativePlatform && mode === 'login')"
 					type="button"
 					class="dt-icon-btn auth-back"
-					aria-label="Back"
+					:aria-label="m.back"
 					@click="goBack">
 					<i
 						class="pi pi-arrow-left"
@@ -94,19 +94,19 @@
 					@switch-mode="switchMode" />
 
 				<p class="auth-legal">
-					By continuing you agree to our
+					{{ m.legalPrefix }}
 					<button
 						type="button"
 						class="dt-link"
 						@click="legalRef?.open('terms')">
-						Terms
+						{{ m.terms }}
 					</button>
-					and
+					{{ m.and }}
 					<button
 						type="button"
 						class="dt-link"
 						@click="legalRef?.open('privacy')">
-						Privacy Policy
+						{{ m.privacyPolicy }}
 					</button>
 					.
 				</p>
@@ -119,6 +119,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import Dialog from "primevue/dialog";
+import { authMessages as m } from "@/i18n/messages/auth";
 import { useAuthStore, type AuthDialogMode } from "@/stores/auth";
 import { isNativePlatform } from "@/utils/platform";
 import { CATALOG, paletteFor } from "@/utils/habitCatalog";

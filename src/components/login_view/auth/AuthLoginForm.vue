@@ -6,19 +6,19 @@
 		<h2
 			:id="titleId"
 			class="auth-title">
-			Welcome back 👋
+			{{ m.welcomeBack }}
 		</h2>
 		<p
 			v-if="authStore.isGuest"
 			class="auth-lead">
-			Your guest progress will be moved to this account.
+			{{ m.guestWillMove }}
 		</p>
 
 		<div class="dt-field">
 			<label
 				for="auth-email"
 				class="dt-label"
-				>Email</label
+				>{{ m.email }}</label
 			>
 			<input
 				id="auth-email"
@@ -28,20 +28,20 @@
 				autocomplete="email"
 				inputmode="email"
 				required
-				placeholder="you@example.com" />
+				:placeholder="m.emailPlaceholder" />
 		</div>
 		<div class="dt-field">
 			<div class="auth-label-row">
 				<label
 					for="auth-password"
 					class="dt-label"
-					>Password</label
+					>{{ m.password }}</label
 				>
 				<button
 					type="button"
 					class="dt-link auth-small-link"
 					@click="emit('switch-mode', 'reset')">
-					Forgot password?
+					{{ m.forgotPassword }}
 				</button>
 			</div>
 			<PasswordInput
@@ -62,7 +62,7 @@
 				v-if="authStore.busy"
 				class="pi pi-spin pi-spinner"
 				aria-hidden="true"></i>
-			Sign in
+			{{ m.signIn }}
 		</button>
 
 		<button
@@ -74,16 +74,16 @@
 			<i
 				class="pi pi-google"
 				aria-hidden="true"></i>
-			Sign in with Google
+			{{ m.signInWithGoogle }}
 		</button>
 
 		<p class="auth-switch">
-			New here?
+			{{ m.newHere }}
 			<button
 				type="button"
 				class="dt-link"
 				@click="emit('switch-mode', 'register')">
-				Create an account
+				{{ m.createAccount }}
 			</button>
 		</p>
 	</form>
@@ -91,6 +91,7 @@
 
 <script setup lang="ts">
 import { useAuthStore, type AuthDialogMode } from "@/stores/auth";
+import { authMessages as m } from "@/i18n/messages/auth";
 import AuthErrorBanner from "@/components/login_view/AuthErrorBanner.vue";
 import PasswordInput from "@/components/login_view/PasswordInput.vue";
 

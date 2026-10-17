@@ -6,10 +6,13 @@ import type {
 	DayEntry,
 	Goal,
 	GoalRef,
+	GoalSchedule,
 	GroupedGoal,
 	GroupedHabit,
 	Habit,
 	HabitLog,
+	Mood,
+	WeeklyGoal,
 } from "@/libs/types";
 import { useAuthStore } from "@/stores/auth";
 import { plain } from "@/utils/plain";
@@ -19,6 +22,7 @@ import {
 	dayDocRef,
 	fetchAllDays,
 	fetchDays,
+	saveDayMood,
 	saveUserFields,
 	type UserDoc,
 } from "@/services/userData";
@@ -35,10 +39,21 @@ import {
 } from "@/utils/date";
 import { CATALOG, findCatalogHabit, resolveHabit } from "@/utils/habitCatalog";
 import { streakDetails } from "@/utils/streak";
+import { cleanNote } from "@/utils/logNote";
+import { isDueOn, isRestDay, isWeekly, normalizeSchedule, weekKeys } from "@/utils/goalSchedule";
+import { habitsMessages as msgs } from "@/i18n/messages/habits";
 
 const RECENT_LIMIT = 12;
+
+// Odhaczenie albo cofnięcie zrobione na widżecie (utils/habitsWidget.ts)
+export interface WidgetAction {
+	op: "log" | "unlog";
+	date: DateKey;
+	log: HabitLog;
+}
 const MAX_STREAK_LOOKBACK_MONTHS = 24;
-const SAVE_ERROR = "Couldn't save that — check your connection and try again.";
+// Getter, bo tekst zależy od aktualnego języka
+const saveError = () => msgs.saveError;
 
 export const useHabitsStore = defineStore("habits", () => {
 	const authStore = useAuthStore();
@@ -137,20 +152,56 @@ export const useHabitsStore = defineStore("habits", () => {
 		return days.value[key]?.goalsSnapshot ?? [];
 	}
 
-	function groupGoals(goals: GoalRef[], counts: Record<string, number>): GroupedGoal[] {
+	// Cele dzienne, które obowiązują danego dnia (bez tygodniowych i bez
+	// celów zaplanowanych na inne dni tygodnia)
+	function groupGoals(goals: GoalRef[], counts: Record<string, number>, key: DateKey): GroupedGoal[] {
 		const map = new Map<string, GroupedGoal>();
 		for (const goal of goals) {
+			if (!isDueOn(goal, key)) continue;
 			const group = map.get(goal.name);
 			if (group) group.target++;
-			else map.set(goal.name, { name: goal.name, habit: resolve(goal), target: 1, done: 0 });
+			else
+				map.set(goal.name, {
+					name: goal.name,
+					habit: resolve(goal),
+					target: 1,
+					done: 0,
+					schedule: normalizeSchedule(goal.schedule),
+				});
 		}
 		for (const group of map.values()) group.done = Math.min(counts[group.name] ?? 0, group.target);
 		return [...map.values()];
 	}
 
 	const groupedGoals = computed(() =>
-		groupGoals(goalsFor(selectedKey.value), selectedCounts.value),
+		groupGoals(goalsFor(selectedKey.value), selectedCounts.value, selectedKey.value),
 	);
+
+	// Cele „N× w tygodniu” w tygodniu wybranego dnia
+	function weeklyGoalsFor(key: DateKey): WeeklyGoal[] {
+		const map = new Map<string, WeeklyGoal>();
+		for (const goal of goalsFor(key)) {
+			const schedule = normalizeSchedule(goal.schedule);
+			if (schedule?.kind !== "weekly" || map.has(goal.name)) continue;
+			map.set(goal.name, {
+				name: goal.name,
+				habit: resolve(goal),
+				target: schedule.times,
+				done: 0,
+				doneOnDay: countsOn(key)[goal.name] ?? 0,
+			});
+		}
+		if (map.size === 0) return [];
+		for (const day of weekKeys(key)) {
+			const counts = countsOn(day);
+			for (const goal of map.values()) goal.done += counts[goal.name] ?? 0;
+		}
+		return [...map.values()];
+	}
+	const weeklyGoals = computed(() => weeklyGoalsFor(selectedKey.value));
+
+	// Dzień bez obowiązujących celów (np. wtorek, gdy siłownia jest pon/śr/pt)
+	const isSelectedRestDay = computed(() => isRestDay(goalsFor(selectedKey.value), selectedKey.value));
 
 	const goalsProgress = computed(() => {
 		let done = 0;
@@ -163,7 +214,7 @@ export const useHabitsStore = defineStore("habits", () => {
 	});
 
 	function dayGoalsProgress(key: DateKey) {
-		const grouped = groupGoals(recordedGoalsFor(key), countsOn(key));
+		const grouped = groupGoals(recordedGoalsFor(key), countsOn(key), key);
 		let done = 0;
 		let total = 0;
 		for (const g of grouped) {
@@ -182,11 +233,15 @@ export const useHabitsStore = defineStore("habits", () => {
 
 	// Liczba dni z rzędu z co najmniej jednym wpisem (jeden opuszczony dzień
 	// na tydzień jest „zamrażany” i nie zrywa serii — utils/streak.ts)
-	const streakInfo = computed(() => streakDetails(hasLogsOn, todayKey.value));
+	// Dni odpoczynku (cele tylko w inne dni tygodnia) nie zrywają serii
+	const restDayOn = (key: DateKey) => isRestDay(goalsFor(key), key);
+	const streakInfo = computed(() => streakDetails(hasLogsOn, todayKey.value, 3660, restDayOn));
 	const streak = computed(() => streakInfo.value.count);
 
 	// Seria trwa, ale dziś jeszcze nic nie zapisano — delikatne przypomnienie
-	const streakAtRisk = computed(() => streak.value > 0 && !hasLogsOn(todayKey.value));
+	const streakAtRisk = computed(
+		() => streak.value > 0 && !hasLogsOn(todayKey.value) && !restDayOn(todayKey.value),
+	);
 
 	// Czy seria dochodzi do najstarszego wczytanego miesiąca (trzeba doładować)
 	function streakTouchesLoadedEdge(): boolean {
@@ -208,6 +263,7 @@ export const useHabitsStore = defineStore("habits", () => {
 			const known = new Set(local.habits.map((l) => l.id));
 			local.habits.push(...remote.habits.filter((l) => !known.has(l.id)));
 			local.goalsSnapshot ??= remote.goalsSnapshot;
+			if (!("mood" in local)) local.mood = remote.mood;
 			return;
 		}
 		days.value[remote.date] = remote;
@@ -258,7 +314,7 @@ export const useHabitsStore = defineStore("habits", () => {
 			})
 			.catch((err) => {
 				console.error("Failed to load full history", err);
-				toast.error("We couldn't load your full history. Check your connection.");
+				toast.error(msgs.historyError);
 			})
 			.finally(() => {
 				pendingAllHistory = null;
@@ -321,12 +377,23 @@ export const useHabitsStore = defineStore("habits", () => {
 		};
 	}
 
+	// Id, nazwa i rytm celu (rytm tylko, gdy nie jest „codziennie”)
+	function goalBase(goal: GoalRef, id = goal.id ?? nanoid()): Goal {
+		const schedule = normalizeSchedule(goal.schedule);
+		return { id, name: goal.name, ...(schedule ? { schedule } : {}) };
+	}
+
 	function snapshotToWrite(key: DateKey): GoalRef[] | null {
 		const slimGoals = () =>
-			dailyGoalsList.value.map((g) => slim(g, { id: g.id, name: g.name }));
+			dailyGoalsList.value.map((g) => slim(g, goalBase(g)));
 		if (key === todayKey.value) return slimGoals();
 		if (days.value[key]?.goalsSnapshot) return null; // zostawiamy historyczną migawkę
 		return slimGoals();
+	}
+
+	// Migawka celów, którą zapisuje odhaczenie z dzisiaj (widżet robi to sam)
+	function todayGoalsSnapshot(): GoalRef[] {
+		return snapshotToWrite(todayKey.value) ?? [];
 	}
 
 	// Zapisy są optymistyczne: stan lokalny zmienia się od razu, a zapis do
@@ -338,11 +405,17 @@ export const useHabitsStore = defineStore("habits", () => {
 			return null;
 		}
 		const log: HabitLog = slim(habit, { id: nanoid(), name: habit.name, at: Date.now() });
+		writeLog(currentUid, log, key);
+		touchRecent(habit.name);
+		return log;
+	}
+
+	// Dopisuje gotowy wpis (z własnym id) lokalnie i w Firestore
+	function writeLog(currentUid: string, log: HabitLog, key: DateKey) {
 		const snapshot = snapshotToWrite(key);
 		const entry = localDay(key);
 		entry.habits.push(log);
 		if (snapshot) entry.goalsSnapshot = snapshot;
-		touchRecent(habit.name);
 
 		beginWrite(key);
 		setDoc(
@@ -358,10 +431,28 @@ export const useHabitsStore = defineStore("habits", () => {
 				console.error("logHabit failed", err);
 				const idx = entry.habits.findIndex((l) => l.id === log.id);
 				if (idx !== -1) entry.habits.splice(idx, 1);
-				toast.error(SAVE_ERROR);
+				toast.error(saveError());
 			})
 			.finally(() => endWrite(key));
-		return log;
+	}
+
+	// Odhaczenie z widżetu Androida. `persist` = widżet nie zdążył go zapisać
+	// (np. brak sieci), więc robimy to teraz; inaczej tylko odświeżamy stan.
+	// Zapisy po id są idempotentne, więc powtórka niczego nie dubluje.
+	function applyWidgetAction(action: WidgetAction, persist: boolean) {
+		const currentUid = uid.value;
+		if (!currentUid || !action.log?.id) return;
+		const { op, date: key, log } = action;
+		const present = logsOn(key).some((l) => l.id === log.id);
+		if (op === "log") {
+			if (present) return;
+			if (persist) writeLog(currentUid, plain(log), key);
+			else localDay(key).habits.push(plain(log));
+			touchRecent(log.name);
+		} else if (present) {
+			if (persist) removeLog(log.id, key);
+			else localDay(key).habits = logsOn(key).filter((l) => l.id !== log.id);
+		}
 	}
 
 	function removeLog(logId: string, key: DateKey = selectedKey.value): HabitLog | null {
@@ -378,7 +469,7 @@ export const useHabitsStore = defineStore("habits", () => {
 			.catch((err) => {
 				console.error("removeLog failed", err);
 				entry.habits.splice(Math.min(idx, entry.habits.length), 0, removed);
-				toast.error(SAVE_ERROR);
+				toast.error(saveError());
 			})
 			.finally(() => endWrite(key));
 		return removed;
@@ -386,11 +477,17 @@ export const useHabitsStore = defineStore("habits", () => {
 
 	// Usuwa ostatnie odhaczenie danego habitu (np. „−1” przy myciu zębów 3×)
 	function unlogHabit(name: string, key: DateKey = selectedKey.value): HabitLog | null {
+		const last = lastLog(name, key);
+		return last ? removeLog(last.id, key) : null;
+	}
+
+	// Najnowsze odhaczenie danego habitu w danym dniu
+	function lastLog(name: string, key: DateKey = selectedKey.value): HabitLog | undefined {
 		const logs = logsOn(key);
 		for (let i = logs.length - 1; i >= 0; i--) {
-			if (logs[i].name === name) return removeLog(logs[i].id, key);
+			if (logs[i].name === name) return logs[i];
 		}
-		return null;
+		return undefined;
 	}
 
 	function removeAllLogs(name: string, key: DateKey = selectedKey.value): HabitLog[] {
@@ -420,7 +517,67 @@ export const useHabitsStore = defineStore("habits", () => {
 				console.error("restoreLogs failed", err);
 				const ids = new Set(copies.map((l) => l.id));
 				entry.habits = entry.habits.filter((l) => !ids.has(l.id));
-				toast.error(SAVE_ERROR);
+				toast.error(saveError());
+			})
+			.finally(() => endWrite(key));
+	}
+
+	// Notatka przy odhaczeniu. Firestore nie zmieni jednego elementu tablicy,
+	// więc zapisujemy całą listę dnia (jak przy zmianie kolejności).
+	function setLogNote(logId: string, key: DateKey, text: string): boolean {
+		const currentUid = uid.value;
+		const entry = days.value[key];
+		if (!currentUid || !entry) return false;
+		const log = entry.habits.find((l) => l.id === logId);
+		if (!log) return false;
+		const note = cleanNote(text);
+		const previous = log.note;
+		if ((previous ?? "") === note) return true;
+		if (note) log.note = note;
+		else delete log.note;
+
+		beginWrite(key);
+		updateDoc(dayDocRef(currentUid, key), {
+			[DAY_LOGS_FIELD]: entry.habits.map((l) => plain(l)),
+		})
+			.catch((err) => {
+				console.error("setLogNote failed", err);
+				const current = entry.habits.find((l) => l.id === logId);
+				if (current) {
+					if (previous) current.note = previous;
+					else delete current.note;
+				}
+				toast.error(saveError());
+			})
+			.finally(() => endWrite(key));
+		return true;
+	}
+
+	// Wpis po id w danym dniu (okno notatki)
+	function findLog(logId: string, key: DateKey): HabitLog | undefined {
+		return days.value[key]?.habits.find((l) => l.id === logId);
+	}
+
+	// Nastrój dnia — jedno tapnięcie; ponowne tapnięcie tej samej buźki czyści
+	function moodOn(key: DateKey): Mood | undefined {
+		return days.value[key]?.mood;
+	}
+
+	function setMood(mood: Mood | null, key: DateKey = selectedKey.value) {
+		const currentUid = uid.value;
+		if (!currentUid) {
+			authStore.openAuthDialog("welcome");
+			return;
+		}
+		const entry = localDay(key);
+		const previous = entry.mood;
+		entry.mood = mood ?? undefined;
+		beginWrite(key);
+		saveDayMood(currentUid, key, mood)
+			.catch((err) => {
+				console.error("setMood failed", err);
+				entry.mood = previous;
+				toast.error(saveError());
 			})
 			.finally(() => endWrite(key));
 	}
@@ -443,7 +600,7 @@ export const useHabitsStore = defineStore("habits", () => {
 			});
 		} catch (err) {
 			console.error("reorder failed", err);
-			toast.error(SAVE_ERROR);
+			toast.error(saveError());
 		} finally {
 			endWrite(key);
 		}
@@ -486,15 +643,22 @@ export const useHabitsStore = defineStore("habits", () => {
 		} catch (err) {
 			console.error("persistGoals failed", err);
 			dailyGoalsList.value = previous;
-			toast.error(SAVE_ERROR);
+			toast.error(saveError());
 		}
 	}
 
 	async function addDailyGoal(habit: Habit | GoalRef) {
+		const existing = dailyGoalsList.value.find((g) => g.name === habit.name);
+		// Cel tygodniowy: kolejne stuknięcie to „jeszcze raz w tygodniu”
+		const schedule = normalizeSchedule(existing?.schedule);
+		if (schedule?.kind === "weekly") {
+			await setGoalSchedule(habit.name, { kind: "weekly", times: schedule.times + 1 });
+			return;
+		}
 		const previous = [...dailyGoalsList.value];
 		dailyGoalsList.value = [
 			...dailyGoalsList.value,
-			slim(habit, { id: nanoid(), name: habit.name }) as Goal,
+			slim(habit, goalBase({ name: habit.name, schedule }, nanoid())),
 		];
 		await persistGoals(previous);
 	}
@@ -514,6 +678,11 @@ export const useHabitsStore = defineStore("habits", () => {
 	}
 
 	async function removeGoalInstance(name: string) {
+		const weekly = normalizeSchedule(dailyGoalsList.value.find((g) => g.name === name)?.schedule);
+		if (weekly?.kind === "weekly" && weekly.times > 1) {
+			await setGoalSchedule(name, { kind: "weekly", times: weekly.times - 1 });
+			return;
+		}
 		const idx = dailyGoalsList.value.map((g) => g.name).lastIndexOf(name);
 		if (idx === -1) return;
 		const previous = [...dailyGoalsList.value];
@@ -540,7 +709,7 @@ export const useHabitsStore = defineStore("habits", () => {
 		const previous = [...dailyGoalsList.value];
 		if (target > current.length) {
 			const extra = Array.from({ length: target - current.length }, () =>
-				slim(current[0], { id: nanoid(), name }) as Goal,
+				slim(current[0], goalBase(current[0], nanoid())),
 			);
 			const lastIdx = dailyGoalsList.value.map((g) => g.name).lastIndexOf(name);
 			const list = [...dailyGoalsList.value];
@@ -566,6 +735,27 @@ export const useHabitsStore = defineStore("habits", () => {
 		await persistGoals(previous);
 	}
 
+	// Zmiana rytmu celu. Cel tygodniowy ma jeden wpis (licznik jest w `times`),
+	// a przy przejściu z tygodniowego na dzienny zostaje 1× dziennie.
+	async function setGoalSchedule(name: string, schedule: GoalSchedule | null) {
+		const current = dailyGoalsList.value.filter((g) => g.name === name);
+		if (current.length === 0) return;
+		const next = normalizeSchedule(schedule);
+		const wasWeekly = isWeekly(current[0]);
+		const keep = next?.kind === "weekly" || wasWeekly ? current.slice(0, 1) : current;
+		const updated = keep.map((g) => {
+			const copy: Goal = { ...g };
+			delete copy.schedule;
+			return next ? { ...copy, schedule: next } : copy;
+		});
+		const previous = [...dailyGoalsList.value];
+		const firstIdx = previous.findIndex((g) => g.name === name);
+		const rest = previous.filter((g) => g.name !== name);
+		rest.splice(firstIdx, 0, ...updated);
+		dailyGoalsList.value = rest;
+		await persistGoals(previous);
+	}
+
 	// Stuknięcie w cel: dopóki nie osiągnięto celu → +1, potem → cofnij jedno
 	function tapGoal(goal: GroupedGoal) {
 		if (goal.done < goal.target) {
@@ -587,7 +777,7 @@ export const useHabitsStore = defineStore("habits", () => {
 		} catch (err) {
 			console.error("saveCustomHabits failed", err);
 			customHabits.value = previous;
-			toast.error(SAVE_ERROR);
+			toast.error(saveError());
 		}
 	}
 
@@ -672,8 +862,12 @@ export const useHabitsStore = defineStore("habits", () => {
 		selectedCounts,
 		groupedSelectedDayHabits,
 		groupedGoals,
+		weeklyGoals,
+		weeklyGoalsFor,
+		isSelectedRestDay,
 		goalsProgress,
 		goalsFor,
+		todayGoalsSnapshot,
 		dayGoalsProgress,
 		streak,
 		streakInfo,
@@ -692,6 +886,13 @@ export const useHabitsStore = defineStore("habits", () => {
 		removeAllLogs,
 		restoreLogs,
 		reorderSelected,
+		setLogNote,
+		findLog,
+		lastLog,
+		// nastrój
+		moodOn,
+		setMood,
+		applyWidgetAction,
 		// cele
 		addDailyGoal,
 		addDailyGoals,
@@ -700,6 +901,7 @@ export const useHabitsStore = defineStore("habits", () => {
 		restoreGoals,
 		setGoalTarget,
 		reorderGoals,
+		setGoalSchedule,
 		tapGoal,
 		// własne habity
 		createCustomHabit,

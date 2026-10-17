@@ -13,10 +13,9 @@ import {
 	saveTodos,
 	type UserDoc,
 } from "@/services/userData";
+import { todosMessages as m } from "@/i18n/messages/todos";
 
 export type { TodoColor, TodoItem, Subtask } from "@/libs/types";
-
-const SAVE_ERROR = "Couldn't save your to-do — check your connection.";
 
 export const useTodosStore = defineStore("todos", () => {
 	const authStore = useAuthStore();
@@ -88,7 +87,7 @@ export const useTodosStore = defineStore("todos", () => {
 		]).catch((err) => {
 			console.error("todos save failed", err);
 			if (authStore.userUid === uid) userTodosList.value = previous;
-			toast.error(SAVE_ERROR);
+			toast.error(m.saveError);
 		});
 		return true;
 	}

@@ -21,14 +21,14 @@
 					<h2
 						id="reminders-title"
 						class="dt-title">
-						Reminders
+						{{ m.title }}
 					</h2>
-					<p class="dt-subtitle">A gentle nudge at your time. Skipped once the goal is done.</p>
+					<p class="dt-subtitle">{{ m.subtitle }}</p>
 				</div>
 				<button
 					type="button"
 					class="dt-icon-btn"
-					aria-label="Close"
+					:aria-label="common.close"
 					@click="visible = false">
 					<i
 						class="pi pi-times"
@@ -61,14 +61,14 @@
 					</span>
 					<span class="rem-name">
 						{{ row.label }}
-						<small v-if="row.target > 1">{{ row.target }}× a day</small>
+						<small v-if="row.target > 1">{{ m.timesADay(row.target) }}</small>
 					</span>
 
 					<template v-if="row.time">
 						<label
 							:for="`rem-${row.name}`"
 							class="sr-only"
-							>Reminder time for {{ row.label }}</label
+							>{{ m.timeFor(row.label) }}</label
 						>
 						<input
 							:id="`rem-${row.name}`"
@@ -80,8 +80,8 @@
 						<button
 							type="button"
 							class="dt-icon-btn"
-							:aria-label="`Turn off reminder for ${row.label}`"
-							v-tooltip.bottom="'Turn off'"
+							:aria-label="m.turnOffFor(row.label)"
+							v-tooltip.bottom="m.turnOff"
 							@click="turnOff(row.name, row.time)">
 							<i
 								class="pi pi-times"
@@ -92,12 +92,12 @@
 						v-else
 						type="button"
 						class="dt-btn dt-btn-soft dt-btn-sm rem-add"
-						:aria-label="`Add a reminder for ${row.label}`"
+						:aria-label="m.addFor(row.label)"
 						@click="turnOn(row.name)">
 						<i
 							class="pi pi-bell"
 							aria-hidden="true"></i>
-						Add time
+						{{ m.addTime }}
 					</button>
 				</li>
 			</ul>
@@ -109,7 +109,7 @@
 					icon="flag"
 					palette="yellow"
 					:size="44" />
-				<p>Reminders are for daily goals. Pick a goal first and come back here.</p>
+				<p>{{ m.empty }}</p>
 			</div>
 
 			<div class="rem-foot">
@@ -117,7 +117,7 @@
 					type="button"
 					class="dt-btn dt-btn-primary"
 					@click="visible = false">
-					Done
+					{{ m.done }}
 				</button>
 			</div>
 		</div>
@@ -132,6 +132,8 @@ import { useRemindersStore } from "@/stores/reminders";
 import { useToastStore } from "@/stores/toast";
 import { displayName, paletteFor } from "@/utils/habitCatalog";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
+import { remindersMessages as m } from "@/i18n/messages/reminders";
+import { commonMessages as common } from "@/i18n/messages/common";
 
 const visible = defineModel<boolean>({ default: false });
 
@@ -155,9 +157,9 @@ const rows = computed(() => {
 const note = computed(() => {
 	switch (remindersStore.permission) {
 		case "unsupported":
-			return "Reminders ring on your phone in the Daily Things Android app. Times you set here sync there.";
+			return m.noteUnsupported;
 		case "denied":
-			return "Notifications are off for Daily Things. Turn them on in your phone's settings to get nudges.";
+			return m.noteDenied;
 		default:
 			return "";
 	}
@@ -168,9 +170,9 @@ function turnOn(name: string) {
 }
 
 function turnOff(name: string, time: string) {
-	const label = rows.value.find((r) => r.name === name)?.label ?? "goal";
+	const label = rows.value.find((r) => r.name === name)?.label ?? m.fallbackGoal;
 	remindersStore.setReminder(name, null);
-	toast.undoable(`Reminder for ${label} turned off`, () => remindersStore.setReminder(name, time));
+	toast.undoable(m.turnedOff(label), () => remindersStore.setReminder(name, time));
 }
 
 function onTimeChange(name: string, event: Event) {

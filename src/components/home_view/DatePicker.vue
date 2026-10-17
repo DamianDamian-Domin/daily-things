@@ -2,11 +2,11 @@
 	<div
 		class="dp-bar"
 		role="group"
-		aria-label="Choose day">
+		:aria-label="m.chooseDay">
 		<button
 			type="button"
 			class="dt-icon-btn"
-			aria-label="Previous day"
+			:aria-label="m.previousDay"
 			@click="habitsStore.changeDate(-1)">
 			<i
 				class="pi pi-chevron-left"
@@ -16,7 +16,7 @@
 		<button
 			type="button"
 			class="dp-date"
-			:aria-label="`${title.weekday}, ${title.full}. Open calendar`"
+			:aria-label="m.openCalendar(title.weekday, title.full)"
 			@click="open">
 			<span class="dp-weekday">{{ relativeLabel || title.weekday }}</span>
 			<span class="dp-full">{{ title.full }}</span>
@@ -25,7 +25,7 @@
 		<button
 			type="button"
 			class="dt-icon-btn"
-			aria-label="Next day"
+			:aria-label="m.nextDay"
 			:disabled="habitsStore.isSelectedToday"
 			@click="habitsStore.changeDate(1)">
 			<i
@@ -39,7 +39,7 @@
 				type="button"
 				class="dt-btn dt-btn-soft dt-btn-sm dp-today-pill"
 				@click="habitsStore.goToToday()">
-				Today
+				{{ common.today }}
 			</button>
 		</Transition>
 
@@ -48,10 +48,10 @@
 			modal
 			dismissable-mask
 			:show-header="false"
-			:pt="{ mask: { class: 'dt-dialog-mask' }, root: { 'aria-label': 'Calendar' } }"
+			:pt="{ mask: { class: 'dt-dialog-mask' }, root: { 'aria-label': m.calendar } }"
 			class="dt-dialog dp-dialog">
 			<div class="dp-dialog-inner">
-				<h2 class="dt-title dp-dialog-title">Pick a day</h2>
+				<h2 class="dt-title dp-dialog-title">{{ m.pickADay }}</h2>
 				<PrimeDatePicker
 					v-model="calendarValue"
 					inline
@@ -72,7 +72,7 @@
 					<span
 						class="dp-legend-dot"
 						aria-hidden="true"></span>
-					Days with something logged
+					{{ m.daysWithLogs }}
 				</p>
 			</div>
 		</Dialog>
@@ -85,6 +85,8 @@ import Dialog from "primevue/dialog";
 import PrimeDatePicker from "primevue/datepicker";
 import { useHabitsStore } from "@/stores/habits";
 import { addDays, formatDayTitle, toDateKey } from "@/utils/date";
+import { habitsMessages as m } from "@/i18n/messages/habits";
+import { commonMessages as common } from "@/i18n/messages/common";
 
 const habitsStore = useHabitsStore();
 const visible = ref(false);
@@ -93,8 +95,8 @@ const calendarValue = ref<Date>(new Date());
 const title = computed(() => formatDayTitle(habitsStore.selectedDate));
 const relativeLabel = computed(() => {
 	const key = habitsStore.selectedKey;
-	if (key === habitsStore.todayKey) return "Today";
-	if (key === toDateKey(addDays(new Date(), -1))) return "Yesterday";
+	if (key === habitsStore.todayKey) return common.today;
+	if (key === toDateKey(addDays(new Date(), -1))) return common.yesterday;
 	return "";
 });
 

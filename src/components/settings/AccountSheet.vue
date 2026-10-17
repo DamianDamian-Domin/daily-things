@@ -9,7 +9,7 @@
 				class: ['account-sheet', `is-${position}`],
 				role: 'dialog',
 				'aria-modal': 'true',
-				'aria-label': 'Account and settings',
+				'aria-label': m.sheetAria,
 			},
 			mask: { class: 'dt-dialog-mask' },
 		}">
@@ -23,24 +23,24 @@
 					<div
 						class="dt-segmented"
 						role="group"
-						aria-label="Section">
+						:aria-label="m.sectionAria">
 						<button
 							type="button"
 							:aria-pressed="tab === 'profile'"
 							@click="tab = 'profile'">
-							{{ authStore.isGuest ? "Account" : "Profile" }}
+							{{ authStore.isGuest ? m.account : m.profile }}
 						</button>
 						<button
 							type="button"
 							:aria-pressed="tab === 'settings'"
 							@click="tab = 'settings'">
-							Settings
+							{{ m.settings }}
 						</button>
 					</div>
 					<button
 						type="button"
 						class="dt-icon-btn"
-						aria-label="Close"
+						:aria-label="c.close"
 						@click="closeCallback">
 						<i
 							class="pi pi-times"
@@ -66,6 +66,8 @@ import Drawer from "primevue/drawer";
 import { useAuthStore } from "@/stores/auth";
 import ProfilePanel from "@/components/settings/ProfilePanel.vue";
 import SettingsPanel from "@/components/settings/SettingsPanel.vue";
+import { profileMessages as m } from "@/i18n/messages/profile";
+import { commonMessages as c } from "@/i18n/messages/common";
 
 const props = withDefaults(
 	defineProps<{

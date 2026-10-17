@@ -3,7 +3,7 @@
 	<div
 		class="insight-row"
 		role="group"
-		aria-label="More insights">
+		:aria-label="m.moreInsights">
 		<button
 			type="button"
 			class="insight-btn"
@@ -12,7 +12,7 @@
 				icon="celebration"
 				palette="orange"
 				:size="22" />
-			Recap
+			{{ m.recap }}
 		</button>
 		<button
 			type="button"
@@ -22,7 +22,7 @@
 				icon="trophy"
 				palette="yellow"
 				:size="22" />
-			Badges <span class="insight-count">{{ achievements.unlockedIds.length }}</span>
+			{{ m.badges }} <span class="insight-count">{{ achievements.unlockedIds.length }}</span>
 		</button>
 		<button
 			type="button"
@@ -32,7 +32,7 @@
 				icon="calendar_month"
 				palette="green"
 				:size="22" />
-			Year
+			{{ m.year }}
 		</button>
 		<button
 			type="button"
@@ -42,7 +42,7 @@
 				icon="schedule"
 				palette="blue"
 				:size="22" />
-			Last done
+			{{ m.lastDone }}
 		</button>
 	</div>
 </template>
@@ -52,6 +52,7 @@ import { useAchievementsStore } from "@/stores/achievements";
 import { useInsightsStore } from "@/stores/insights";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import type { StatsPeriod } from "./useStatsData";
+import { statsMessages as m } from "@/i18n/messages/stats";
 
 defineProps<{ period: StatsPeriod; offset: number }>();
 

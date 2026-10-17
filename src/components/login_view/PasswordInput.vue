@@ -12,7 +12,7 @@
 		<button
 			type="button"
 			class="dt-icon-btn pw-toggle"
-			:aria-label="visible ? 'Hide password' : 'Show password'"
+			:aria-label="visible ? m.hidePassword : m.showPassword"
 			:aria-pressed="visible"
 			@click="visible = !visible">
 			<i
@@ -24,6 +24,7 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
+import { authMessages as m } from "@/i18n/messages/auth";
 
 withDefaults(
 	defineProps<{

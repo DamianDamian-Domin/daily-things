@@ -15,7 +15,7 @@
 				type="button"
 				class="dt-link manage-link"
 				@click="managing = !managing">
-				{{ managing ? "Done" : "Manage" }}
+				{{ managing ? m.done : m.manage }}
 			</button>
 		</div>
 		<div class="add-grid">
@@ -35,7 +35,7 @@
 					v-if="managing && section.key === 'yours'"
 					type="button"
 					class="cell-mini is-delete"
-					:aria-label="`Delete ${h.display_name}`"
+					:aria-label="m.deleteHabit(h.display_name)"
 					@click="emit('delete', h)">
 					<i
 						class="pi pi-trash"
@@ -45,7 +45,7 @@
 					v-else-if="countFor(h) > 0"
 					type="button"
 					class="cell-mini"
-					:aria-label="`Remove one ${h.display_name}`"
+					:aria-label="m.removeOneOf(h.display_name)"
 					@click="emit('minus', h)">
 					<i
 						class="pi pi-minus"
@@ -62,9 +62,11 @@ import { computed } from "vue";
 import type { Habit } from "@/libs/types";
 import { useHabitsStore } from "@/stores/habits";
 import { displayName } from "@/utils/habitCatalog";
+import { normalizeSchedule } from "@/utils/goalSchedule";
 import HabitTile from "@/components/home_view/HabitTile.vue";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import type { HabitSection } from "./types";
+import { addHabitMessages as m } from "@/i18n/messages/addHabit";
 
 const props = defineProps<{ mode: "log" | "goal"; sections: HabitSection[] }>();
 const emit = defineEmits<{
@@ -76,11 +78,24 @@ const managing = defineModel<boolean>("managing", { required: true });
 
 const habitsStore = useHabitsStore();
 
+// Cel tygodniowy ma jeden wpis — jego licznik to „ile razy w tygodniu”
 const goalCounts = computed(() => {
 	const counts: Record<string, number> = {};
-	for (const g of habitsStore.dailyGoalsList) counts[g.name] = (counts[g.name] ?? 0) + 1;
+	for (const g of habitsStore.dailyGoalsList) {
+		const schedule = normalizeSchedule(g.schedule);
+		counts[g.name] = schedule?.kind === "weekly" ? schedule.times : (counts[g.name] ?? 0) + 1;
+	}
 	return counts;
 });
+const weeklyNames = computed(
+	() =>
+		new Set(
+			habitsStore.dailyGoalsList
+				.filter((g) => normalizeSchedule(g.schedule)?.kind === "weekly")
+				.map((g) => g.name),
+		),
+);
+const isWeeklyGoal = (h: Habit) => props.mode === "goal" && weeklyNames.value.has(h.name);
 
 function countFor(h: Habit) {
 	return props.mode === "log"
@@ -91,16 +106,16 @@ function countFor(h: Habit) {
 function badgeFor(h: Habit) {
 	const n = countFor(h);
 	if (n === 0) return null;
+	if (isWeeklyGoal(h)) return `${n}/wk`;
 	return props.mode === "goal" || n > 1 ? `×${n}` : "✓";
 }
 
 function tileLabel(h: Habit) {
 	const n = countFor(h);
 	const name = displayName(h);
-	if (n === 0) return props.mode === "log" ? `Log ${name}` : `Add goal: ${name}`;
-	return props.mode === "log"
-		? `${name}, logged ${n} ${n === 1 ? "time" : "times"}. Log again`
-		: `${name}, goal ${n} ${n === 1 ? "time" : "times"} a day. Add one more`;
+	if (n === 0) return props.mode === "log" ? m.tileLog(name) : m.tileAddGoal(name);
+	if (props.mode === "log") return m.tileLoggedAgain(name, n);
+	return isWeeklyGoal(h) ? m.tileGoalMoreWeekly(name, n) : m.tileGoalMore(name, n);
 }
 </script>
 

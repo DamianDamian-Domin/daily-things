@@ -1,7 +1,7 @@
 <template>
 	<nav
 		class="tabbar"
-		aria-label="Main">
+		:aria-label="m.mainNav">
 		<button
 			v-for="tab in tabs"
 			:key="tab.id"
@@ -25,11 +25,11 @@
 					class="tab-dot"
 					aria-hidden="true"></span>
 			</span>
-			<span class="tab-label">{{ tab.label }}</span>
+			<span class="tab-label">{{ m.tabs[tab.id] }}</span>
 			<span
 				v-if="tab.id === 'me' && authStore.isGuest"
 				class="sr-only"
-				>(progress not saved yet)</span
+				>{{ m.progressNotSaved }}</span
 			>
 		</button>
 	</nav>
@@ -45,6 +45,7 @@ import { useCarouselStore } from "@/stores/useCarouselStore";
 import { useAuthStore } from "@/stores/auth";
 import { useProfileStore } from "@/stores/profile";
 import PixelAvatar from "@/components/ui/PixelAvatar.vue";
+import { shellMessages as m } from "@/i18n/messages/shell";
 const AccountSheet = defineAsyncComponent(() => import("@/components/settings/AccountSheet.vue"));
 
 type TabId = "textAdd" | "manage" | "stats" | "friends" | "me";
@@ -54,12 +55,13 @@ const authStore = useAuthStore();
 const profileStore = useProfileStore();
 const accountOpen = ref(false);
 
-const tabs: Array<{ id: TabId; label: string; icon: string }> = [
-	{ id: "textAdd", label: "To-do", icon: "pi-list-check" },
-	{ id: "manage", label: "Today", icon: "pi-sun" },
-	{ id: "stats", label: "Progress", icon: "pi-chart-bar" },
-	{ id: "friends", label: "Friends", icon: "pi-users" },
-	{ id: "me", label: "Me", icon: "pi-user" },
+// Etykiety zakładek bierzemy z m.tabs w szablonie (zmieniają się z językiem)
+const tabs: Array<{ id: TabId; icon: string }> = [
+	{ id: "textAdd", icon: "pi-list-check" },
+	{ id: "manage", icon: "pi-sun" },
+	{ id: "stats", icon: "pi-chart-bar" },
+	{ id: "friends", icon: "pi-users" },
+	{ id: "me", icon: "pi-user" },
 ];
 
 function isActive(id: TabId) {

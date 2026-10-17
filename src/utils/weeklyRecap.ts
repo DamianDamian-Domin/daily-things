@@ -1,4 +1,5 @@
 import type { Habit } from "@/libs/types";
+import { insightsMessages as m } from "@/i18n/messages/insights";
 
 // ==========================================================================
 // Podsumowanie tygodnia — czysta logika (liczby, nagłówek, wskazówka,
@@ -79,21 +80,21 @@ export function buildRecap(input: RecapInput): Recap {
 	const empty = checkIns === 0 && goalsDone === 0;
 	const pct = goalPct ?? (activeDays / Math.max(1, days.length)) * 100;
 	let headline: string;
-	if (empty) headline = "A quiet week. Fresh start ahead 🌅";
-	else if (pct >= 90) headline = "An outstanding week ✨";
-	else if (pct >= 65) headline = "A strong week 💪";
-	else if (pct >= 35) headline = "Steady progress 🌱";
-	else headline = "Every step counts 🌱";
+	if (empty) headline = m.headlineEmpty;
+	else if (pct >= 90) headline = m.headlineOutstanding;
+	else if (pct >= 65) headline = m.headlineStrong;
+	else if (pct >= 35) headline = m.headlineSteady;
+	else headline = m.headlineEveryStep;
 
 	let tip: string;
-	if (empty) tip = "Pick one tiny goal for tomorrow. Two minutes is enough to start.";
-	else if (goalPct === null) tip = "Set 2–3 daily goals and next week's recap will show how close you got.";
+	if (empty) tip = m.tipEmpty;
+	else if (goalPct === null) tip = m.tipNoGoals;
 	else if (perfectDays === days.length && days.length === 7)
-		tip = "A perfect week! Ready to add one small new goal?";
+		tip = m.tipPerfectWeek;
 	else if (quietDay)
-		tip = `${quietDay.weekday} was the quietest day. A reminder around then could help.`;
-	else if (deltaPct !== null && deltaPct > 0) tip = "You're trending up. Keep the same rhythm next week.";
-	else tip = "Keep goals small enough that even a busy day can tick them off.";
+		tip = m.tipQuietDay(quietDay.weekday);
+	else if (deltaPct !== null && deltaPct > 0) tip = m.tipTrendingUp;
+	else tip = m.tipDefault;
 
 	return {
 		checkIns,
@@ -115,11 +116,11 @@ export function buildRecap(input: RecapInput): Recap {
 }
 
 export function recapShareText(recap: Recap, label: string, streak: number): string {
-	const lines = [`My week on Daily Things (${label})`, recap.headline];
-	lines.push(`✅ ${recap.checkIns} habits logged`);
-	if (recap.goalPct !== null) lines.push(`🎯 ${recap.goalPct}% of daily goals`);
-	if (recap.perfectDays) lines.push(`🏅 ${recap.perfectDays} perfect ${recap.perfectDays === 1 ? "day" : "days"}`);
-	if (streak > 1) lines.push(`🔥 ${streak}-day streak`);
-	if (recap.top[0]) lines.push(`⭐ Top habit: ${recap.top[0].habit.display_name || recap.top[0].name}`);
+	const lines = [m.shareTitle(label), recap.headline];
+	lines.push(m.shareLogged(recap.checkIns));
+	if (recap.goalPct !== null) lines.push(m.shareGoals(recap.goalPct));
+	if (recap.perfectDays) lines.push(m.sharePerfect(recap.perfectDays));
+	if (streak > 1) lines.push(m.shareStreak(streak));
+	if (recap.top[0]) lines.push(m.shareTop(recap.top[0].habit.display_name || recap.top[0].name));
 	return lines.join("\n");
 }

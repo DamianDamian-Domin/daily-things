@@ -4,7 +4,7 @@
 		<button
 			type="button"
 			class="me-avatar"
-			aria-label="Edit your avatar"
+			:aria-label="pm.editAvatar"
 			@click="profileStore.openEditor()">
 			<PixelAvatar
 				:avatar="profileStore.avatar"
@@ -19,12 +19,12 @@
 			<h2
 				id="friends-title"
 				class="friends-title">
-				Friends <span aria-hidden="true">🌻</span>
+				{{ m.title }} <span aria-hidden="true">🌻</span>
 			</h2>
 			<div
 				v-if="isSocial"
 				class="code-row">
-				<span class="code-label">Your code</span>
+				<span class="code-label">{{ m.yourCode }}</span>
 				<span
 					v-if="code"
 					class="code-value"
@@ -45,7 +45,7 @@
 			<p
 				v-else
 				class="friends-sub">
-				Cheer each other on, gently.
+				{{ m.subtitle }}
 			</p>
 		</div>
 		<div
@@ -54,8 +54,8 @@
 			<button
 				type="button"
 				class="dt-icon-btn"
-				aria-label="Copy your friend code"
-				v-tooltip.bottom="'Copy code'"
+				:aria-label="m.copyCodeAria"
+				v-tooltip.bottom="m.copyCodeTip"
 				@click="emit('copy', code)">
 				<i
 					class="pi pi-copy"
@@ -64,8 +64,8 @@
 			<button
 				type="button"
 				class="dt-icon-btn"
-				aria-label="Share an invite link"
-				v-tooltip.bottom="'Share invite'"
+				:aria-label="m.shareInviteAria"
+				v-tooltip.bottom="m.shareInviteTip"
 				@click="emit('share', code)">
 				<i
 					class="pi pi-share-alt"
@@ -78,6 +78,8 @@
 <script setup lang="ts">
 import { useProfileStore } from "@/stores/profile";
 import PixelAvatar from "@/components/ui/PixelAvatar.vue";
+import { friendsMessages as m } from "@/i18n/messages/friends";
+import { profileMessages as pm } from "@/i18n/messages/profile";
 
 // Nagłówek karty: mój awatar, kod znajomego i akcje kopiuj/udostępnij
 defineProps<{ isSocial: boolean; code: string | null }>();

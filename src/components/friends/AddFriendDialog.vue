@@ -17,12 +17,12 @@
 				<h2
 					id="add-friend-title"
 					class="dt-title">
-					{{ fromInvite && card ? `Add ${card.name}?` : "Add a friend" }}
+					{{ fromInvite && card ? m.addNameQuestion(card.name) : m.addTitle }}
 				</h2>
 				<button
 					type="button"
 					class="dt-icon-btn"
-					aria-label="Close"
+					:aria-label="c.close"
 					@click="visible = false">
 					<i
 						class="pi pi-times"
@@ -39,14 +39,13 @@
 					:size="64" />
 				<div class="af-found-text">
 					<p class="af-found-name">{{ card.name }}</p>
-					<p class="af-found-code">Code {{ card.code }}</p>
+					<p class="af-found-code">{{ m.codeLine(card.code) }}</p>
 				</div>
 			</div>
 			<p
 				v-if="card && fromInvite"
 				class="dt-subtitle">
-				{{ card.name }} invited you to cheer each other on. You'll see each other's streaks and
-				weekly goals.
+				{{ m.invitedYou(card.name) }}
 			</p>
 
 			<form
@@ -57,7 +56,7 @@
 				<label
 					for="friend-code-input"
 					class="dt-label"
-					>Friend's code</label
+					>{{ m.friendsCode }}</label
 				>
 				<div class="af-row">
 					<input
@@ -70,7 +69,7 @@
 						autocapitalize="characters"
 						spellcheck="false"
 						maxlength="8"
-						placeholder="e.g. K7M2QX"
+						:placeholder="m.codePlaceholder"
 						:aria-invalid="error ? 'true' : undefined"
 						:aria-describedby="error ? 'friend-code-error' : 'friend-code-hint'"
 						@input="onInput" />
@@ -78,7 +77,7 @@
 						type="submit"
 						class="dt-btn dt-btn-soft"
 						:disabled="!canFind || busy">
-						{{ busy && !card ? "Looking…" : "Find" }}
+						{{ busy && !card ? m.looking : m.find }}
 					</button>
 				</div>
 				<p
@@ -92,7 +91,7 @@
 					v-else
 					id="friend-code-hint"
 					class="dt-hint">
-					Six letters and numbers — ask your friend to share theirs.
+					{{ m.codeHint }}
 				</p>
 			</form>
 
@@ -103,14 +102,14 @@
 					type="button"
 					class="dt-btn dt-btn-ghost"
 					@click="fromInvite ? (visible = false) : reset()">
-					{{ fromInvite ? "Not now" : "Back" }}
+					{{ fromInvite ? m.notNow : c.back }}
 				</button>
 				<button
 					type="button"
 					class="dt-btn dt-btn-primary"
 					:disabled="busy"
 					@click="send">
-					{{ busy ? "Sending…" : `Add ${card.name}` }}
+					{{ busy ? m.sending : m.addName(card.name) }}
 				</button>
 			</div>
 
@@ -118,14 +117,14 @@
 			<div
 				v-if="!fromInvite && myCode"
 				class="af-mine">
-				<p class="af-mine-label">Or share yours</p>
+				<p class="af-mine-label">{{ m.orShareYours }}</p>
 				<div class="af-mine-row">
 					<span
 						class="af-mine-code"
 						aria-hidden="true"
 						>{{ myCode }}</span
 					>
-					<span class="sr-only">Your code: {{ myCode.split("").join(" ") }}</span>
+					<span class="sr-only">{{ m.yourCodeSr(myCode.split("").join(" ")) }}</span>
 					<button
 						type="button"
 						class="dt-btn dt-btn-outline dt-btn-sm"
@@ -133,7 +132,7 @@
 						<i
 							class="pi pi-copy"
 							aria-hidden="true"></i>
-						Copy
+						{{ m.copy }}
 					</button>
 					<button
 						type="button"
@@ -142,7 +141,7 @@
 						<i
 							class="pi pi-share-alt"
 							aria-hidden="true"></i>
-						Invite
+						{{ m.invite }}
 					</button>
 				</div>
 			</div>
@@ -159,6 +158,8 @@ import { useProfileStore } from "@/stores/profile";
 import { useToastStore } from "@/stores/toast";
 import { isValidCode, normalizeCode, type CodeCard } from "@/services/friends";
 import { useInvite } from "@/utils/useInvite";
+import { friendsMessages as m } from "@/i18n/messages/friends";
+import { commonMessages as c } from "@/i18n/messages/common";
 
 const props = defineProps<{ initialCode?: string | null }>();
 const emit = defineEmits<{ (e: "done"): void }>();
@@ -208,11 +209,11 @@ function onHide() {
 async function find() {
 	const code = normalizeCode(codeInput.value);
 	if (!isValidCode(code)) {
-		error.value = "That code doesn't look right — it has 6 letters and numbers.";
+		error.value = m.badCode;
 		return;
 	}
 	if (code === myCode.value) {
-		error.value = "That's your own code 🙂";
+		error.value = m.ownCode;
 		fromInvite.value = false;
 		return;
 	}
@@ -221,14 +222,14 @@ async function find() {
 	try {
 		const found = await friendsStore.lookup(code);
 		if (!found) {
-			error.value = "We couldn't find that code. Double-check it with your friend?";
+			error.value = m.codeNotFound;
 			fromInvite.value = false;
 		} else {
 			card.value = found;
 		}
 	} catch (err) {
 		console.error("Code lookup failed", err);
-		error.value = "Couldn't look that up — check your connection.";
+		error.value = m.lookupFailed;
 		fromInvite.value = false;
 	} finally {
 		busy.value = false;

@@ -18,8 +18,8 @@
 				<button
 					type="button"
 					class="dt-icon-btn"
-					aria-label="When did I last…? Search your history"
-					v-tooltip.bottom="'When did I last…?'"
+					:aria-label="m.lastDoneAria"
+					v-tooltip.bottom="m.lastDoneTooltip"
 					@click="insights.open('lastDone')">
 					<i
 						class="pi pi-history"
@@ -30,7 +30,7 @@
 					class="streak-chip"
 					:class="{ 'at-risk': habitsStore.streakAtRisk }"
 					role="img"
-					:aria-label="`${habitsStore.streak}-day streak`"
+					:aria-label="m.streakAria(habitsStore.streak)"
 					v-tooltip.bottom="streakTooltip">
 					<PixelIcon
 						icon="local_fire_department"
@@ -60,39 +60,52 @@
 						<h3
 							id="goals-title"
 							class="dt-section-title">
-							Daily goals
+							{{ m.dailyGoals }}
 						</h3>
 						<p
-							v-if="progress.total > 0"
+							v-if="progress.total > 0 || isRestDay"
 							class="panel-hint">
 							{{ goalsHint }}
 						</p>
 					</div>
-					<button
-						v-if="progress.total > 0"
-						type="button"
-						class="dt-icon-btn reminders-btn"
-						:class="{ 'is-on': remindersOn > 0 }"
-						:aria-label="remindersLabel"
-						v-tooltip.bottom="remindersLabel"
-						@click="remindersOpen = true">
-						<i
-							class="pi pi-bell"
-							aria-hidden="true"></i>
-						<span
-							v-if="remindersOn > 0"
-							class="reminders-dot"
-							aria-hidden="true"></span>
-					</button>
-					<button
-						type="button"
-						class="dt-btn dt-btn-ghost dt-btn-sm"
-						@click="openDialog('goal')">
-						<i
-							class="pi pi-pencil"
-							aria-hidden="true"></i>
-						{{ progress.total > 0 ? "Edit" : "Set goals" }}
-					</button>
+					<div class="panel-actions">
+						<button
+							v-if="hasGoals"
+							type="button"
+							class="dt-icon-btn"
+							:aria-label="m.weeklyRoutineAria"
+							v-tooltip.bottom="m.weeklyRoutine"
+							@click="scheduleOpen = true">
+							<i
+								class="pi pi-calendar"
+								aria-hidden="true"></i>
+						</button>
+						<button
+							v-if="hasGoals"
+							type="button"
+							class="dt-icon-btn reminders-btn"
+							:class="{ 'is-on': remindersOn > 0 }"
+							:aria-label="remindersLabel"
+							v-tooltip.bottom="remindersLabel"
+							@click="remindersOpen = true">
+							<i
+								class="pi pi-bell"
+								aria-hidden="true"></i>
+							<span
+								v-if="remindersOn > 0"
+								class="reminders-dot"
+								aria-hidden="true"></span>
+						</button>
+						<button
+							type="button"
+							class="dt-btn dt-btn-ghost dt-btn-sm"
+							@click="openDialog('goal')">
+							<i
+								class="pi pi-pencil"
+								aria-hidden="true"></i>
+							<span :class="{ 'edit-label': hasGoals }">{{ hasGoals ? m.edit : m.setGoals }}</span>
+						</button>
+					</div>
 				</div>
 
 				<Transition name="banner">
@@ -100,8 +113,7 @@
 						v-if="progress.complete"
 						class="goals-banner"
 						role="status">
-						🌟 All goals done{{ habitsStore.isSelectedToday ? " for today" : "" }}! Well
-						deserved.
+						{{ m.goalsBanner(habitsStore.isSelectedToday) }}
 					</p>
 				</Transition>
 
@@ -129,26 +141,59 @@
 					</template>
 				</draggable>
 
+				<p
+					v-else-if="isRestDay"
+					class="rest-day"
+					role="status">
+					<span aria-hidden="true">🌿</span>
+					No goals planned for {{ weekdayLabel }}. Enjoy the day off, your streak is safe.
+				</p>
+
 				<div
-					v-else
+					v-if="weeklyTiles.length > 0"
+					class="weekly"
+					:class="{ 'has-daily': goalTiles.length > 0 || isRestDay }">
+					<h4 class="weekly-title">
+						This week
+						<span class="weekly-sub">{{ weeklySummary }}</span>
+					</h4>
+					<div class="tile-row">
+						<HabitTile
+							v-for="goal in weeklyTiles"
+							:key="goal.name"
+							:habit="goal.habit"
+							show-label
+							:muted="goal.done === 0"
+							:done="goal.done >= goal.target"
+							:badge="goal.done >= goal.target ? '✓' : `${goal.done}/${goal.target}`"
+							:progress="goal.done / goal.target"
+							:selected="stepperFor === goal.name"
+							:aria-label="weeklyAria(goal)"
+							:pressed="goal.doneOnDay > 0"
+							@click="(e: MouseEvent) => onWeeklyTap(goal, e)" />
+					</div>
+				</div>
+
+				<div
+					v-if="!hasGoals"
 					class="goals-empty">
 					<PixelIcon
 						icon="flag"
 						palette="yellow"
 						:size="34" />
 					<p>
-						Pick 2–3 small things you'd like to do every day. Tapping a goal logs it — that's it.
+						{{ m.goalsEmpty }}
 					</p>
 					<StarterPacks
 						v-if="habitsStore.isSelectedToday"
-						title="Not sure where to start?"
+						:title="m.notSureWhereToStart"
 						compact
 						:limit="4" />
 					<button
 						type="button"
 						class="dt-btn dt-btn-soft dt-btn-sm"
 						@click="openDialog('goal')">
-						{{ habitsStore.isSelectedToday ? "Or choose your own" : "Choose goals" }}
+						{{ habitsStore.isSelectedToday ? m.orChooseYourOwn : m.chooseGoals }}
 					</button>
 				</div>
 			</section>
@@ -187,7 +232,7 @@
 								show-label
 								:badge="group.count > 1 ? `×${group.count}` : null"
 								:selected="stepperFor === group.name"
-								:aria-label="`${group.habit.display_name}, logged ${group.count} ${group.count === 1 ? 'time' : 'times'}. Edit`"
+								:aria-label="m.loggedAria(group.habit.display_name, group.count)"
 								aria-haspopup="dialog"
 								@click="(e: MouseEvent) => openStepper(group.name, e)" />
 						</template>
@@ -196,8 +241,8 @@
 					<button
 						type="button"
 						class="add-tile"
-						aria-label="Log a habit"
-						v-tooltip.bottom="'Log a habit'"
+						:aria-label="m.logAHabit"
+						v-tooltip.bottom="m.logAHabit"
 						@click="openDialog('log')">
 						<i
 							class="pi pi-plus"
@@ -211,6 +256,9 @@
 					{{ loggedEmptyText }}
 				</p>
 			</section>
+
+			<!-- ============ NASTRÓJ ============ -->
+			<MoodPicker class="dt-panel" />
 		</div>
 
 		<!-- Stepper −/+ dla zalogowanego habitu -->
@@ -222,13 +270,13 @@
 				v-if="stepperGroup"
 				class="stepper"
 				role="dialog"
-				:aria-label="`Edit ${stepperGroup.habit.display_name}`">
+				:aria-label="m.editHabit(stepperGroup.habit.display_name)">
 				<p class="stepper-name">{{ stepperGroup.habit.display_name }}</p>
 				<div class="stepper-row">
 					<button
 						type="button"
 						class="stepper-btn"
-						aria-label="Remove one"
+						:aria-label="m.removeOne"
 						@click="stepDown">
 						<i
 							class="pi pi-minus"
@@ -242,19 +290,41 @@
 					<button
 						type="button"
 						class="stepper-btn is-plus"
-						aria-label="Log one more"
+						:aria-label="m.logOneMore"
 						@click="stepUp">
 						<i
 							class="pi pi-plus"
 							aria-hidden="true"></i>
 					</button>
 				</div>
+				<ul
+					v-if="stepperNotes.length"
+					class="stepper-notes"
+					aria-label="Notes">
+					<li
+						v-for="n in stepperNotes"
+						:key="n.id">
+						<i
+							class="pi pi-pencil"
+							aria-hidden="true"></i>
+						{{ n.note }}
+					</li>
+				</ul>
+				<button
+					type="button"
+					class="dt-btn dt-btn-ghost dt-btn-sm"
+					@click="editNote">
+					<i
+						class="pi pi-pen-to-square"
+						aria-hidden="true"></i>
+					{{ stepperLast?.note ? "Edit note" : "Add note" }}
+				</button>
 				<button
 					v-if="stepperGroup.count > 1"
 					type="button"
 					class="dt-btn dt-btn-ghost dt-btn-sm stepper-clear"
 					@click="removeAll">
-					Remove all
+					{{ m.removeAll }}
 				</button>
 				<button
 					type="button"
@@ -263,7 +333,7 @@
 					<i
 						class="pi pi-history"
 						aria-hidden="true"></i>
-					History
+					{{ m.history }}
 				</button>
 			</div>
 		</Popover>
@@ -275,6 +345,9 @@
 		<RemindersDialog
 			v-if="remindersNeeded"
 			v-model="remindersOpen" />
+		<GoalScheduleDialog
+			v-if="scheduleNeeded"
+			v-model="scheduleOpen" />
 	</section>
 </template>
 
@@ -282,13 +355,14 @@
 import { computed, defineAsyncComponent, ref, watch } from "vue";
 import Popover from "primevue/popover";
 import draggable from "vuedraggable";
-import type { GroupedGoal, GroupedHabit } from "@/libs/types";
+import type { GroupedGoal, GroupedHabit, WeeklyGoal } from "@/libs/types";
 import { useHabitsStore } from "@/stores/habits";
 import { useAuthStore } from "@/stores/auth";
 import { useToastStore } from "@/stores/toast";
 import { usePreferencesStore } from "@/stores/userPreferences";
 import { useRemindersStore } from "@/stores/reminders";
 import { useInsightsStore } from "@/stores/insights";
+import { useLogNoteStore } from "@/stores/logNote";
 import { useSound } from "@/utils/useSound";
 import { useConfetti } from "@/utils/useConfetti";
 import { randomCheer } from "@/utils/useCompliment";
@@ -301,8 +375,13 @@ const AddHabitDialog = defineAsyncComponent(
 const RemindersDialog = defineAsyncComponent(
 	() => import("@/components/home_view/RemindersDialog.vue"),
 );
+const GoalScheduleDialog = defineAsyncComponent(
+	() => import("@/components/home_view/GoalScheduleDialog.vue"),
+);
 import PixelIcon from "@/components/ui/PixelIcon.vue";
 import StarterPacks from "@/components/home_view/StarterPacks.vue";
+import MoodPicker from "@/components/home_view/MoodPicker.vue";
+import { habitsMessages as m } from "@/i18n/messages/habits";
 
 defineProps<{ isActive: boolean }>();
 
@@ -312,6 +391,7 @@ const toast = useToastStore();
 const preferences = usePreferencesStore();
 const remindersStore = useRemindersStore();
 const insights = useInsightsStore();
+const logNote = useLogNoteStore();
 const { playHabitCheck, playUncheck, playVictory } = useSound();
 const { launch: launchConfetti } = useConfetti();
 
@@ -332,27 +412,29 @@ const ringPct = computed(() =>
 );
 
 const subline = computed(() => {
-	if (!habitsStore.isSelectedToday) return "Looking back — you can still fill in this day.";
+	if (!habitsStore.isSelectedToday) return m.subLookingBack;
+	if (habitsStore.isSelectedRestDay && habitsStore.selectedLogs.length === 0) return m.subRestDay;
 	if (habitsStore.streakAtRisk)
-		return `Log anything today to keep your ${habitsStore.streak}-day streak 🔥`;
+		return m.subKeepStreak(habitsStore.streak);
 	const { done, total, complete } = progress.value;
-	if (complete) return "Everything's done. Enjoy the rest of your day ☕";
-	if (total > 0 && done === 0) return "A fresh day. Start with the easiest goal.";
-	if (total > 0) return `${total - done} to go — you've got this.`;
-	if (habitsStore.selectedLogs.length > 0) return "Nice rhythm today. Keep it gentle.";
-	return "Small steps count. What's one thing you'll do today?";
+	if (complete) return m.subAllDone;
+	if (total > 0 && done === 0) return m.subFreshDay;
+	if (total > 0) return m.subToGo(total - done);
+	if (habitsStore.selectedLogs.length > 0) return m.subNiceRhythm;
+	return m.subSmallSteps;
 });
 
 const streakTooltip = computed(() =>
 	habitsStore.streakAtRisk
-		? `${habitsStore.streak}-day streak — log something today to keep it`
-		: `${habitsStore.streak}-day streak — keep it going!`,
+		? m.streakAtRiskTooltip(habitsStore.streak)
+		: m.streakTooltip(habitsStore.streak),
 );
 
 const goalsHint = computed(() => {
+	if (isRestDay.value) return m.restDay;
 	const left = progress.value.total - progress.value.done;
-	if (progress.value.complete) return "Perfect day ✨";
-	return `${left} left · tap a goal to log it`;
+	if (progress.value.complete) return m.perfectDay;
+	return m.goalsLeft(left);
 });
 
 // ==========================================================================
@@ -363,6 +445,42 @@ const goalTiles = computed<GroupedGoal[]>({
 	set: (list) => habitsStore.reorderGoals(list.map((g) => g.name)),
 });
 
+const hasGoals = computed(() => habitsStore.dailyGoalsList.length > 0);
+const isRestDay = computed(() => habitsStore.isSelectedRestDay);
+const weekdayLabel = computed(() => formatDayTitle(habitsStore.selectedDate).weekday);
+
+// ==========================================================================
+// CELE TYGODNIOWE („3× w tygodniu”)
+// ==========================================================================
+const weeklyTiles = computed(() => habitsStore.weeklyGoals);
+const weeklySummary = computed(() => {
+	const hit = weeklyTiles.value.filter((g) => g.done >= g.target).length;
+	return hit === weeklyTiles.value.length
+		? "all done ✨"
+		: `${hit} of ${weeklyTiles.value.length} done`;
+});
+
+function weeklyAria(goal: WeeklyGoal) {
+	return `${displayName(goal.habit)}: ${goal.done} of ${goal.target} this week`;
+}
+
+// Jeszcze nie odhaczone tego dnia → +1. Już odhaczone → stepper −/+.
+function onWeeklyTap(goal: WeeklyGoal, event: MouseEvent) {
+	markTap();
+	if (goal.doneOnDay > 0) {
+		openStepper(goal.name, event);
+		return;
+	}
+	playHabitCheck();
+	if (!habitsStore.logHabit(goal.habit)) return;
+	const done = goal.done + 1;
+	toast.undoable(
+		`${displayName(goal.habit)} (${Math.min(done, goal.target)}/${goal.target} this week) — ${randomCheer()}`,
+		() => habitsStore.unlogHabit(goal.name),
+	);
+	if (done === goal.target) flyEmoji();
+}
+
 function goalBadge(goal: GroupedGoal) {
 	if (goal.done >= goal.target) return "✓";
 	if (goal.target > 1) return `${goal.done}/${goal.target}`;
@@ -371,8 +489,8 @@ function goalBadge(goal: GroupedGoal) {
 
 function goalAria(goal: GroupedGoal) {
 	const name = displayName(goal.habit);
-	if (goal.target > 1) return `${name}: ${goal.done} of ${goal.target} done`;
-	return `${name}: ${goal.done ? "done" : "not done yet"}`;
+	if (goal.target > 1) return m.goalAriaCount(name, goal.done, goal.target);
+	return goal.done ? m.goalAriaDone(name) : m.goalAriaNotDone(name);
 }
 
 // Stuknięcie w cel: dopóki nie jest zrobiony → +1. Zrobiony → stepper −/+,
@@ -388,8 +506,12 @@ async function onGoalTap(goal: GroupedGoal, event: MouseEvent) {
 	if (result === "logged") {
 		const done = goal.done + 1;
 		const suffix = goal.target > 1 ? ` (${Math.min(done, goal.target)}/${goal.target})` : "";
-		toast.undoable(`${displayName(goal.habit)}${suffix} — ${randomCheer()}`, () =>
-			habitsStore.unlogHabit(goal.name),
+		const key = habitsStore.selectedKey;
+		const log = habitsStore.lastLog(goal.name, key);
+		toast.undoable(
+			`${displayName(goal.habit)}${suffix} — ${randomCheer()}`,
+			() => habitsStore.unlogHabit(goal.name),
+			log ? logNote.toastAction(log.id, key) : undefined,
 		);
 		if (done >= goal.target) flyEmoji();
 	}
@@ -407,7 +529,7 @@ watch(
 		if (complete && was === false && byUser && habitsStore.isSelectedToday) {
 			playVictory();
 			launchConfetti();
-			toast.show("All goals done — what a day! 🌟", { tone: "celebrate", duration: 3500 });
+			toast.show(m.allGoalsToast, { tone: "celebrate", duration: 3500 });
 		}
 	},
 );
@@ -429,7 +551,13 @@ function flyEmoji() {
 // ZALOGOWANE HABITY + STEPPER
 // ==========================================================================
 // Habity-cele mają już swoje kafelki wyżej — tu pokazujemy resztę dnia
-const goalNames = computed(() => new Set(habitsStore.groupedGoals.map((g) => g.name)));
+const goalNames = computed(
+	() =>
+		new Set([
+			...habitsStore.groupedGoals.map((g) => g.name),
+			...habitsStore.weeklyGoals.map((g) => g.name),
+		]),
+);
 const loggedTiles = computed<GroupedHabit[]>({
 	get: () => habitsStore.groupedSelectedDayHabits.filter((g) => !goalNames.value.has(g.name)),
 	set: (list) =>
@@ -443,14 +571,14 @@ const loggedTiles = computed<GroupedHabit[]>({
 const otherLogsCount = computed(() => loggedTiles.value.reduce((sum, g) => sum + g.count, 0));
 
 const loggedHeading = computed(() => {
-	if (goalNames.value.size > 0) return "Also logged";
-	return habitsStore.isSelectedToday ? "Logged today" : "Logged that day";
+	if (goalNames.value.size > 0) return m.alsoLogged;
+	return habitsStore.isSelectedToday ? m.loggedToday : m.loggedThatDay;
 });
 const loggedEmptyText = computed(() => {
-	if (goalNames.value.size > 0) return "Did something else nice? Tap + to add it.";
+	if (goalNames.value.size > 0) return m.emptyWithGoals;
 	return habitsStore.isSelectedToday
-		? "Nothing logged yet. Tap + and add the first little win of your day 🌱"
-		: "Nothing was logged that day. You can still add it now.";
+		? m.emptyToday
+		: m.emptyThatDay;
 });
 
 const countBump = ref(false);
@@ -495,7 +623,7 @@ async function stepDown() {
 	const removed = habitsStore.unlogHabit(name);
 	if (!removed) return;
 	if (!stepperGroup.value) stepperRef.value?.hide();
-	toast.undoable(`Removed ${displayName(group.habit)}`, () =>
+	toast.undoable(m.removed(displayName(group.habit)), () =>
 		habitsStore.restoreLogs([removed]),
 	);
 }
@@ -507,9 +635,25 @@ async function removeAll() {
 	playUncheck();
 	const removed = habitsStore.removeAllLogs(group.name);
 	if (removed.length)
-		toast.undoable(`Removed ${displayName(group.habit)} ×${removed.length}`, () =>
+		toast.undoable(m.removedTimes(displayName(group.habit), removed.length), () =>
 			habitsStore.restoreLogs(removed),
 		);
+}
+
+// Notatki przy odhaczeniach tego habitu w wybranym dniu; przycisk edytuje
+// najnowsze odhaczenie
+const stepperLast = computed(() =>
+	stepperFor.value ? habitsStore.lastLog(stepperFor.value) : undefined,
+);
+const stepperNotes = computed(() =>
+	habitsStore.selectedLogs.filter((l) => l.name === stepperFor.value && l.note),
+);
+
+function editNote() {
+	const log = stepperLast.value;
+	if (!log) return;
+	stepperRef.value?.hide();
+	logNote.open(log.id, habitsStore.selectedKey);
 }
 
 // „Kiedy ostatnio” z rozwiniętą historią tego habitu
@@ -546,11 +690,14 @@ const remindersNeeded = ref(false);
 watch(remindersOpen, (open) => {
 	if (open) remindersNeeded.value = true;
 });
+const scheduleOpen = ref(false);
+const scheduleNeeded = ref(false);
+watch(scheduleOpen, (open) => {
+	if (open) scheduleNeeded.value = true;
+});
 const remindersOn = computed(() => remindersStore.activeReminders.length);
 const remindersLabel = computed(() =>
-	remindersOn.value > 0
-		? `Reminders: ${remindersOn.value} on`
-		: "Set reminders",
+	remindersOn.value > 0 ? m.remindersOn(remindersOn.value) : m.setReminders,
 );
 </script>
 
@@ -656,6 +803,23 @@ const remindersLabel = computed(() =>
 	flex: 1;
 	min-width: 0;
 }
+.panel-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.15rem;
+	flex-shrink: 0;
+}
+/* Na wąskim ekranie „Edit” zostaje samą ikoną — tytuł celów potrzebuje miejsca */
+@media (max-width: 480px) {
+	.edit-label {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
+	}
+}
 .panel-hint {
 	margin: 0.1rem 0 0;
 	font-size: var(--dt-text-xs);
@@ -681,6 +845,35 @@ const remindersLabel = computed(() =>
 	font-weight: 700;
 	text-align: center;
 	box-shadow: var(--dt-shadow-sm);
+}
+.rest-day {
+	margin: 0;
+	padding: 0.7rem 0.9rem;
+	border-radius: var(--dt-radius);
+	background: var(--dt-surface);
+	color: var(--dt-text-2);
+	font-size: var(--dt-text-sm);
+	line-height: 1.45;
+	text-align: center;
+}
+.weekly.has-daily {
+	margin-top: 0.85rem;
+	padding-top: 0.75rem;
+	border-top: 1px dashed var(--dt-border);
+}
+.weekly-title {
+	display: flex;
+	align-items: baseline;
+	gap: 0.5rem;
+	margin: 0 0 0.55rem;
+	font-size: var(--dt-text-sm);
+	font-weight: 700;
+	color: var(--dt-text-2);
+}
+.weekly-sub {
+	font-weight: 400;
+	font-size: var(--dt-text-xs);
+	color: var(--dt-text-3);
 }
 .goals-empty {
 	display: flex;
@@ -865,6 +1058,28 @@ const remindersLabel = computed(() =>
 }
 .stepper-clear {
 	color: var(--dt-danger);
+}
+.stepper-notes {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	max-width: 15rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.stepper-notes li {
+	padding: 0.35rem 0.6rem;
+	border-radius: var(--dt-radius-sm);
+	background: var(--dt-surface-soft);
+	font-size: var(--dt-text-xs);
+	color: var(--dt-text-2);
+	overflow-wrap: anywhere;
+}
+.stepper-notes i {
+	margin-right: 0.25rem;
+	font-size: 0.65rem;
+	color: var(--dt-text-3);
 }
 
 .banner-enter-active {

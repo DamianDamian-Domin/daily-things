@@ -40,9 +40,10 @@ auth.useDeviceLanguage();
 // a zapisy są kolejkowane do czasu powrotu sieci.
 export const db = initializeFirestore(app, {
 	ignoreUndefinedProperties: true,
-	localCache: useEmulators
-		? memoryLocalCache()
-		: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+	localCache:
+		useEmulators && import.meta.env.VITE_EMULATOR_PERSISTENT_CACHE !== "true"
+			? memoryLocalCache()
+			: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
 });
 
 if (useEmulators) {

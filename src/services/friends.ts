@@ -26,6 +26,7 @@ import { defaultAvatar, normalizeAvatar, type AvatarConfig } from "@/utils/avata
 //   profiles/{uid}/cheers/{fromUid} → skrzynka: piątka / zaproszenie / akceptacja
 //   friendCodes/{CODE}             → { uid, name, avatar } (get tak, list nie)
 //   friendships/{uidA_uidB}        → { members, requestedBy, status, from, to }
+//   challenges/{id}                → wyzwania ze znajomymi (services/challenges.ts)
 // Szczegóły i uprawnienia: firestore.rules
 // ==========================================================================
 
@@ -94,7 +95,7 @@ export interface Friendship {
 	acceptedAt?: Timestamp | null;
 }
 
-export type CheerKind = "cheer" | "request" | "accept";
+export type CheerKind = "cheer" | "request" | "accept" | "challenge";
 
 export interface Cheer {
 	id: string;
@@ -354,6 +355,16 @@ export async function removeFriendship(me: string, other: string) {
 	await batch.commit();
 }
 
+// Zaproszenie do wyzwania — tylko powiadomienie (samo wyzwanie jest w challenges/)
+export async function sendChallengeNote(me: string, other: string, myName: string) {
+	await setDoc(cheerRef(other, me), {
+		from: me,
+		kind: "challenge",
+		name: myName,
+		at: serverTimestamp(),
+	});
+}
+
 export async function sendCheer(me: string, other: string, myName: string) {
 	await setDoc(cheerRef(other, me), {
 		from: me,
@@ -367,7 +378,8 @@ export async function sendCheer(me: string, other: string, myName: string) {
 // SKRZYNKA
 // --------------------------------------------------------------------------
 function toCheer(id: string, raw: Record<string, unknown>): Cheer {
-	const kind = raw.kind === "request" || raw.kind === "accept" ? raw.kind : "cheer";
+	const kind =
+		raw.kind === "request" || raw.kind === "accept" || raw.kind === "challenge" ? raw.kind : "cheer";
 	const at = raw.at as Timestamp | null | undefined;
 	return {
 		id,
@@ -426,6 +438,9 @@ export async function deleteSocialData(uid: string, friendCode?: string | null) 
 		ops.slice(i, i + 450).forEach((op) => op(batch));
 		await batch.commit();
 	}
+	// Wyjście z wyzwań nie może zablokować usuwania konta
+	const { leaveAllChallenges } = await import("@/services/challenges");
+	await leaveAllChallenges(uid).catch((err) => console.warn("Leaving challenges failed", err));
 	if (friendCode) {
 		await deleteDoc(codeRef(friendCode)).catch((err) => {
 			// Kod mógł już nie istnieć — nie blokujemy usuwania konta

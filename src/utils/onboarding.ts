@@ -1,5 +1,7 @@
 // Krótki obrazkowy przewodnik po aplikacji. Pokazujemy go raz, nowym
 // użytkownikom, a potem można go otworzyć z ustawień (Help).
+import { defineLocalizedField } from "@/i18n";
+import { HELP_SLIDES_PL } from "@/i18n/messages/help";
 
 export const ONBOARDING_STORAGE_KEY = "onboarding.v1";
 
@@ -40,9 +42,15 @@ export const HELP_SLIDES: readonly HelpSlide[] = [
 	{
 		id: "friends",
 		title: "Better with friends",
-		text: "Create an account, invite friends with a link, see each other's week and send a high-five.",
+		text: "Create an account, invite friends with a link, see each other's week, send a high-five or start a challenge together.",
 	},
 ];
+
+// Tytuły i opisy slajdów idą za wybranym językiem
+for (const slide of HELP_SLIDES) {
+	defineLocalizedField(slide, "title", HELP_SLIDES_PL[slide.id].title);
+	defineLocalizedField(slide, "text", HELP_SLIDES_PL[slide.id].text);
+}
 
 // Ktoś, kto już coś odhaczał albo ma wybrane cele, nie jest nowy —
 // np. zalogował się na nowym urządzeniu. Jemu przewodnika nie wyskakujemy.

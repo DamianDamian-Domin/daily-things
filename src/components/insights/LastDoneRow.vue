@@ -1,7 +1,7 @@
 <template>
 	<li
 		class="ld-row"
-		:class="[`is-${row.fresh}`, { 'is-open': open, 'is-never': row.never }]">
+		:class="[`is-${row.fresh}`, { 'is-open': open, 'is-never': row.never && !row.cycle, 'is-cycle': !!row.cycle }]">
 		<button
 			type="button"
 			class="ld-head dt-row"
@@ -19,12 +19,20 @@
 			</span>
 			<span class="ld-text">
 				<span class="ld-name">{{ name }}</span>
-				<span class="ld-sub">{{ subline }}</span>
+				<span
+					class="ld-sub"
+					:class="{ 'is-note': row.matchedNote }">
+					<i
+						v-if="row.matchedNote"
+						class="pi pi-pencil"
+						aria-hidden="true"></i>
+					{{ subline }}
+				</span>
 			</span>
 			<span
 				class="ld-ago"
 				aria-hidden="true"
-				>{{ row.never ? "never" : agoShort(row.daysAgo) }}</span
+				>{{ badge }}</span
 			>
 			<i
 				class="pi pi-chevron-down ld-chevron"
@@ -36,40 +44,60 @@
 			:id="panelId"
 			class="ld-panel">
 			<p class="ld-answer">
-				<template v-if="row.never">You haven't logged this yet.</template>
+				<template v-if="row.never">{{ m.notYetAnswer }}</template>
 				<template v-else>
-					Last time: <strong>{{ agoLabel(row.daysAgo) }}</strong>
+					{{ m.lastTime }} <strong>{{ agoLabel(row.daysAgo) }}</strong>
 					<span class="ld-answer-date">{{ formatLong(row.dates[0]) }}</span>
 				</template>
 			</p>
 
 			<p
-				v-if="!row.never"
+				v-if="row.cycle"
 				class="ld-facts">
-				<span>on {{ row.dates.length }} {{ row.dates.length === 1 ? "day" : "days" }}</span>
+				<span>{{ everyLabel(row.cycle.cycle) }}</span>
+				<span
+					v-if="row.fresh !== 'fresh'"
+					class="ld-due"
+					>{{ capitalize(dueLabel(row.cycle.status)) }}</span
+				>
+				<span v-if="row.cycle.status.daysLeft > 0">next {{ formatShort(row.cycle.status.due) }}</span>
+			</p>
+			<p
+				v-else-if="!row.never"
+				class="ld-facts">
+				<span>{{ m.onDays(row.dates.length) }}</span>
 				<span v-if="rhythm">{{ rhythm }}</span>
 				<span
 					v-if="row.fresh !== 'fresh'"
 					class="ld-due"
-					>{{ row.fresh === "overdue" ? "Overdue" : "Due again" }}</span
+					>{{ row.fresh === "overdue" ? m.overdue : m.dueAgain }}</span
 				>
-				<span v-else-if="nextAround">next around {{ nextAround }}</span>
+				<span v-else-if="nextAround">{{ m.nextAround(nextAround) }}</span>
 			</p>
 
 			<ol
 				v-if="!row.never"
 				class="ld-dates"
-				aria-label="Days you did it">
+				:aria-label="m.datesAria">
 				<li
 					v-for="key in shownDates"
 					:key="key">
 					<button
 						type="button"
 						class="ld-date"
-						:aria-label="`Open ${formatLong(key)}`"
+						:aria-label="m.openDate(formatLong(key))"
 						@click="emit('openDay', key)">
 						<span>{{ formatLong(key) }}</span>
 						<span class="ld-date-ago">{{ agoLabel(daysBetween(key, todayKey)) }}</span>
+						<span
+							v-for="(note, i) in row.notes[key] ?? []"
+							:key="i"
+							class="ld-note">
+							<i
+								class="pi pi-pencil"
+								aria-hidden="true"></i>
+							{{ note }}
+						</span>
 					</button>
 				</li>
 			</ol>
@@ -78,8 +106,13 @@
 				type="button"
 				class="dt-btn dt-btn-ghost dt-btn-sm ld-more"
 				@click="showAll = true">
-				Show all {{ row.dates.length }}
+				{{ m.showAll(row.dates.length) }}
 			</button>
+
+			<CyclePicker
+				:cycle="row.cycle?.cycle ?? null"
+				:habit-key="row.name"
+				@set="(every, unit) => emit('setCycle', every, unit)" />
 
 			<button
 				type="button"
@@ -89,7 +122,7 @@
 				<i
 					:class="row.daysAgo === 0 && !row.never ? 'pi pi-check' : 'pi pi-plus'"
 					aria-hidden="true"></i>
-				{{ row.daysAgo === 0 && !row.never ? "Done today" : "Did it today" }}
+				{{ row.daysAgo === 0 && !row.never ? m.doneToday : m.didItToday }}
 			</button>
 		</div>
 	</li>
@@ -98,21 +131,30 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
-import type { Habit } from "@/libs/types";
+import type { Habit, HabitCycle } from "@/libs/types";
+import { dueLabel, dueShort, everyLabel, type CycleStatus, type CycleUnit } from "@/utils/cycles";
+import CyclePicker from "./CyclePicker.vue";
 import { addDays, fromDateKey, type DateKey } from "@/utils/date";
 import { displayName, paletteFor } from "@/utils/habitCatalog";
 import { agoLabel, agoShort, daysBetween, rhythmLabel, type Freshness } from "@/utils/lastDone";
 import { PALETTES } from "@/utils/pixelIcons";
+import { insightsMessages as m } from "@/i18n/messages/insights";
+import { dateLocale } from "@/i18n";
 
 export interface LastDoneItem {
 	name: string;
 	habit: Habit;
 	dates: DateKey[];
 	count: number;
+	notes: Record<DateKey, string[]>;
+	// Notatka, dzięki której habit pasuje do wyszukiwania
+	matchedNote: string | null;
 	daysAgo: number;
 	gap: number | null;
 	fresh: Freshness;
 	never: boolean;
+	// Obowiązek cykliczny: termin zamiast „ile temu”
+	cycle?: { cycle: HabitCycle; status: CycleStatus };
 }
 
 const PREVIEW = 6;
@@ -122,6 +164,7 @@ const emit = defineEmits<{
 	(e: "toggle"): void;
 	(e: "openDay", key: DateKey): void;
 	(e: "logToday"): void;
+	(e: "setCycle", every: number | null, unit: CycleUnit): void;
 }>();
 
 const showAll = ref(false);
@@ -140,9 +183,19 @@ const tintStrong = computed(() => PALETTES[palette.value].f);
 const rhythm = computed(() => rhythmLabel(props.row.gap));
 const shownDates = computed(() => (showAll.value ? props.row.dates : props.row.dates.slice(0, PREVIEW)));
 
+const badge = computed(() => {
+	if (props.row.cycle) return dueShort(props.row.cycle.status);
+	return props.row.never ? m.never : agoShort(props.row.daysAgo);
+});
+
 const subline = computed(() => {
-	if (props.row.never) return "Not logged yet";
-	const times = props.row.count === 1 ? "once" : `${props.row.count}×`;
+	if (props.row.cycle) {
+		const last = props.row.never ? "not logged yet" : `last ${formatLong(props.row.dates[0])}`;
+		return `${everyLabel(props.row.cycle.cycle)} · ${last}`;
+	}
+	if (props.row.never) return m.notLoggedYet;
+	if (props.row.matchedNote) return `“${props.row.matchedNote}”`;
+	const times = props.row.count === 1 ? m.once : `${props.row.count}×`;
 	return `${formatLong(props.row.dates[0])} · ${times}`;
 });
 
@@ -150,13 +203,19 @@ const subline = computed(() => {
 const nextAround = computed(() => {
 	if (props.row.gap === null || props.row.gap < 2) return null;
 	const next = addDays(fromDateKey(props.row.dates[0]), Math.round(props.row.gap));
-	return next.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+	return next.toLocaleDateString(dateLocale(), { day: "numeric", month: "short" });
 });
+
+function formatShort(key: DateKey) {
+	return fromDateKey(key).toLocaleDateString(dateLocale(), { weekday: "short", day: "numeric", month: "short" });
+}
+
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 function formatLong(key: DateKey) {
 	const date = fromDateKey(key);
 	const sameYear = date.getFullYear() === fromDateKey(props.todayKey).getFullYear();
-	return date.toLocaleDateString("en-GB", {
+	return date.toLocaleDateString(dateLocale(), {
 		weekday: "short",
 		day: "numeric",
 		month: "short",
@@ -248,6 +307,9 @@ function formatLong(key: DateKey) {
 	color: color-mix(in srgb, var(--fresh) 70%, var(--dt-text));
 	background: color-mix(in srgb, var(--fresh) 16%, var(--dt-surface));
 }
+.ld-row.is-cycle .ld-ago {
+	min-width: 3.6rem;
+}
 .ld-chevron {
 	font-size: 0.75rem;
 	color: var(--dt-text-3);
@@ -310,6 +372,7 @@ function formatLong(key: DateKey) {
 .ld-date {
 	position: relative;
 	display: flex;
+	flex-wrap: wrap;
 	justify-content: space-between;
 	gap: 0.5rem;
 	width: 100%;
@@ -323,18 +386,55 @@ function formatLong(key: DateKey) {
 	text-align: left;
 	cursor: pointer;
 }
+.ld-note {
+	flex-basis: 100%;
+	margin-top: -0.1rem;
+	font-size: var(--dt-text-xs);
+	color: var(--dt-text-2);
+	overflow-wrap: anywhere;
+}
+.ld-note i,
+.ld-sub i {
+	margin-right: 0.2rem;
+	font-size: 0.6rem;
+	color: var(--dt-text-3);
+}
+.ld-sub.is-note {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
 .ld-date::before {
 	content: "";
 	position: absolute;
 	left: calc(-0.75rem - 5px);
-	top: 50%;
+	/* Na wysokości pierwszej linii (pod datą może być notatka) */
+	top: calc(0.3rem + 0.5lh);
 	width: 8px;
 	height: 8px;
 	border-radius: 2px;
 	transform: translateY(-50%);
 	background: var(--dt-accent);
 }
-.ld-dates li:first-child .ld-date::before {
+.ld-dates li:first-child .ld-note {
+	flex-basis: 100%;
+	margin-top: -0.1rem;
+	font-size: var(--dt-text-xs);
+	color: var(--dt-text-2);
+	overflow-wrap: anywhere;
+}
+.ld-note i,
+.ld-sub i {
+	margin-right: 0.2rem;
+	font-size: 0.6rem;
+	color: var(--dt-text-3);
+}
+.ld-sub.is-note {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.ld-date::before {
 	background: var(--fresh);
 }
 .ld-date-ago {

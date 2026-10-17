@@ -27,7 +27,7 @@
 					<i
 						v-if="item.role === 'left'"
 						class="pi pi-chevron-left"></i>
-					{{ cardLabels[item.card.id] }}
+					{{ m.cardLabels[item.card.id] }}
 					<i
 						v-if="item.role === 'right'"
 						class="pi pi-chevron-right"></i>
@@ -37,7 +37,7 @@
 				v-if="carouselStore.leftCard"
 				type="button"
 				class="side-hit side-left"
-				:aria-label="`Show ${cardLabels[carouselStore.leftCard.id]}`"
+				:aria-label="m.show(m.cardLabels[carouselStore.leftCard.id])"
 				@click="goPrevWithAnimation"
 				@pointerenter="onHitEnter('left', $event)"
 				@pointerleave="hitHover = null"
@@ -51,7 +51,7 @@
 				v-if="carouselStore.rightCard"
 				type="button"
 				class="side-hit side-right"
-				:aria-label="`Show ${cardLabels[carouselStore.rightCard.id]}`"
+				:aria-label="m.show(m.cardLabels[carouselStore.rightCard.id])"
 				@click="goNextWithAnimation"
 				@pointerenter="onHitEnter('right', $event)"
 				@pointerleave="hitHover = null"
@@ -68,7 +68,7 @@
 			v-if="!isMobile"
 			class="carousel-dots"
 			role="tablist"
-			aria-label="Cards">
+			:aria-label="m.cards">
 			<button
 				v-for="card in carouselStore.cards"
 				:key="card.id"
@@ -77,7 +77,7 @@
 				class="dot"
 				:class="{ active: card.id === carouselStore.activeCardId }"
 				:aria-selected="card.id === carouselStore.activeCardId"
-				:aria-label="cardLabels[card.id]"
+				:aria-label="m.cardLabels[card.id]"
 				@click="onDotClick(card.id)" />
 		</div>
 
@@ -111,6 +111,7 @@ type VisibleCarouselCard = {
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useCarouselStore } from "@/stores/useCarouselStore";
 import { useLayout } from "@/utils/useLayout";
+import { homeMessages as m } from "@/i18n/messages/home";
 
 import ToDosCard from "../components/home_view/ToDosCard.vue";
 import StatsCard from "../components/home_view/StatsCard.vue";
@@ -131,13 +132,6 @@ const cardComponentMap = {
 	stats: StatsCard,
 	friends: FriendsCard,
 } as const;
-
-const cardLabels: Record<CarouselCardConfig["id"], string> = {
-	textAdd: "To-do list",
-	manage: "Today's habits",
-	stats: "Progress",
-	friends: "Friends",
-};
 
 const visibleCards = computed<VisibleCarouselCard[]>(() => {
 	const candidates = [

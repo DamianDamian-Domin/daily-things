@@ -1,10 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { setLocale } from "@/i18n";
 import {
 	agoLabel,
 	agoShort,
 	averageGap,
 	buildHabitHistory,
 	daysBetween,
+	findNote,
 	freshness,
 	rhythmLabel,
 } from "@/utils/lastDone";
@@ -25,9 +27,37 @@ describe("buildHabitHistory", () => {
 			name: "Clean the fridge",
 			dates: ["2026-10-12", "2026-09-01"],
 			count: 2,
+			notes: {},
 		});
 		expect(history.get("Drink water")?.dates).toEqual(["2026-10-12", "2026-10-01"]);
 		expect(history.get("Drink water")?.count).toBe(3);
+	});
+
+	it("keeps notes per day and finds them newest first", () => {
+		const history = buildHabitHistory([
+			{
+				date: "2026-09-01",
+				habits: [{ id: "a", name: "Clean the fridge", note: "Changed the filter, model X" }],
+			},
+			{
+				date: "2026-10-12",
+				habits: [
+					{ id: "b", name: "Clean the fridge", note: "  quick wipe " },
+					{ id: "c", name: "Clean the fridge", note: "" },
+					{ id: "d", name: "Clean the fridge", note: "new filter too" },
+				],
+			},
+		]);
+		const fridge = history.get("Clean the fridge")!;
+		expect(fridge.notes).toEqual({
+			"2026-09-01": ["Changed the filter, model X"],
+			"2026-10-12": ["quick wipe", "new filter too"],
+		});
+		const lower = (t: string) => t.toLowerCase();
+		expect(findNote(fridge, "filter", lower)).toBe("new filter too");
+		expect(findNote(fridge, "model x", lower)).toBe("Changed the filter, model X");
+		expect(findNote(fridge, "mop", lower)).toBeNull();
+		expect(findNote(fridge, "", lower)).toBeNull();
 	});
 
 	it("is empty without logs", () => {
@@ -76,5 +106,24 @@ describe("averageGap / rhythm / freshness", () => {
 		expect(freshness(10, 30)).toBe("fresh");
 		expect(freshness(30, 30)).toBe("due");
 		expect(freshness(50, 30)).toBe("overdue");
+	});
+});
+
+describe("po polsku", () => {
+	afterEach(() => setLocale("en", { remember: false }));
+
+	it("odmienia etykiety przez liczby", () => {
+		setLocale("pl", { remember: false });
+		expect(agoLabel(0)).toBe("dziś");
+		expect(agoLabel(3)).toBe("3 dni temu");
+		expect(agoLabel(21)).toBe("3 tygodnie temu");
+		expect(agoLabel(35)).toBe("5 tygodni temu");
+		expect(agoLabel(100)).toBe("3 miesiące temu");
+		expect(agoLabel(400)).toBe("ponad rok temu");
+		expect(agoLabel(2000)).toBe("ponad 5 lat temu");
+		expect(rhythmLabel(7)).toBe("mniej więcej co 7 dni");
+		expect(rhythmLabel(10)).toBe("mniej więcej co tydzień");
+		expect(rhythmLabel(30)).toBe("mniej więcej co 4 tygodnie");
+		expect(rhythmLabel(1)).toBe("prawie codziennie");
 	});
 });

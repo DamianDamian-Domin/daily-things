@@ -15,13 +15,13 @@
 						icon="local_fire_department"
 						:palette="friend.streak ? 'orange' : 'gray'"
 						:size="16" />
-					{{ friend.streak ? `${friend.streak}-day streak` : "No streak yet" }}
+					{{ friend.streak ? m.streak(friend.streak) : m.noStreak }}
 					<template v-if="friend.away">
 						<span class="friend-meta-sep">·</span>
-						not here yet today
+						{{ m.notHereYet }}
 					</template>
 				</template>
-				<template v-else>private 🌙</template>
+				<template v-else>{{ m.private }}</template>
 			</span>
 		</span>
 		<span
@@ -43,6 +43,7 @@
 import type { FriendRow } from "@/stores/friends";
 import PixelAvatar from "@/components/ui/PixelAvatar.vue";
 import PixelIcon from "@/components/ui/PixelIcon.vue";
+import { friendsMessages as m } from "@/i18n/messages/friends";
 
 // Jeden wiersz na liście znajomych (otwiera szczegóły)
 defineProps<{ friend: FriendRow }>();
@@ -50,14 +51,10 @@ defineProps<{ friend: FriendRow }>();
 const emit = defineEmits<{ open: [uid: string] }>();
 
 function rowAria(f: FriendRow) {
-	if (!f.shares) return `${f.name}, keeps progress private. Open details`;
-	const streak = f.streak ? `${f.streak}-day streak` : "no streak yet";
-	const today = f.today
-		? `, ${f.today.done} of ${f.today.total} goals today`
-		: f.away
-			? ", not here yet today"
-			: "";
-	return `${f.name}, ${streak}${today}. Open details`;
+	if (!f.shares) return m.rowPrivateAria(f.name);
+	const streak = f.streak ? m.streak(f.streak) : m.noStreakLower;
+	const today = f.today ? m.rowTodayAria(f.today.done, f.today.total) : f.away ? m.rowAwayAria : "";
+	return m.rowAria(f.name, streak, today);
 }
 </script>
 
