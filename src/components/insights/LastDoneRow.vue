@@ -19,7 +19,15 @@
 			</span>
 			<span class="ld-text">
 				<span class="ld-name">{{ name }}</span>
-				<span class="ld-sub">{{ subline }}</span>
+				<span
+					class="ld-sub"
+					:class="{ 'is-note': row.matchedNote }">
+					<i
+						v-if="row.matchedNote"
+						class="pi pi-pencil"
+						aria-hidden="true"></i>
+					{{ subline }}
+				</span>
 			</span>
 			<span
 				class="ld-ago"
@@ -70,6 +78,15 @@
 						@click="emit('openDay', key)">
 						<span>{{ formatLong(key) }}</span>
 						<span class="ld-date-ago">{{ agoLabel(daysBetween(key, todayKey)) }}</span>
+						<span
+							v-for="(note, i) in row.notes[key] ?? []"
+							:key="i"
+							class="ld-note">
+							<i
+								class="pi pi-pencil"
+								aria-hidden="true"></i>
+							{{ note }}
+						</span>
 					</button>
 				</li>
 			</ol>
@@ -109,6 +126,9 @@ export interface LastDoneItem {
 	habit: Habit;
 	dates: DateKey[];
 	count: number;
+	notes: Record<DateKey, string[]>;
+	// Notatka, dzięki której habit pasuje do wyszukiwania
+	matchedNote: string | null;
 	daysAgo: number;
 	gap: number | null;
 	fresh: Freshness;
@@ -142,6 +162,7 @@ const shownDates = computed(() => (showAll.value ? props.row.dates : props.row.d
 
 const subline = computed(() => {
 	if (props.row.never) return "Not logged yet";
+	if (props.row.matchedNote) return `“${props.row.matchedNote}”`;
 	const times = props.row.count === 1 ? "once" : `${props.row.count}×`;
 	return `${formatLong(props.row.dates[0])} · ${times}`;
 });
@@ -310,6 +331,7 @@ function formatLong(key: DateKey) {
 .ld-date {
 	position: relative;
 	display: flex;
+	flex-wrap: wrap;
 	justify-content: space-between;
 	gap: 0.5rem;
 	width: 100%;
@@ -323,18 +345,55 @@ function formatLong(key: DateKey) {
 	text-align: left;
 	cursor: pointer;
 }
+.ld-note {
+	flex-basis: 100%;
+	margin-top: -0.1rem;
+	font-size: var(--dt-text-xs);
+	color: var(--dt-text-2);
+	overflow-wrap: anywhere;
+}
+.ld-note i,
+.ld-sub i {
+	margin-right: 0.2rem;
+	font-size: 0.6rem;
+	color: var(--dt-text-3);
+}
+.ld-sub.is-note {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
 .ld-date::before {
 	content: "";
 	position: absolute;
 	left: calc(-0.75rem - 5px);
-	top: 50%;
+	/* Na wysokości pierwszej linii (pod datą może być notatka) */
+	top: calc(0.3rem + 0.5lh);
 	width: 8px;
 	height: 8px;
 	border-radius: 2px;
 	transform: translateY(-50%);
 	background: var(--dt-accent);
 }
-.ld-dates li:first-child .ld-date::before {
+.ld-dates li:first-child .ld-note {
+	flex-basis: 100%;
+	margin-top: -0.1rem;
+	font-size: var(--dt-text-xs);
+	color: var(--dt-text-2);
+	overflow-wrap: anywhere;
+}
+.ld-note i,
+.ld-sub i {
+	margin-right: 0.2rem;
+	font-size: 0.6rem;
+	color: var(--dt-text-3);
+}
+.ld-sub.is-note {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.ld-date::before {
 	background: var(--fresh);
 }
 .ld-date-ago {

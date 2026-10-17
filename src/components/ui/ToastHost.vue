@@ -12,6 +12,16 @@
 				:class="`tone-${t.tone}`">
 				<span class="toast-msg">{{ t.message }}</span>
 				<button
+					v-if="t.extra"
+					type="button"
+					class="toast-action toast-extra"
+					@click="toastStore.runExtra(t.id)">
+					<i
+						:class="t.extra.icon"
+						aria-hidden="true"></i>
+					{{ t.extra.label }}
+				</button>
+				<button
 					v-if="t.actionLabel"
 					type="button"
 					class="toast-action"
@@ -108,6 +118,21 @@ const toastStore = useToastStore();
 	.toast-action:hover {
 		background: rgba(255, 255, 255, 0.3);
 	}
+}
+
+.toast-extra {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	background: transparent;
+	box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.28);
+}
+.toast-extra i {
+	font-size: 0.7rem;
+}
+:where(.my-app-dark) .toast:not(.tone-error, .tone-success, .tone-celebrate) .toast-extra {
+	background: transparent;
+	box-shadow: inset 0 0 0 1.5px rgba(0, 0, 0, 0.16);
 }
 
 .toast-close {

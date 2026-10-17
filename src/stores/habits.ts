@@ -35,6 +35,7 @@ import {
 } from "@/utils/date";
 import { CATALOG, findCatalogHabit, resolveHabit } from "@/utils/habitCatalog";
 import { streakDetails } from "@/utils/streak";
+import { cleanNote } from "@/utils/logNote";
 
 const RECENT_LIMIT = 12;
 const MAX_STREAK_LOOKBACK_MONTHS = 24;
@@ -386,11 +387,17 @@ export const useHabitsStore = defineStore("habits", () => {
 
 	// Usuwa ostatnie odhaczenie danego habitu (np. „−1” przy myciu zębów 3×)
 	function unlogHabit(name: string, key: DateKey = selectedKey.value): HabitLog | null {
+		const last = lastLog(name, key);
+		return last ? removeLog(last.id, key) : null;
+	}
+
+	// Najnowsze odhaczenie danego habitu w danym dniu
+	function lastLog(name: string, key: DateKey = selectedKey.value): HabitLog | undefined {
 		const logs = logsOn(key);
 		for (let i = logs.length - 1; i >= 0; i--) {
-			if (logs[i].name === name) return removeLog(logs[i].id, key);
+			if (logs[i].name === name) return logs[i];
 		}
-		return null;
+		return undefined;
 	}
 
 	function removeAllLogs(name: string, key: DateKey = selectedKey.value): HabitLog[] {
@@ -423,6 +430,42 @@ export const useHabitsStore = defineStore("habits", () => {
 				toast.error(SAVE_ERROR);
 			})
 			.finally(() => endWrite(key));
+	}
+
+	// Notatka przy odhaczeniu. Firestore nie zmieni jednego elementu tablicy,
+	// więc zapisujemy całą listę dnia (jak przy zmianie kolejności).
+	function setLogNote(logId: string, key: DateKey, text: string): boolean {
+		const currentUid = uid.value;
+		const entry = days.value[key];
+		if (!currentUid || !entry) return false;
+		const log = entry.habits.find((l) => l.id === logId);
+		if (!log) return false;
+		const note = cleanNote(text);
+		const previous = log.note;
+		if ((previous ?? "") === note) return true;
+		if (note) log.note = note;
+		else delete log.note;
+
+		beginWrite(key);
+		updateDoc(dayDocRef(currentUid, key), {
+			[DAY_LOGS_FIELD]: entry.habits.map((l) => plain(l)),
+		})
+			.catch((err) => {
+				console.error("setLogNote failed", err);
+				const current = entry.habits.find((l) => l.id === logId);
+				if (current) {
+					if (previous) current.note = previous;
+					else delete current.note;
+				}
+				toast.error(SAVE_ERROR);
+			})
+			.finally(() => endWrite(key));
+		return true;
+	}
+
+	// Wpis po id w danym dniu (okno notatki)
+	function findLog(logId: string, key: DateKey): HabitLog | undefined {
+		return days.value[key]?.habits.find((l) => l.id === logId);
 	}
 
 	async function reorderSelected(names: string[]) {
@@ -692,6 +735,9 @@ export const useHabitsStore = defineStore("habits", () => {
 		removeAllLogs,
 		restoreLogs,
 		reorderSelected,
+		setLogNote,
+		findLog,
+		lastLog,
 		// cele
 		addDailyGoal,
 		addDailyGoals,

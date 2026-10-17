@@ -249,6 +249,28 @@
 							aria-hidden="true"></i>
 					</button>
 				</div>
+				<ul
+					v-if="stepperNotes.length"
+					class="stepper-notes"
+					aria-label="Notes">
+					<li
+						v-for="n in stepperNotes"
+						:key="n.id">
+						<i
+							class="pi pi-pencil"
+							aria-hidden="true"></i>
+						{{ n.note }}
+					</li>
+				</ul>
+				<button
+					type="button"
+					class="dt-btn dt-btn-ghost dt-btn-sm"
+					@click="editNote">
+					<i
+						class="pi pi-pen-to-square"
+						aria-hidden="true"></i>
+					{{ stepperLast?.note ? "Edit note" : "Add note" }}
+				</button>
 				<button
 					v-if="stepperGroup.count > 1"
 					type="button"
@@ -289,6 +311,7 @@ import { useToastStore } from "@/stores/toast";
 import { usePreferencesStore } from "@/stores/userPreferences";
 import { useRemindersStore } from "@/stores/reminders";
 import { useInsightsStore } from "@/stores/insights";
+import { useLogNoteStore } from "@/stores/logNote";
 import { useSound } from "@/utils/useSound";
 import { useConfetti } from "@/utils/useConfetti";
 import { randomCheer } from "@/utils/useCompliment";
@@ -312,6 +335,7 @@ const toast = useToastStore();
 const preferences = usePreferencesStore();
 const remindersStore = useRemindersStore();
 const insights = useInsightsStore();
+const logNote = useLogNoteStore();
 const { playHabitCheck, playUncheck, playVictory } = useSound();
 const { launch: launchConfetti } = useConfetti();
 
@@ -388,8 +412,12 @@ async function onGoalTap(goal: GroupedGoal, event: MouseEvent) {
 	if (result === "logged") {
 		const done = goal.done + 1;
 		const suffix = goal.target > 1 ? ` (${Math.min(done, goal.target)}/${goal.target})` : "";
-		toast.undoable(`${displayName(goal.habit)}${suffix} — ${randomCheer()}`, () =>
-			habitsStore.unlogHabit(goal.name),
+		const key = habitsStore.selectedKey;
+		const log = habitsStore.lastLog(goal.name, key);
+		toast.undoable(
+			`${displayName(goal.habit)}${suffix} — ${randomCheer()}`,
+			() => habitsStore.unlogHabit(goal.name),
+			log ? logNote.toastAction(log.id, key) : undefined,
 		);
 		if (done >= goal.target) flyEmoji();
 	}
@@ -510,6 +538,22 @@ async function removeAll() {
 		toast.undoable(`Removed ${displayName(group.habit)} ×${removed.length}`, () =>
 			habitsStore.restoreLogs(removed),
 		);
+}
+
+// Notatki przy odhaczeniach tego habitu w wybranym dniu; przycisk edytuje
+// najnowsze odhaczenie
+const stepperLast = computed(() =>
+	stepperFor.value ? habitsStore.lastLog(stepperFor.value) : undefined,
+);
+const stepperNotes = computed(() =>
+	habitsStore.selectedLogs.filter((l) => l.name === stepperFor.value && l.note),
+);
+
+function editNote() {
+	const log = stepperLast.value;
+	if (!log) return;
+	stepperRef.value?.hide();
+	logNote.open(log.id, habitsStore.selectedKey);
 }
 
 // „Kiedy ostatnio” z rozwiniętą historią tego habitu
@@ -865,6 +909,28 @@ const remindersLabel = computed(() =>
 }
 .stepper-clear {
 	color: var(--dt-danger);
+}
+.stepper-notes {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	max-width: 15rem;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.stepper-notes li {
+	padding: 0.35rem 0.6rem;
+	border-radius: var(--dt-radius-sm);
+	background: var(--dt-surface-soft);
+	font-size: var(--dt-text-xs);
+	color: var(--dt-text-2);
+	overflow-wrap: anywhere;
+}
+.stepper-notes i {
+	margin-right: 0.25rem;
+	font-size: 0.65rem;
+	color: var(--dt-text-3);
 }
 
 .banner-enter-active {
