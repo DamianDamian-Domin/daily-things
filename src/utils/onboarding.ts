@@ -40,7 +40,7 @@ export const HELP_SLIDES: readonly HelpSlide[] = [
 	{
 		id: "friends",
 		title: "Better with friends",
-		text: "Create an account, invite friends with a link, see each other's week and send a high-five.",
+		text: "Create an account, invite friends with a link, see each other's week, send a high-five or start a challenge together.",
 	},
 ];
 

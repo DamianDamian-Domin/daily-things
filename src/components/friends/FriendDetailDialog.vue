@@ -158,6 +158,16 @@
 				@click="friendsStore.cheer(friend)">
 				{{ cheered ? "High-fived today ✓" : `High-five ${friend.name} 👏` }}
 			</button>
+			<button
+				type="button"
+				class="dt-btn dt-btn-soft dt-btn-block fd-challenge"
+				@click="emit('challenge', friend.uid)">
+				<PixelIcon
+					icon="flag"
+					palette="green"
+					:size="20" />
+				Start a challenge together
+			</button>
 
 			<div class="fd-remove">
 				<button
@@ -203,6 +213,7 @@ import { fromDateKey, weekdayName } from "@/utils/date";
 import { ACHIEVEMENTS } from "@/utils/achievements";
 
 const props = defineProps<{ friendUid: string | null }>();
+const emit = defineEmits<{ challenge: [uid: string] }>();
 const visible = defineModel<boolean>({ default: false });
 
 const friendsStore = useFriendsStore();
@@ -404,6 +415,9 @@ function remove() {
 	font-size: var(--dt-text-sm);
 	color: var(--dt-text-3);
 	font-style: italic;
+}
+.fd-challenge {
+	margin-top: -0.5rem;
 }
 .fd-cheer.sent:disabled {
 	opacity: 1;

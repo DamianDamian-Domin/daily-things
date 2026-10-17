@@ -31,6 +31,11 @@
 				<!-- ============ CHWILE DO ŚWIĘTOWANIA ============ -->
 				<FriendsHighlights v-if="friendsStore.highlights.length" />
 
+				<!-- ============ WYZWANIA ============ -->
+				<FriendsChallenges
+					v-if="hasFriends && !challengesStore.unavailable"
+					@create="openChallenge()" />
+
 				<!-- ============ TEN TYDZIEŃ ============ -->
 				<FriendsWeekBoard
 					v-if="hasFriends"
@@ -86,13 +91,19 @@
 		<FriendDetailDialog
 			v-if="detailNeeded"
 			v-model="detailOpen"
-			:friend-uid="detailUid" />
+			:friend-uid="detailUid"
+			@challenge="challengeFrom" />
+		<ChallengeDialog
+			v-if="challengeNeeded"
+			v-model="challengeOpen"
+			:friend-uid="challengeUid" />
 	</section>
 </template>
 
 <script setup lang="ts">
 import { computed, defineAsyncComponent, ref, watch } from "vue";
 import { useAuthStore } from "@/stores/auth";
+import { useChallengesStore } from "@/stores/challenges";
 import { useFriendsStore } from "@/stores/friends";
 import { useProfileStore } from "@/stores/profile";
 import { useInvite } from "@/utils/useInvite";
@@ -102,17 +113,22 @@ import FriendsRequests from "@/components/friends/FriendsRequests.vue";
 import FriendsHighlights from "@/components/friends/FriendsHighlights.vue";
 import FriendsWeekBoard from "@/components/friends/FriendsWeekBoard.vue";
 import FriendsList from "@/components/friends/FriendsList.vue";
+import FriendsChallenges from "@/components/friends/FriendsChallenges.vue";
 const AddFriendDialog = defineAsyncComponent(
 	() => import("@/components/friends/AddFriendDialog.vue"),
 );
 const FriendDetailDialog = defineAsyncComponent(
 	() => import("@/components/friends/FriendDetailDialog.vue"),
 );
+const ChallengeDialog = defineAsyncComponent(
+	() => import("@/components/friends/ChallengeDialog.vue"),
+);
 
 const props = defineProps<{ isActive: boolean }>();
 
 const authStore = useAuthStore();
 const friendsStore = useFriendsStore();
+const challengesStore = useChallengesStore();
 const profileStore = useProfileStore();
 const { copyCode, shareInvite } = useInvite();
 
@@ -145,6 +161,20 @@ function openDetail(uid: string) {
 	detailUid.value = uid;
 	detailNeeded.value = true;
 	detailOpen.value = true;
+}
+
+const challengeOpen = ref(false);
+const challengeNeeded = ref(false);
+const challengeUid = ref<string | null>(null);
+function openChallenge(friendUid: string | null = null) {
+	challengeUid.value = friendUid;
+	challengeNeeded.value = true;
+	challengeOpen.value = true;
+}
+// „Wyzwanie z Olą” ze szczegółów znajomego
+function challengeFrom(friendUid: string) {
+	detailOpen.value = false;
+	openChallenge(friendUid);
 }
 
 // Link z zaproszeniem: po zalogowaniu od razu pytamy „Dodać Anię?”
